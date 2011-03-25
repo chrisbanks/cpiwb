@@ -58,9 +58,8 @@ pProcess = do pcs <- sepBy pProcessComponent (rOp "||");
               return (Process pcs aff)
 
 pProcessComponent :: Parser (Species,Conc)
-pProcessComponent = do s <- pSpecies;
-                       rOp "@";
-                       c <- double;
+pProcessComponent = do c <- squares(double);
+                       s <- pSpecies;
                        return (s,(d2s c))
 
 -- Species definition
@@ -100,6 +99,13 @@ pSumOp = do rOp "+";
 
 sumOp :: Species -> Species -> Species
 sumOp (Sum ss) (Sum ss') = (Sum (ss++ss'))
+
+-- FIXME: Complete patterns in sumOp ^
+-- *CpiParser> testParse pSpecies "(a.0|z.0) + (b.0|c.0)"
+-- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
+-- *CpiParser> testParse pSpecies "z.0 + (b.0|c.0)"
+-- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
+
 
 -- Prefix expression
 pPre :: Parser Species
@@ -189,13 +195,29 @@ pCommIO = parens (do os <- pNameList;
 ------------------
 
 -- Parser Test harnesses:
-testParse :: (Show a) => Parser a -> String -> IO ()
+testParse :: (Expr a) => Parser a -> String -> IO ()
 testParse p input = case (parse p "" input) of
+                      Left err -> do putStr "parse error at";
+                                     print err
+                      Right x -> print (pretty x)
+-- FIXME: need to be able to prettyprint Defs too:
+-- *CpiParser> testParse pProcessDef "Pi = [20]P()||[30.2]Z(a,b) : {a-b@0.7}"
+-- <interactive>:1:0:
+--     No instance for (Expr ProcessDef)
+--       arising from a use of `testParse' at <interactive>:1:0-61
+--     Possible fix: add an instance declaration for (Expr ProcessDef)
+--     In the expression:
+--         testParse pProcessDef "Pi = [20]P()||[30.2]Z(a,b) : {a-b@0.7}"
+--     In the definition of `it':
+--         it = testParse pProcessDef "Pi = [20]P()||[30.2]Z(a,b) : {a-b@0.7}"
+
+testParse' :: (Expr a) => Parser a -> String -> IO ()
+testParse' p input = case (parse p "" input) of
                       Left err -> do putStr "parse error at";
                                      print err
                       Right x -> print x
 
-testMultiParse :: (Show a) => Parser a -> String -> IO ()
+testMultiParse :: (Expr a) => Parser a -> String -> IO ()
 testMultiParse p input = testParse (do ws;
                                        x <- p;
                                        eof;

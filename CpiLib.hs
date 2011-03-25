@@ -14,23 +14,24 @@ type Conc = String
 
 data Prefix = Comm Name OutNames InNames
             | Tau Rate
-              deriving (Eq, Ord)
+              deriving (Eq, Ord, Show)
 
 data Aff = Aff ((Name,Name),Rate)
-         deriving(Eq,Ord)
+         deriving(Eq, Ord, Show)
 
 type AffNet = [Aff]
 
 data Species = Nil
              | Def String [Name]
-             | Sum [(Prefix, Species)]
+             | Sum [PrefixSpecies]
              | Par [Species]
              | New AffNet Species
-               deriving (Eq, Ord)
+               deriving (Eq, Ord, Show)
+
+type PrefixSpecies = (Prefix,Species)
 
 data Process = Process [(Species,Conc)] AffNet 
                deriving (Eq, Ord, Show)
---TODO: pretty print process
 
 type SpeciesDef = (Name, [Name], Species)
 type ProcessDef = (Name, Process)
@@ -38,42 +39,76 @@ type ProcessDef = (Name, Process)
 ----------------------
 -- Pretty printing:
 ----------------------
--- by instantiation of show for each type
+-- by instantiation of "pretty" for each type
 -- or a function for each synonym type
 
-instance Show Species where
-    show Nil = "0"
-    show (Def i ns) = i++"("++(showNames ns)++")"
---    show (Sum ((p,s):pss)) = show' ((p,s):pss)
---        where show' ((p,s):pss) r = 
--- FIXME: non-exhaustive!!!!!!!!!!
+class (Show a) => Expr a where
+    pretty :: a -> String
+    pretty x = show x
 
-instance Show Prefix where
-    show (Tau r) = "tau<"++r++">"
-    show (Comm n [] []) = n++"."
-    show (Comm n [] is) = n++"("++(showNames is)++")."
-    show (Comm n os []) = n++"<"++(showNames os)++">."
-    show (Comm n os is) = n++"("++(showNames os)++";"++(showNames is)++")."
+instance Expr Process where
+    pretty (Process x@((s,c):scs) n)
+        | null x = ""
+        | length x == 1
+            = "["++c++"] "++(pretty s)
+        | otherwise
+            = (pretty (Process [(s,c)] n))++" || "++(pretty (Process scs n))
 
-showNames :: [Name] -> String
-showNames ns = concat(L.intersperse "," (L.sort ns))
+instance Expr Species where
+    pretty Nil = "0"
+    pretty (Def i ns) = i++"("++(prettyNames ns)++")"
+    pretty x'@(Sum x@((p,s):pss)) 
+        | (null x) = ""
+        | (length x == 1) 
+            = (pretty p)++(prettyPs s x')
+        | otherwise 
+            = (pretty $ Sum [(p,s)])++" + "++(pretty $ Sum pss)
+    pretty (Par x@(s:ss))
+        | (null x) 
+            = ""
+        | (length x == 1) 
+            = pretty s
+        | otherwise 
+            = (pretty s)++" | "++(pretty(Par ss))
+    pretty (New n s) = (prettyAffNet n)++" "++(pretty s)
 
-instance Show Aff where
-    show (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++r++")"
+-- Parenthesisation
+prettyPs :: Species -> Species -> String
+prettyPs x x' 
+    | ((prio x)<=(prio x')) 
+        = (pretty x)
+    | otherwise 
+        =  "("++(pretty x)++")"
+    where prio Nil = 10
+          prio (Def _ _) = 10
+          prio (Sum ss)
+              | (length ss == 1) = 10
+              | otherwise = 20
+          prio (Par _) = 30
 
-showAffNet :: AffNet -> String
-showAffNet an = "(new "++(showNames(sites an))++")"
+instance Expr Prefix where
+    pretty (Tau r) = "tau<"++r++">"
+    pretty (Comm n [] []) = n++"."
+    pretty (Comm n [] is) = n++"("++(prettyNames is)++")."
+    pretty (Comm n os []) = n++"<"++(prettyNames os)++">."
+    pretty (Comm n os is) = n++"("++(prettyNames os)++";"
+                            ++(prettyNames is)++")."
 
--- TODO: showSpeciesDef :: SpeciesDef -> String
--- TODO: showProcessDef :: ProcessDef -> String
+prettyNames :: [Name] -> String
+prettyNames ns = concat(L.intersperse "," (L.sort ns))
 
--- TODO: show with correct parentheses:
--- showParens (x,x') = if ((prio x)>=(prio x'))
---                     then (show x)
---                     else "("++(show x)++")"
---     where prio Nil = 90
---           prio (Def _ _) = 90
---           prio (Sum ss) = --FIXME: finish this (cases for Sum, etc.)
+instance Expr Aff where
+    pretty (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++r++")"
+
+prettyAffNet :: AffNet -> String
+prettyAffNet an = "(new "++(prettyNames(sites an))++")"
+
+prettySpeciesDef :: SpeciesDef -> String
+prettySpeciesDef (n,fns,s) = n++"("++(prettyNames fns)++") = "++(pretty s)
+
+prettyProcessDef :: ProcessDef -> String
+prettyProcessDef (n,p) = n++" = "++(pretty p)
+
 
 ----------------------
 --Functions:
