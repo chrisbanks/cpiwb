@@ -33,8 +33,9 @@ type PrefixSpecies = (Prefix,Species)
 data Process = Process [(Species,Conc)] AffNet 
                deriving (Eq, Ord, Show)
 
-type SpeciesDef = (Name, [Name], Species)
-type ProcessDef = (Name, Process)
+data Definition = SpeciesDef Name [Name] Species
+                | ProcessDef Name Process
+                  deriving (Eq,Ord,Show)
 
 ----------------------
 -- Pretty printing:
@@ -103,11 +104,11 @@ instance Expr Aff where
 prettyAffNet :: AffNet -> String
 prettyAffNet an = "(new "++(prettyNames(sites an))++")"
 
-prettySpeciesDef :: SpeciesDef -> String
-prettySpeciesDef (n,fns,s) = n++"("++(prettyNames fns)++") = "++(pretty s)
-
-prettyProcessDef :: ProcessDef -> String
-prettyProcessDef (n,p) = n++" = "++(pretty p)
+instance Expr Definition where
+    pretty (SpeciesDef n fns s) 
+        = n++"("++(prettyNames fns)++") = "++(pretty s)
+    pretty (ProcessDef  n p) 
+        = n++" = "++(pretty p)
 
 
 ----------------------

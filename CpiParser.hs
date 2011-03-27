@@ -42,13 +42,20 @@ commaSep = P.commaSep lexer
 -- Parser
 ------------------
 
--- Process definition
-pProcessDef :: Parser ProcessDef
-pProcessDef = do reserved "process";
-                 i <- identifier;
-                 rOp "=";
-                 p <- pProcess;
-                 return (i,p)
+-- Process/Species definition
+pDefinition :: Parser Definition
+pDefinition = (do reserved "process";
+                  i <- identifier;
+                  rOp "=";
+                  p <- pProcess;
+                  return (ProcessDef i p) )
+              <|>
+              (do reserved "species";
+                  i <- identifier;
+                  ns <- pFreeNames;
+                  rOp "=";
+                  s <- pSpecies;
+                  return (SpeciesDef i ns s) )
 
 -- Process expression
 pProcess :: Parser Process
@@ -61,15 +68,6 @@ pProcessComponent :: Parser (Species,Conc)
 pProcessComponent = do c <- squares(double);
                        s <- pSpecies;
                        return (s,(d2s c))
-
--- Species definition
-pSpeciesDef :: Parser SpeciesDef
-pSpeciesDef = do reserved "species";
-                 i <- identifier;
-                 ns <- pFreeNames;
-                 rOp "=";
-                 s <- pSpecies;
-                 return (i, ns, s) 
 
 -- Species expression
 pSpecies :: Parser Species
