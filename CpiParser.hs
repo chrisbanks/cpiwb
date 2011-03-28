@@ -3,6 +3,7 @@ module CpiParser where
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as P
+
 import CpiLib
 
 
@@ -57,6 +58,12 @@ pDefinition = (do reserved "process";
                   s <- pSpecies;
                   return (SpeciesDef i ns s) )
 
+pDefinitionLines :: Parser [Definition]
+pDefinitionLines = many1(do ws;
+                            d <- pDefinition;
+                            semi;
+                            return d)
+
 -- Process expression
 pProcess :: Parser Process
 pProcess = do pcs <- sepBy pProcessComponent (rOp "||");
@@ -103,6 +110,8 @@ sumOp (Sum ss) (Sum ss') = (Sum (ss++ss'))
 -- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
 -- *CpiParser> testParse pSpecies "z.0 + (b.0|c.0)"
 -- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
+-- NOTE: these constructions aren't allowed, Sums are prefix guarded
+--       the parser allows it though...
 
 
 -- Prefix expression
@@ -183,40 +192,3 @@ pCommIO = parens (do os <- pNameList;
                      semi;
                      is <- pNameList;
                      return (os,is) )
-             
-
-
-
-
-------------------
--- Utility Funs
-------------------
-
--- Parser Test harnesses:
-testParse :: (Expr a) => Parser a -> String -> IO ()
-testParse p input = case (parse p "" input) of
-                      Left err -> do putStr "parse error at";
-                                     print err
-                      Right x -> print (pretty x)
--- FIXME: need to be able to prettyprint Defs too:
--- *CpiParser> testParse pProcessDef "Pi = [20]P()||[30.2]Z(a,b) : {a-b@0.7}"
--- <interactive>:1:0:
---     No instance for (Expr ProcessDef)
---       arising from a use of `testParse' at <interactive>:1:0-61
---     Possible fix: add an instance declaration for (Expr ProcessDef)
---     In the expression:
---         testParse pProcessDef "Pi = [20]P()||[30.2]Z(a,b) : {a-b@0.7}"
---     In the definition of `it':
---         it = testParse pProcessDef "Pi = [20]P()||[30.2]Z(a,b) : {a-b@0.7}"
-
-testParse' :: (Expr a) => Parser a -> String -> IO ()
-testParse' p input = case (parse p "" input) of
-                      Left err -> do putStr "parse error at";
-                                     print err
-                      Right x -> print x
-
-testMultiParse :: (Expr a) => Parser a -> String -> IO ()
-testMultiParse p input = testParse (do ws;
-                                       x <- p;
-                                       eof;
-                                       return x) input

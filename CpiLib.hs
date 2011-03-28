@@ -37,6 +37,7 @@ data Definition = SpeciesDef Name [Name] Species
                 | ProcessDef Name Process
                   deriving (Eq,Ord,Show)
 
+
 ----------------------
 -- Pretty printing:
 ----------------------
