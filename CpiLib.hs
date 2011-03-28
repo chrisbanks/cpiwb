@@ -11,7 +11,7 @@
 --     GNU General Public License for more details.
 
 --     You should have received a copy of the GNU General Public License
---     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+--     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
 module CpiLib where
 
@@ -25,7 +25,8 @@ type Name = String
 type OutNames = [Name]
 type InNames = [Name]
 type Rate = String
-type Conc = String 
+type Conc = String
+type PrefixSpecies = (Prefix,Species)
 
 data Prefix = Comm Name OutNames InNames
             | Tau Rate
@@ -34,7 +35,8 @@ data Prefix = Comm Name OutNames InNames
 data Aff = Aff ((Name,Name),Rate)
          deriving(Eq, Ord, Show)
 
-type AffNet = [Aff]
+data AffNet = AffNet [Aff]
+         deriving(Eq, Ord, Show)
 
 data Species = Nil
              | Def String [Name]
@@ -42,8 +44,6 @@ data Species = Nil
              | Par [Species]
              | New AffNet Species
                deriving (Eq, Ord, Show)
-
-type PrefixSpecies = (Prefix,Species)
 
 data Process = Process [(Species,Conc)] AffNet 
                deriving (Eq, Ord, Show)
@@ -53,17 +53,17 @@ data Definition = SpeciesDef Name [Name] Species
                   deriving (Eq,Ord,Show)
 
 
+
 ----------------------
 -- Pretty printing:
 ----------------------
--- by instantiation of "pretty" for each type
--- or a function for each synonym type
-
-class (Show a) => Expr a where
+-- Instances of Pretty class are pretty-printable
+-- CPi components.
+class (Show a) => Pretty a where
     pretty :: a -> String
     pretty x = show x
 
-instance Expr Process where
+instance Pretty Process where
     pretty (Process x@((s,c):scs) n)
         | null x = ""
         | length x == 1
@@ -71,7 +71,7 @@ instance Expr Process where
         | otherwise
             = (pretty (Process [(s,c)] n))++" || "++(pretty (Process scs n))
 
-instance Expr Species where
+instance Pretty Species where
     pretty Nil = "0"
     pretty (Def i ns) = i++"("++(prettyNames ns)++")"
     pretty x'@(Sum x@((p,s):pss)) 
@@ -87,7 +87,30 @@ instance Expr Species where
             = pretty s
         | otherwise 
             = (pretty s)++" | "++(pretty(Par ss))
-    pretty (New n s) = (prettyAffNet n)++" "++(pretty s)
+    pretty (New n s) = (pretty n)++" "++(pretty s)
+
+instance Pretty Prefix where
+    pretty (Tau r) = "tau<"++r++">"
+    pretty (Comm n [] []) = n++"."
+    pretty (Comm n [] is) = n++"("++(prettyNames is)++")."
+    pretty (Comm n os []) = n++"<"++(prettyNames os)++">."
+    pretty (Comm n os is) = n++"("++(prettyNames os)++";"
+                            ++(prettyNames is)++")."
+
+instance Pretty Aff where
+    pretty (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++r++")"
+
+instance Pretty AffNet where
+    pretty an = "(new "++(prettyNames(sites an))++")"
+
+instance Pretty Definition where
+    pretty (SpeciesDef n fns s) 
+        = n++"("++(prettyNames fns)++") = "++(pretty s)
+    pretty (ProcessDef  n p) 
+        = n++" = "++(pretty p)
+
+prettyNames :: [Name] -> String
+prettyNames ns = concat(L.intersperse "," (L.sort ns))
 
 -- Parenthesisation
 prettyPs :: Species -> Species -> String
@@ -103,29 +126,6 @@ prettyPs x x'
               | otherwise = 20
           prio (Par _) = 30
 
-instance Expr Prefix where
-    pretty (Tau r) = "tau<"++r++">"
-    pretty (Comm n [] []) = n++"."
-    pretty (Comm n [] is) = n++"("++(prettyNames is)++")."
-    pretty (Comm n os []) = n++"<"++(prettyNames os)++">."
-    pretty (Comm n os is) = n++"("++(prettyNames os)++";"
-                            ++(prettyNames is)++")."
-
-prettyNames :: [Name] -> String
-prettyNames ns = concat(L.intersperse "," (L.sort ns))
-
-instance Expr Aff where
-    pretty (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++r++")"
-
-prettyAffNet :: AffNet -> String
-prettyAffNet an = "(new "++(prettyNames(sites an))++")"
-
-instance Expr Definition where
-    pretty (SpeciesDef n fns s) 
-        = n++"("++(prettyNames fns)++") = "++(pretty s)
-    pretty (ProcessDef  n p) 
-        = n++" = "++(pretty p)
-
 
 ----------------------
 --Functions:
@@ -136,8 +136,9 @@ sites :: AffNet -> [Name]
 sites net = sites' net []
     where
       sites' :: AffNet -> [Name] -> [Name]
-      sites' ((Aff ((s1,s2),_)):affs) r = sites' affs (s1:s2:r)
-      sites' [] r = L.nub r
+      sites' (AffNet ((Aff ((s1,s2),_)):affs)) r 
+          = sites' (AffNet affs) (s1:s2:r)
+      sites' (AffNet []) r = L.nub r
 
 --Free/Bound names:
 fn :: Species -> [Name]

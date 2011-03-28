@@ -11,7 +11,7 @@
 --     GNU General Public License for more details.
 
 --     You should have received a copy of the GNU General Public License
---     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+--     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
 module CpiParser where
 
@@ -172,7 +172,8 @@ pNew = do net <- parens pNew';
 
 -- Affinity network:
 pAffNet :: Parser AffNet
-pAffNet = braces(commaSep pAff)
+pAffNet = do as <- braces(commaSep pAff);
+             return (AffNet as)
 
 pAff :: Parser Aff
 pAff = do s1 <- identifier;

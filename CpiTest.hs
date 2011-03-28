@@ -11,7 +11,7 @@
 --     GNU General Public License for more details.
 
 --     You should have received a copy of the GNU General Public License
---     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+--     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
 module CpiTest where
 
@@ -22,25 +22,22 @@ import Text.ParserCombinators.Parsec
 import IO
 
 -- Parser Test harnesses:
-testParse :: (Expr a) => Parser a -> String -> IO ()
+testParse :: (Pretty a) => Parser a -> String -> IO ()
 testParse p input = case (parse p "" input) of
                       Left err -> do putStr "parse error at";
                                      print err
                       Right x -> print (pretty x)
 
-testParse' :: (Expr a) => Parser a -> String -> IO ()
+testParse' :: (Show a) => Parser a -> String -> IO ()
 testParse' p input = case (parse p "" input) of
                       Left err -> do putStr "parse error at";
                                      print err
                       Right x -> print x
 
--- Test file input:
+-- -- Test file input:
 
 -- getRight (Right x) = x
 
 -- testFile x = do file <- openFile x ReadMode;
---                 contents <- hGetContents file;
---                 result <- parse pDefinitionLines contents;
---                 result' <- getRight result;
---                 print result'
-                
+--                 d <- hGetContents file;
+--                 testParse pDefinitionLines d
