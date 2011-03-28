@@ -1,0 +1,7 @@
+species S(s) = (new {u-a@1,a-t@1}) s<a>.(u.S(s)+t.P());
+species I(i) = (new {u-a@1}) i<a>.u.I(i);
+species E(e) = e(x).x.E(e);
+species P() = 0;
+
+process Pi = [10]S(s) || [1]E(e) || [2]I(i) || [0]P() : {s-e@1, e-i@1} ;
+
