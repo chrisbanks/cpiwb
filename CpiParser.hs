@@ -162,13 +162,9 @@ pNameList = commaSep identifier
 
 -- New network:
 pNew :: Parser Species
-pNew = do net <- parens pNew';
+pNew = do net <- pAffNet;
           s <- pSpecies;
           return (New net s)
-    where
-      pNew' = do reserved "new";
-                 n <- pAffNet;
-                 return n
 
 -- Affinity network:
 pAffNet :: Parser AffNet
