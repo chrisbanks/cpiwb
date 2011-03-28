@@ -1,3 +1,5 @@
+-- (C) Copyright Chris Banks 2011
+
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
 --     CPiWB is free software: you can redistribute it and/or modify
@@ -125,8 +127,9 @@ sumOp (Sum ss) (Sum ss') = (Sum (ss++ss'))
 -- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
 -- *CpiParser> testParse pSpecies "z.0 + (b.0|c.0)"
 -- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
--- NOTE: these constructions aren't allowed, Sums are prefix guarded
---       the parser allows it though...
+-- NOTE: these constructions aren't allowed in the syntax, because Sums 
+--       are prefix guarded the parser allows it though... 
+--       maybe throw a useful exception for other patterns?
 
 
 -- Prefix expression

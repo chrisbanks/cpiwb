@@ -1,3 +1,5 @@
+-- (C) Copyright Chris Banks 2011
+
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
 --     CPiWB is free software: you can redistribute it and/or modify
