@@ -20,8 +20,11 @@ import CpiParser
 
 import System.Console.Haskeline
 
+import qualified Data.List as L
+
 welcome = "\nWelcome to the Continuous Pi-calculus Workbench (CPiWB).\n"
-prompt = "CPi:> "
+          ++"Type \"help\" for help.\n"
+prompt = "CPiWB:> "
 
 main :: IO ()
 main = do putStrLn welcome;
@@ -33,22 +36,54 @@ main = do putStrLn welcome;
                             Nothing -> return ()
                             Just "" -> loop
                             Just "quit" -> return ()
-                            Just i -> do command i;
+                            Just i -> do doCommand i;
                                          loop
--- NOTE: Haskeline gives us a very nice REPL with history
---       and the possibility for autocomplete.
+-- TODO: command autocomplete (see Haskeline docs).
+--       can we use the command map?
 
-command :: String -> InputT IO ()
-command cmdln = let cmd = head(words cmdln)
-                    params = tail(words cmdln)
-                in
-                case cmd of
-                  "help" -> outputStrLn (help params)
-                  "load" -> outputStrLn ("Loading: "++(unwords params))
-                  _      -> outputStrLn "Try again."
+doCommand :: String -> InputT IO ()
+doCommand cmdln = let cmd = head(words cmdln)
+                      params = tail(words cmdln)
+                  in
+                    case (lookup cmd commands) of
+                      Nothing -> outputStrLn "Try again."
+                      Just x  -> outputStrLn ((cmdFn x) params)
 
-help :: [String] -> String
-help ("load":_) = "\nload <filename>\n\tLoads a CPi definition file.\n"
-help x = "Sorry, no help for: "++(unwords x)
--- TODO: maybe we want a map of help topics, so we can list topics
---       and find responses more easily.
+---------------
+-- Command map:
+---------------
+
+data CmdRec = CmdRec {cmdFn::[String]->String,cmdHelp::String}
+
+commands :: [(String,CmdRec)]
+commands = [("help",CmdRec {
+                         cmdFn = helpCmd,
+                         cmdHelp = helpTextHelp}),
+            ("load",CmdRec {
+                         cmdFn = loadCmd,
+                         cmdHelp = helpTextLoad})]
+
+cmdList = "\n"++L.concat(L.intersperse "\n" (map (\(x,_) -> x) commands))++"\n\n"
+
+---------------------
+-- Command Functions:
+---------------------
+
+loadCmd :: [String] -> String
+loadCmd (x:_) = "Loading: "++x
+
+helpCmd :: [String] -> String
+helpCmd (x:_) = case (lookup x commands) of
+                  Nothing -> "Sorry no help on \""++x++"\"."
+                  Just r -> cmdHelp r
+helpCmd [] = "\nThe available commands are:\n"
+             ++cmdList
+             ++"Type \"help <command>\" for help on a specific command.\n"
+
+----------------------
+-- Command help texts:
+----------------------
+
+helpTextHelp = "\nhelp <command>\n\tShows help on a specific command.\n"
+helpTextLoad = "\nload <filename>\n\tLoads a CPi definition file.\n"
+
