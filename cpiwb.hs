@@ -15,28 +15,14 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CpiTest where
+main = do putStrLn welcome;
+          putStr prompt;
+          input <- getLine; -- (1)
+          print input -- TODO: deal with the input.
 
-import CpiLib
-import CpiParser
+-- TODO: (1) - find a better way of getting input than this
+--             e.g. doesn't deal with backspace and what if we want
+--             command history/autocomplete etc.
 
-import Text.ParserCombinators.Parsec
-import System.IO
-
--- Parser Test harnesses:
-tParse :: (Pretty a) => Parser a -> String -> IO ()
-tParse p input = case (parse p "" input) of
-                      Left err -> do putStr "parse error at";
-                                     print err
-                      Right x -> print (pretty x)
-
-tParse' :: (Show a) => Parser a -> String -> IO ()
-tParse' p input = case (parse p "" input) of
-                      Left err -> do putStr "parse error at";
-                                     print err
-                      Right x -> print x
-
--- -- Test file input:
-
-tFile x = do f <- readFile x
-             tParse' pDefinitionLines f
+welcome = "\nWelcome to the Continuous Pi-calculus Workbench (CPiWB).\n"
+prompt = "CPi:> "
