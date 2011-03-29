@@ -15,14 +15,40 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-main = do putStrLn welcome;
-          putStr prompt;
-          input <- getLine; -- (1)
-          print input -- TODO: deal with the input.
+import CpiLib
+import CpiParser
 
--- TODO: (1) - find a better way of getting input than this
---             e.g. doesn't deal with backspace and what if we want
---             command history/autocomplete etc.
+import System.Console.Haskeline
 
 welcome = "\nWelcome to the Continuous Pi-calculus Workbench (CPiWB).\n"
 prompt = "CPi:> "
+
+main :: IO ()
+main = do putStrLn welcome;
+          runInputT defaultSettings loop
+              where 
+                loop :: InputT IO ()
+                loop = do input <- getInputLine prompt
+                          case input of
+                            Nothing -> return ()
+                            Just "" -> loop
+                            Just "quit" -> return ()
+                            Just i -> do command i;
+                                         loop
+-- NOTE: Haskeline gives us a very nice REPL with history
+--       and the possibility for autocomplete.
+
+command :: String -> InputT IO ()
+command cmdln = let cmd = head(words cmdln)
+                    params = tail(words cmdln)
+                in
+                case cmd of
+                  "help" -> outputStrLn (help params)
+                  "load" -> outputStrLn ("Loading: "++(unwords params))
+                  _      -> outputStrLn "Try again."
+
+help :: [String] -> String
+help ("load":_) = "\nload <filename>\n\tLoads a CPi definition file.\n"
+help x = "Sorry, no help for: "++(unwords x)
+-- TODO: maybe we want a map of help topics, so we can list topics
+--       and find responses more easily.
