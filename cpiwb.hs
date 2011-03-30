@@ -19,18 +19,26 @@ import CpiLib
 import CpiParser
 
 import System.Console.Haskeline
+import Control.Monad.State
 
 import qualified Data.List as L
 
+
+-- Some configurables:
 welcome = "\nWelcome to the Continuous Pi-calculus Workbench (CPiWB).\n"
           ++"Type \"help\" for help.\n"
 prompt = "CPiWB:> "
 
+-- Our environment will be a stack of the Haskeline,
+-- State transformer (of CPi Definitions), and IO monads:
+type Environment = InputT (StateT [Definition] IO) ()
+
+-- Main function:
 main :: IO ()
 main = do putStrLn welcome;
-          runInputT defaultSettings loop
+          evalStateT (runInputT defaultSettings loop) []
               where 
-                loop :: InputT IO ()
+                loop :: Environment
                 loop = do input <- getInputLine prompt
                           case input of
                             Nothing -> return ()
@@ -41,19 +49,19 @@ main = do putStrLn welcome;
 -- TODO: command autocomplete (see Haskeline docs).
 --       can we use the command map?
 
-doCommand :: String -> InputT IO ()
-doCommand cmdln = let cmd = head(words cmdln)
-                      params = tail(words cmdln)
-                  in
-                    case (lookup cmd commands) of
-                      Nothing -> outputStrLn "Try again."
-                      Just x  -> outputStrLn ((cmdFn x) params)
+doCommand :: String -> Environment
+doCommand cmdln = let cmd = head $ words cmdln in
+                  case (lookup cmd commands) of
+                    Nothing -> say "Try again."
+                    Just x  -> (cmdFn x) cmdln
 
 ---------------
 -- Command map:
 ---------------
 
-data CmdRec = CmdRec {cmdFn::[String]->String,cmdHelp::String}
+-- TODO: document how to add new commands
+
+data CmdRec = CmdRec {cmdFn::String->Environment,cmdHelp::String}
 
 commands :: [(String,CmdRec)]
 commands = [("help",CmdRec {
@@ -69,16 +77,21 @@ cmdList = "\n"++L.concat(L.intersperse "\n" (map (\(x,_) -> x) commands))++"\n\n
 -- Command Functions:
 ---------------------
 
-loadCmd :: [String] -> String
-loadCmd (x:_) = "Loading: "++x
+-- load
+loadCmd :: String -> Environment
+loadCmd x = say $ "Loading: "++(param x)
 
-helpCmd :: [String] -> String
-helpCmd (x:_) = case (lookup x commands) of
-                  Nothing -> "Sorry no help on \""++x++"\"."
-                  Just r -> cmdHelp r
-helpCmd [] = "\nThe available commands are:\n"
-             ++cmdList
-             ++"Type \"help <command>\" for help on a specific command.\n"
+-- help
+helpCmd :: String -> Environment
+helpCmd x 
+    | not(null(param x)) 
+        = case (lookup (param x) commands) of
+            Nothing -> say $ "Sorry no help on \""++x++"\"."
+            Just r -> say $ cmdHelp r
+    | otherwise
+        = say $ "\nThe available commands are:\n"
+          ++cmdList
+          ++"Type \"help <command>\" for help on a specific command.\n"
 
 ----------------------
 -- Command help texts:
@@ -87,3 +100,19 @@ helpCmd [] = "\nThe available commands are:\n"
 helpTextHelp = "\nhelp <command>\n\tShows help on a specific command.\n"
 helpTextLoad = "\nload <filename>\n\tLoads a CPi definition file.\n"
 
+---------------------
+-- Utility functions:
+---------------------
+
+-- Say something to the user:
+say = outputStrLn
+
+-- get the parameters from a command line:
+params :: String -> [String]
+params cmdln = tail(words cmdln)
+-- just the first:
+param :: String -> String
+param cmdln = let ps = params cmdln in
+              case ps of
+                []     -> []
+                (p:ps) -> p
