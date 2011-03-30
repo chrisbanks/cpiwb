@@ -65,21 +65,35 @@ data CmdRec = CmdRec {cmdFn::String->Environment (),
                       cmdHelp::(String,String)}
 
 commands :: [(String,CmdRec)]
-commands = [("help",CmdRec {
-                         cmdFn = helpCmd,
-                         cmdHelp = helpTextHelp}),
-            ("load",CmdRec {
-                         cmdFn = loadCmd,
-                         cmdHelp = helpTextLoad}),
-            ("env",CmdRec {
-                        cmdFn = envCmd,
-                        cmdHelp = helpTextEnv}) ]
+commands = [("help",
+             CmdRec {cmdFn = helpCmd,
+                     cmdHelp = helpTextHelp}),
+            ("load",
+             CmdRec {cmdFn = loadCmd,
+                     cmdHelp = helpTextLoad}),
+            ("env",
+             CmdRec {cmdFn = envCmd,
+                     cmdHelp = helpTextEnv}),
+            ("clear",
+             CmdRec {cmdFn = clearCmd,
+                     cmdHelp = helpTextClear}),
+            ("species",
+             CmdRec {cmdFn = speciesCmd,
+                     cmdHelp = helpTextSpecies}),
+            ("process",
+             CmdRec {cmdFn = processCmd,
+                     cmdHelp = helpTextProcess})]
+
+-- TODO: * delete a specific defn cmd
+--       * finish load file cmd
+--       * network cmd (need to parameterise in syntax first)
+--      ** semantics/equivalences/model checking/ODE/trans.graph/etc...
 
 ---------------------
 -- Command Functions:
 ---------------------
 
--- help
+-- help Command
 helpCmd :: String -> Environment ()
 helpCmd x 
     | not(null(param x)) 
@@ -92,15 +106,31 @@ helpCmd x
           ++"\n"++prettyList(map (\(x,_) -> x) commands)++"\n\n"
           ++"Type \"help <command>\" for help on a specific command.\n"
 
--- load
+-- load Command
 loadCmd :: String -> Environment ()
 loadCmd x = say $ "Loading: "++(param x)
 -- TODO: load a definition file into the environment
 
--- env
+-- env Command
 envCmd :: String -> Environment ()
 envCmd _ = do s <- getEnv;
-              say $ prettyList $ map pretty s
+              say $ prettyList $ L.sort $ map pretty s
+                  -- TODO: sort so procs come last.
+
+-- species Command
+speciesCmd :: String -> Environment ()
+speciesCmd x = case parseDefn x of
+                 Left err -> say $ "Parse error at:\n"++(show err)
+                 Right x  -> do addEnv x;
+                                say $ pretty x
+
+-- process Command
+processCmd :: String -> Environment ()
+processCmd = speciesCmd
+
+-- clear Command
+clearCmd :: String -> Environment ()
+clearCmd _ = putEnv []
 
 ----------------------
 -- Command help texts:
@@ -109,6 +139,11 @@ envCmd _ = do s <- getEnv;
 helpTextHelp = ("help <command>","Shows help on a specific command.")
 helpTextLoad = ("load <filename>","Loads a CPi definition file.")
 helpTextEnv = ("env","Shows the contents of the current environment.")
+helpTextSpecies = ("species <definition>","Adds a species definition to the "
+                   ++"current environment.")
+helpTextClear = ("clear","Clears the environment.")
+helpTextProcess = ("process <definition>","Adds a process definition to the "
+                   ++"environment.")
 
 ---------------------
 -- Utility functions:
@@ -121,9 +156,14 @@ say = outputStrLn
 getEnv :: Environment [Definition]
 getEnv = lift get
 
--- Add to the Environment state:
+-- Write the Environment state:
 putEnv :: [Definition] -> Environment ()
 putEnv = lift . put
+
+-- Add to the Environment state:
+addEnv :: Definition -> Environment ()
+addEnv x = do env <- getEnv;
+              putEnv (x:env)
 
 -- get the parameters from a command line:
 params :: String -> [String]

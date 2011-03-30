@@ -207,3 +207,10 @@ pCommIO = parens (do os <- pNameList;
                      semi;
                      is <- pNameList;
                      return (os,is) )
+
+---------------------
+-- Definition Parser:
+---------------------
+
+parseDefn :: String -> Either ParseError Definition
+parseDefn x = parse pDefinition "" x
