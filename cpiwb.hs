@@ -119,8 +119,7 @@ loadCmd x = do say $ "Loading: "++(param x);
 -- env Command
 envCmd :: String -> Environment ()
 envCmd _ = do s <- getEnv;
-              say $ prettyList $ L.sort $ map pretty s
-                  -- TODO: sort so procs come last.
+              say $ prettyList $ map pretty $ L.sort s
 
 -- species Command
 speciesCmd :: String -> Environment ()

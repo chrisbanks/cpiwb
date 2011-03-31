@@ -52,7 +52,7 @@ data Process = Process [(Species,Conc)] AffNet
 
 data Definition = SpeciesDef Name [Name] Species
                 | ProcessDef Name Process
-                  deriving (Eq,Ord,Show)
+                  deriving (Eq,Show)
 
 
 
@@ -110,6 +110,15 @@ instance Pretty Definition where
         = n++"("++(prettyNames fns)++") = "++(pretty s)
     pretty (ProcessDef  n p) 
         = n++" = "++(pretty p)
+
+-- Ordering for Definitions:
+instance Ord Definition where
+    -- Any SpeciesDef < any ProcessDef
+    compare (SpeciesDef _ _ _) (ProcessDef _ _)    = LT
+    compare (ProcessDef _ _)   (SpeciesDef _ _ _)  = GT
+    -- Both ProcessDef and SpeciesDef sort by name.
+    compare (SpeciesDef n _ _) (SpeciesDef n' _ _) = compare n n'
+    compare (ProcessDef n _)   (ProcessDef n' _)   = compare n n'
 
 prettyNames :: [Name] -> String
 prettyNames ns = concat(L.intersperse "," (L.sort ns))
