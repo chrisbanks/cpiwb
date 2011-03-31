@@ -108,8 +108,13 @@ helpCmd x
 
 -- load Command
 loadCmd :: String -> Environment ()
-loadCmd x = say $ "Loading: "++(param x)
--- TODO: load a definition file into the environment
+loadCmd x = do say $ "Loading: "++(param x);
+               f <- getFile (param x);
+               case parseFile f of
+                 Left err -> say $ "Parse error at:\n"++(show err)
+                 Right ds -> do putEnv ds;
+                                say "Done. Type \"env\" to view."
+-- TODO: maybe a flag to append to Env rather than overwrite?
 
 -- env Command
 envCmd :: String -> Environment ()
@@ -164,6 +169,10 @@ putEnv = lift . put
 addEnv :: Definition -> Environment ()
 addEnv x = do env <- getEnv;
               putEnv (x:env)
+
+-- Read in a file:
+getFile :: FilePath -> Environment String
+getFile = lift . lift . readFile
 
 -- get the parameters from a command line:
 params :: String -> [String]

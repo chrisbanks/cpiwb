@@ -128,7 +128,7 @@ sumOp (Sum ss) (Sum ss') = (Sum (ss++ss'))
 -- *CpiParser> testParse pSpecies "z.0 + (b.0|c.0)"
 -- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
 -- NOTE: these constructions aren't allowed in the syntax, because Sums 
---       are prefix guarded the parser allows it though... 
+--       are prefix guarded. The parser allows it though... 
 --       maybe throw a useful exception for other patterns?
 
 
@@ -214,3 +214,6 @@ pCommIO = parens (do os <- pNameList;
 
 parseDefn :: String -> Either ParseError Definition
 parseDefn x = parse pDefinition "" x
+
+parseFile :: String -> Either ParseError [Definition]
+parseFile x = parse pDefinitionLines "" x
