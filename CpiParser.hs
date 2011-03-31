@@ -60,6 +60,8 @@ commaSep = P.commaSep lexer
 -- Parser
 ------------------
 
+-- TODO: Use <?> combinator to generate human readable err msgs.
+
 -- Process/Species definition
 pDefinition :: Parser Definition
 pDefinition = (do reserved "process";
