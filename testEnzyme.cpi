@@ -1,0 +1,14 @@
+-- Species (S) + Enzyme (E) <-> Complex -> Product (P)
+
+species S(s) = s(x,y).(x.S(s) + y.P());
+
+species E(e) = {a-u@0.5,a-t@1.0}
+               e<u,t>.a.E(e);
+
+species P() = tau<0.5>.0;
+
+
+process Pi = [1.0] S(s) || [0.1] E(e) || [0] P()
+           : {e-s@1.0};
+
+-- NB: Complex = {a-u@0.5,a-t@1.0} a.E(e)|u.S(s)+t.P()
