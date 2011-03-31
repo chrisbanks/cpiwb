@@ -1,0 +1,8 @@
+-- Simple reaction: X + Y -> P -> 0
+
+species X(a) = a.P();
+species Y(b) = b.P();
+species P() = tau<0.2>.0;
+
+process Pi = [2] X(a) || [1] Y(b) || [0] P()
+           : {a-b@1};

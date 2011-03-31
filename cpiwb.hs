@@ -85,7 +85,6 @@ commands = [("help",
                      cmdHelp = helpTextProcess})]
 
 -- TODO: * delete a specific defn cmd
---       * finish load file cmd
 --       * network cmd (need to parameterise in syntax first)
 --      ** semantics/equivalences/model checking/ODE/trans.graph/etc...
 

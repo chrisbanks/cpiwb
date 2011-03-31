@@ -92,7 +92,7 @@ instance Pretty Species where
     pretty (New n s) = (pretty n)++" "++(pretty s)
 
 instance Pretty Prefix where
-    pretty (Tau r) = "tau<"++r++">"
+    pretty (Tau r) = "tau<"++r++">."
     pretty (Comm n [] []) = n++"."
     pretty (Comm n [] is) = n++"("++(prettyNames is)++")."
     pretty (Comm n os []) = n++"<"++(prettyNames os)++">."
