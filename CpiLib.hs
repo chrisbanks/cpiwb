@@ -127,7 +127,15 @@ prettyPs x x'
               | (length ss == 1) = 10
               | otherwise = 20
           prio (Par _) = 30
-
+          prio (New _ _) = 40
+-- FIXME: New binds correctly in parser, but doesn't parenthesise when
+--        tightly bound:
+-- *CpiTest> tParse' pSpecies "{a-b@1} a.0|b.0"
+-- New (AffNet [Aff (("a","b"),"1.0")]) (Par [Sum [(Comm "a" [] [],Nil)],Sum [(Comm "b" [] [],Nil)]])
+-- *CpiTest> tParse' pSpecies "({a-b@1} a.0)|b.0"
+-- Par [New (AffNet [Aff (("a","b"),"1.0")]) (Sum [(Comm "a" [] [],Nil)]),Sum [(Comm "b" [] [],Nil)]]
+-- *CpiTest> tParse pSpecies "({a-b@1} a.0)|b.0"
+-- "(new a,b) a.0 | b.0"
 
 ----------------------
 --Functions:
