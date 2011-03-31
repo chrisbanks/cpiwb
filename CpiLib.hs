@@ -82,13 +82,13 @@ instance Pretty Species where
             = (pretty p)++(prettyPs s x')
         | otherwise 
             = (pretty $ Sum [(p,s)])++" + "++(pretty $ Sum pss)
-    pretty (Par x@(s:ss))
+    pretty x'@(Par x@(s:ss))
         | (null x) 
             = ""
         | (length x == 1) 
             = pretty s
         | otherwise 
-            = (pretty s)++" | "++(pretty(Par ss))
+            = (prettyPs s x')++" | "++(prettyPs (Par ss) x')
     pretty (New n s) = (pretty n)++" "++(pretty s)
 
 instance Pretty Prefix where
@@ -128,14 +128,6 @@ prettyPs x x'
               | otherwise = 20
           prio (Par _) = 30
           prio (New _ _) = 40
--- FIXME: New binds correctly in parser, but doesn't parenthesise when
---        tightly bound:
--- *CpiTest> tParse' pSpecies "{a-b@1} a.0|b.0"
--- New (AffNet [Aff (("a","b"),"1.0")]) (Par [Sum [(Comm "a" [] [],Nil)],Sum [(Comm "b" [] [],Nil)]])
--- *CpiTest> tParse' pSpecies "({a-b@1} a.0)|b.0"
--- Par [New (AffNet [Aff (("a","b"),"1.0")]) (Sum [(Comm "a" [] [],Nil)]),Sum [(Comm "b" [] [],Nil)]]
--- *CpiTest> tParse pSpecies "({a-b@1} a.0)|b.0"
--- "(new a,b) a.0 | b.0"
 
 ----------------------
 --Functions:
