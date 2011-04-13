@@ -19,6 +19,7 @@ module CpiTest where
 
 import CpiLib
 import CpiParser
+import CpiSemantics
 
 import Text.ParserCombinators.Parsec
 import System.IO
