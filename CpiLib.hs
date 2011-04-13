@@ -72,16 +72,17 @@ instance Pretty Process where
             = "["++c++"] "++(pretty s)
         | otherwise
             = (pretty (Process [(s,c)] n))++" || "++(pretty (Process scs n))
+    pretty (Process [] _) = "<Empty process>"
 
 instance Pretty Species where
     pretty Nil = "0"
     pretty (Def i ns) = i++"("++(prettyNames ns)++")"
     pretty x'@(Sum x@((p,s):pss)) 
-        | (null x) = ""
         | (length x == 1) 
             = (pretty p)++(prettyPs s x')
         | otherwise 
             = (pretty $ Sum [(p,s)])++" + "++(pretty $ Sum pss)
+    pretty (Sum []) = "<Empty Sum>"
     pretty x'@(Par x@(s:ss))
         | (null x) 
             = ""
@@ -89,6 +90,7 @@ instance Pretty Species where
             = pretty s
         | otherwise 
             = (prettyPs s x')++" | "++(prettyPs (Par ss) x')
+    pretty (Par []) = "<Empty Par>"
     pretty (New n s) = (pretty n)++" "++(pretty s)
 
 instance Pretty Prefix where

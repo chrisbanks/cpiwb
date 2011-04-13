@@ -20,6 +20,7 @@ module CpiParser where
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as P
+import qualified Control.Exception as X
 
 import CpiLib
 
@@ -123,15 +124,11 @@ pSumOp = do rOp "+";
 
 sumOp :: Species -> Species -> Species
 sumOp (Sum ss) (Sum ss') = (Sum (ss++ss'))
-
--- FIXME: Complete patterns in sumOp ^
--- *CpiParser> testParse pSpecies "(a.0|z.0) + (b.0|c.0)"
--- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
--- *CpiParser> testParse pSpecies "z.0 + (b.0|c.0)"
--- *** Exception: CpiParser.hs:101:0-41: Non-exhaustive patterns in function sumOp
--- NOTE: these constructions aren't allowed in the syntax, because Sums 
---       are prefix guarded. The parser allows it though... 
---       maybe throw a useful exception for other patterns?
+sumOp _ _ = X.throw $ X.PatternMatchFail 
+            "Unexpected pattern: Sum must be prefix guarded!"
+-- FIXME: This won't happen for correct syntax (prefix guarded Sum)
+--        Either change the parser so we don't allow it (hard?), 
+--         or handle this properly up in the IO monad.
 
 
 -- Prefix expression
