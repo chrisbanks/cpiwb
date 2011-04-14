@@ -17,6 +17,8 @@
 
 module CpiSemantics where
 
+import qualified Data.List as L
+
 import CpiLib
 
 --------------------
@@ -44,7 +46,7 @@ getMTS (Process ss net) = undefined -- TODO: but first the foundations:
 -- Pseudo-application of concretions:
 pseudoapp :: Concretion -> Concretion -> Species
 pseudoapp (ConcBase s1 a x) (ConcBase s2 b y) 
-    = Par [(sub s1 (b,x)),(sub s2 (a,y))]
+    = Par [(sub (zip x b) s1),(sub (zip y a) s2)]
 pseudoapp c1 (ConcPar c2 s2)
     = Par $ (pseudoapp c1 c2):s2
 pseudoapp c1 (ConcNew c2 net)
@@ -55,8 +57,25 @@ pseudoapp (ConcNew c1 net) c2
     = New net (pseudoapp c1 c2)
 
 -- Substitution of names in a Species:
-sub :: Species -> ([Name],[Name]) -> Species
-sub s ((n:ns),(n':ns')) = undefined -- TODO: define substitution
+-- sub s (ns,ns') = find Names ns in Species s and replace with New Names ns'
+sub :: [(Name,Name)] -> Species -> Species
+sub _ Nil = Nil
+sub subs (Def l ns) = (Def l (nameSub ns subs))
+sub subs (Sum ps) = (Sum (map prefixSub ps))
+    where prefixSub :: PrefixSpecies -> PrefixSpecies
+          prefixSub ((Tau r),s) = ((Tau r),(sub subs s))
+          prefixSub ((Comm n o i),s)
+              = ((Comm (maybe n id (L.lookup n subs)) (nameSub o subs) i),
+                 (sub subs' s))
+                     where subs' = [x | x <- subs, not (elem (fst x) i)]
+sub subs (Par ss) = (Par (map (sub subs) ss))
+sub subs (New net s) = (New net (sub subs' s))
+    where subs' = [x | x <- subs, not (elem (fst x) (sites net))]
+
+-- Substitution on name vectors
+nameSub :: [Name] -> [(Name,Name)] -> [Name]
+nameSub [] _ = []
+nameSub (n:ns) ss = (maybe n id (L.lookup n ss)):(nameSub ns ss)
 
 
 --------------------
