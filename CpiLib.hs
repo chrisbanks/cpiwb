@@ -45,7 +45,7 @@ data Species = Nil
              | Sum [PrefixSpecies]
              | Par [Species]
              | New AffNet Species
-               deriving (Eq, Ord, Show)
+               deriving (Ord, Show)
 
 data Process = Process [(Species,Conc)] AffNet 
                deriving (Eq, Ord, Show)
@@ -54,7 +54,14 @@ data Definition = SpeciesDef Name [Name] Species
                 | ProcessDef Name Process
                   deriving (Eq,Show)
 
-
+-- Referential equality of Species (e.g. for lookup).
+instance Eq Species where
+    Nil == Nil               =  True
+    (Def s _) == (Def s' _)  =  s==s'
+    (Sum ss) == (Sum ss')    =  ss==ss'
+    (Par ss) == (Par ss')    =  ss==ss'
+    (New n s) == (New n' s') =  (n==n')&&(s==s')
+    _ == _                   =  False
 
 ----------------------
 -- Pretty printing:
