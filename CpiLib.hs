@@ -195,6 +195,6 @@ s2d :: String -> Double
 s2d x = read x :: Double
 
 -- If not nil:
-ifnotnil :: [a] -> b -> ([a] -> b) -> b
-ifnotnil [] b f = b
-ifnotnil xs b f = f xs
+ifnotnil :: [a] -> ([a] -> b) -> b -> b
+ifnotnil [] f b = b
+ifnotnil xs f b = f xs
