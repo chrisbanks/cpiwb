@@ -41,7 +41,22 @@ data ConcTauAff = ConcTauAff (Name,Name) Rate
 
 -- Get the Multi-Transition System for a Process:
 getMTS :: Process -> MTS
-getMTS (Process ss net) = undefined -- TODO: but first the foundations:
+getMTS (Process ss net) = undefined -- TODO:
+
+-- Add the transitions for a species to the MTS
+trans :: MTS -> Species -> MTS
+trans mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' mts s)
+    where
+      trans' mts Nil = mts
+      trans' mts (Def n ns) = undefined -- TODO:
+
+-- FIXME: !!!!!!!!!!!!!!!! BEGIN
+lookupTrans :: MTS -> Species -> [Trans]
+lookupTrans (MTS []) _ =  []
+lookupTrans (MTS ((x,y,z):xyzs)) s
+    | s == x    = (x,y,z):(lookupTrans (MTS xyzs) s) 
+    | otherwise = lookupTrans xyzs s
+-- FIXME: !!!!!!!!!!!!!!!! END
 
 -- Pseudo-application of concretions:
 pseudoapp :: Concretion -> Concretion -> Species
