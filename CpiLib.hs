@@ -193,3 +193,8 @@ d2s x = show x
 
 s2d :: String -> Double
 s2d x = read x :: Double
+
+-- If not nil:
+ifnotnil :: [a] -> b -> ([a] -> b) -> b
+ifnotnil [] b f = b
+ifnotnil xs b f = f xs
