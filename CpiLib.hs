@@ -15,9 +15,17 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
+{-# OPTIONS_GHC -XDeriveDataTypeable #-}
+
 module CpiLib where
 
 import qualified Data.List as L
+import qualified Control.Exception as X
+import qualified Data.Typeable as T
+
+data CpiException = CpiException String
+                    deriving (Show,T.Typeable)
+instance X.Exception CpiException
 
 ----------------------
 --Data structures:
@@ -171,10 +179,45 @@ fn (Sum []) = []
 fn (Sum (((Tau r),s):xs)) = fn s
 fn (Sum (((Comm n o i),s):xs)) = [n] \/ o \/ ((fn s) \\ i) \/ (fn (Sum xs))
 
+-- Definition lookup:
+lookupDef :: [Definition] -> Species -> Maybe Species
+lookupDef [] (Def _ _) = Nothing
+lookupDef ((SpeciesDef i ps s):env) def@(Def x ns)
+    | i == x    = Just (sub (zip ps ns) s)
+    | otherwise = lookupDef env def
+lookupDef ((ProcessDef _ _):env) def = lookupDef env def
+lookupDef _ _ = X.throw $ CpiException 
+                "Unexpected pattern: CpiLib.lookupDef expects a Def!"
+
+-- Substitution of names in a Species:
+-- sub (ns,ns') s = find free Names ns in Species s 
+--                  and replace with New Names ns'
+-- FIXME: can allow the substitution of names already bound e.g.:
+-- !!!!!  A() = New(a,u,t) e<u,t>.a.E(e)
+-- !!!!!   sub will allow A{e\a}, but here 'a' is bound!
+-- !!!!!  Need to check the name really is free before sub'ing!
+sub :: [(Name,Name)] -> Species -> Species
+sub _ Nil = Nil
+sub subs (Def l ns) = (Def l (nameSub ns subs))
+sub subs (Sum ps) = (Sum (map prefixSub ps))
+    where prefixSub :: PrefixSpecies -> PrefixSpecies
+          prefixSub ((Tau r),s) = ((Tau r),(sub subs s))
+          prefixSub ((Comm n o i),s)
+              = ((Comm (maybe n id (L.lookup n subs)) (nameSub o subs) i),
+                 (sub subs' s))
+                     where subs' = [x | x <- subs, not (elem (fst x) i)]
+sub subs (Par ss) = (Par (map (sub subs) ss))
+sub subs (New net s) = (New net (sub subs' s))
+    where subs' = [x | x <- subs, not (elem (fst x) (sites net))]
+
+-- Substitution on name vectors
+nameSub :: [Name] -> [(Name,Name)] -> [Name]
+nameSub [] _ = []
+nameSub (n:ns) ss = (maybe n id (L.lookup n ss)):(nameSub ns ss)
 
 
 ---------------------
---Utility functions:
+-- Utility functions:
 ---------------------
 
 --Set operations:

@@ -44,11 +44,15 @@ getMTS :: Process -> MTS
 getMTS (Process ss net) = undefined -- TODO:
 
 -- Add the transitions for a species to the MTS
-trans :: MTS -> Species -> MTS
-trans mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' mts s)
+-- 
+trans :: [Definition] -> MTS -> Species -> MTS
+trans env mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' env mts s)
     where
-      trans' mts Nil = mts
-      trans' mts (Def n ns) = undefined -- TODO:
+      trans' :: [Definition] -> MTS -> Species -> MTS
+      trans' env mts Nil = mts
+      trans' env mts (Def n ns)
+          = undefined
+      -- TODO: finish this.
 
 lookupTrans :: MTS -> Species -> [Trans]
 lookupTrans (MTS []) _ =  []
@@ -74,27 +78,6 @@ pseudoapp (ConcPar c1 ss) c2
     = Par $ (pseudoapp c1 c2):ss
 pseudoapp (ConcNew c1 net) c2
     = New net (pseudoapp c1 c2)
-
--- Substitution of names in a Species:
--- sub s (ns,ns') = find Names ns in Species s and replace with New Names ns'
-sub :: [(Name,Name)] -> Species -> Species
-sub _ Nil = Nil
-sub subs (Def l ns) = (Def l (nameSub ns subs))
-sub subs (Sum ps) = (Sum (map prefixSub ps))
-    where prefixSub :: PrefixSpecies -> PrefixSpecies
-          prefixSub ((Tau r),s) = ((Tau r),(sub subs s))
-          prefixSub ((Comm n o i),s)
-              = ((Comm (maybe n id (L.lookup n subs)) (nameSub o subs) i),
-                 (sub subs' s))
-                     where subs' = [x | x <- subs, not (elem (fst x) i)]
-sub subs (Par ss) = (Par (map (sub subs) ss))
-sub subs (New net s) = (New net (sub subs' s))
-    where subs' = [x | x <- subs, not (elem (fst x) (sites net))]
-
--- Substitution on name vectors
-nameSub :: [Name] -> [(Name,Name)] -> [Name]
-nameSub [] _ = []
-nameSub (n:ns) ss = (maybe n id (L.lookup n ss)):(nameSub ns ss)
 
 
 --------------------
