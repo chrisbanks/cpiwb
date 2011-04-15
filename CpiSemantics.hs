@@ -50,13 +50,17 @@ trans mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' mts s)
       trans' mts Nil = mts
       trans' mts (Def n ns) = undefined -- TODO:
 
--- FIXME: !!!!!!!!!!!!!!!! BEGIN
 lookupTrans :: MTS -> Species -> [Trans]
 lookupTrans (MTS []) _ =  []
-lookupTrans (MTS ((x,y,z):xyzs)) s
-    | s == x    = (x,y,z):(lookupTrans (MTS xyzs) s) 
-    | otherwise = lookupTrans xyzs s
--- FIXME: !!!!!!!!!!!!!!!! END
+lookupTrans (MTS (tran:trans)) s
+    | s == (transSrc tran)   = tran:(lookupTrans (MTS trans) s) 
+    | otherwise              = lookupTrans (MTS trans) s
+
+-- The source Species of a transition:
+transSrc :: Trans -> Species
+transSrc (Trans1 (s,_,_)) = s
+transSrc (Trans2 (s,_,_)) = s
+transSrc (Trans3 (s,_,_)) = s
 
 -- Pseudo-application of concretions:
 pseudoapp :: Concretion -> Concretion -> Species
