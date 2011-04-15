@@ -41,3 +41,40 @@ tParse' p input = case (parse p "" input) of
 
 tFile x = do f <- readFile x
              tParse' pDefinitionLines f
+
+-------------------------------
+-- Tests for transition system:
+-------------------------------
+
+tTrans = do file <- readFile "testEnzyme.cpi"
+            let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
+            print defns
+
+-- Test trans of Def/Nil
+tTrans' = trans [tcSpecP0] (MTS []) tcP
+
+-- Test trans of singleton Sum of Tau.P()
+tTrans'2 = trans [tcSpecP0] (MTS []) tcSum1TauP
+
+-- Test trans of Sum of Tau.P() + Tau.Q()
+tTrans'3 = trans [tcSpecP0,tcSpecQ0] (MTS []) tcSum2TauPQ
+
+tLookupDef = lookupDef [tcSpecP0] (tcP) 
+
+------------------
+-- Test constants:
+------------------
+
+-- tau@<0.5>.P():
+tcSum1TauP = Sum [((Tau "0.5"),tcP)]
+--  tau@<0.5>.P() + tau@<0.5>.Q()
+tcSum2TauPQ = Sum [((Tau "0.5"),tcP),((Tau "0.6"),tcQ)]
+-- P()
+tcP = Def "P" []
+-- Q()
+tcQ = Def "Q" []
+-- species P() = 0
+tcSpecP0 = SpeciesDef "P" [] Nil
+-- species Q() = 0
+tcSpecQ0 = SpeciesDef "Q" [] Nil
+

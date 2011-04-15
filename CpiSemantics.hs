@@ -18,6 +18,7 @@
 module CpiSemantics where
 
 import qualified Data.List as L
+import qualified Control.Exception as X
 
 import CpiLib
 
@@ -27,32 +28,52 @@ import CpiLib
 
 -- Semantic data structures:
 data MTS = MTS [Trans]
+           deriving (Show)
 
-data Trans = Trans1 (Species,Name,Concretion)     -- A ----a-----> (x;y)B
-           | Trans2 (Species,ConcTau,Species)     -- A ---t@k----> B
-           | Trans3 (Species,ConcTauAff,Species)  -- A -t<a,b>@k-> B
+data Trans = Trans1 (Species,Name,Concretion)  -- A ----a-----> (x;y)B
+           | Trans2 (Species,TTau,Species)     -- A ---t@k----> B
+           | Trans3 (Species,TTauAff,Species)  -- A -t<a,b>@k-> B
+             deriving (Show)
 
 data Concretion = ConcBase Species OutNames InNames
                 | ConcPar Concretion [Species]
                 | ConcNew Concretion AffNet
+                  deriving (Show)
 
-data ConcTau = ConcTau Rate
-data ConcTauAff = ConcTauAff (Name,Name) Rate
+data TTau = TTau Rate
+            deriving (Show)
+data TTauAff = TTauAff (Name,Name) Rate
+               deriving (Show)
+-- TODO: pretty print Multi-Transition System
+--       (instantiate pretty)
 
 -- Get the Multi-Transition System for a Process:
 getMTS :: Process -> MTS
 getMTS (Process ss net) = undefined -- TODO:
 
 -- Add the transitions for a species to the MTS
--- 
 trans :: [Definition] -> MTS -> Species -> MTS
 trans env mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' env mts s)
     where
       trans' :: [Definition] -> MTS -> Species -> MTS
+      -- Nil
       trans' env mts Nil = mts
-      trans' env mts (Def n ns)
+      -- Def
+      trans' env mts (Def _ _)
+          = maybe ex (trans env mts) (lookupDef env s)
+            where ex = X.throw (CpiException
+                       ("Species "++(show s)++" not in the Environment."))
+      -- Sum
+      trans' _ mts (Sum []) = mts
+      -- Sum(Tau + ...)
+      trans' env mts (Sum (((Tau r),dst):pss))
+          = MTS ((Trans2 (s,(TTau r),dst)):
+                 ((\(MTS x) -> x)(trans env mts (Sum pss))))
+      -- Sum(Comm + ...)
+      trans' env mts (Sum (((Comm n o i),dst):pss))
           = undefined
       -- TODO: finish this.
+
 
 lookupTrans :: MTS -> Species -> [Trans]
 lookupTrans (MTS []) _ =  []
