@@ -30,9 +30,9 @@ import CpiLib
 data MTS = MTS [Trans]
            deriving (Show)
 
-data Trans = Trans1 (Species,Name,Concretion)  -- A ----a-----> (x;y)B
-           | Trans2 (Species,TTau,Species)     -- A ---t@k----> B
-           | Trans3 (Species,TTauAff,Species)  -- A -t<a,b>@k-> B
+data Trans = TransSC Species Name Concretion    -- A ----a-----> (x;y)B
+           | TransSST Species TTau Species      -- A ---t@k----> B
+           | TransSSTA Species TTauAff Species  -- A -t<a,b>@k-> B
              deriving (Show)
 
 data Concretion = ConcBase Species OutNames InNames
@@ -42,10 +42,39 @@ data Concretion = ConcBase Species OutNames InNames
 
 data TTau = TTau Rate
             deriving (Show)
-data TTauAff = TTauAff (Name,Name) Rate
+data TTauAff = TTauAff (Name,Name)
                deriving (Show)
+
 -- TODO: pretty print Multi-Transition System
 --       (instantiate pretty)
+-- Pretty printing:
+instance Pretty MTS where
+    pretty (MTS (t:ts)) = ((pretty t)++"\n")++(pretty (MTS ts))
+    pretty (MTS []) = ""
+
+instance Pretty Trans where 
+    pretty (TransSC s n c) 
+        = (pretty s)++" ---"++n++"--> "++(pretty c)
+    pretty (TransSST s t s')
+        = prettyTauTrans s t s'
+    pretty (TransSSTA s t s')
+        = prettyTauTrans s t s'
+
+instance Pretty Concretion where
+    pretty (ConcBase s o i) 
+        = "("++(prettyNames o)++";"++(prettyNames i)++")"++(pretty s)
+    pretty (ConcPar c ss)
+        = (pretty c)++" | "++concat(L.intersperse " | " (map pretty ss))
+          -- TODO: parens?
+    pretty (ConcNew c net)
+        = (pretty net)++" "++(pretty c)
+
+instance Pretty TTau where
+    pretty (TTau r) = "tau@<"++r++">"
+instance Pretty TTauAff where
+    pretty (TTauAff (n1,n2)) = "tau@<"++n1++","++n2++">"
+
+prettyTauTrans s t s' = (pretty s)++" ---"++(pretty t)++"--> "++(pretty s')
 
 -- Get the Multi-Transition System for a Process:
 getMTS :: Process -> MTS
@@ -67,11 +96,14 @@ trans env mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' env mts s)
       trans' _ mts (Sum []) = mts
       -- Sum(Tau + ...)
       trans' env mts (Sum (((Tau r),dst):pss))
-          = MTS ((Trans2 (s,(TTau r),dst)):
+          = MTS ((TransSST s (TTau r) dst):
                  ((\(MTS x) -> x)(trans env mts (Sum pss))))
       -- Sum(Comm + ...)
       trans' env mts (Sum (((Comm n o i),dst):pss))
-          = undefined
+          = MTS ((TransSC s n (ConcBase dst o i)):
+                 ((\(MTS x) -> x)(trans env mts (Sum pss))))
+      -- Par
+      -- New
       -- TODO: finish this.
 
 
@@ -83,9 +115,9 @@ lookupTrans (MTS (tran:trans)) s
 
 -- The source Species of a transition:
 transSrc :: Trans -> Species
-transSrc (Trans1 (s,_,_)) = s
-transSrc (Trans2 (s,_,_)) = s
-transSrc (Trans3 (s,_,_)) = s
+transSrc (TransSC s _ _) = s
+transSrc (TransSST s _ _) = s
+transSrc (TransSSTA s _ _) = s
 
 -- Pseudo-application of concretions:
 pseudoapp :: Concretion -> Concretion -> Species
