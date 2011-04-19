@@ -168,6 +168,16 @@ sites net = sites' net []
           = sites' (AffNet affs) (s1:s2:r)
       sites' (AffNet []) r = L.nub r
 
+aff :: AffNet -> (Name,Name) -> Maybe Rate
+aff (AffNet affs) (n,n') 
+    | (a /= Nothing) = a
+    | otherwise = (aff' (n',n) affs)
+    where a = (aff' (n,n') affs)
+          aff' _ []          =  Nothing
+          aff' k ((Aff ((x,y),r)):affs')
+              | k == (x,y) =  Just r
+              | otherwise  =  aff' k affs'
+
 --Free/Bound names:
 fn :: Species -> [Name]
 fn Nil = []

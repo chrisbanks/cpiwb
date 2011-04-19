@@ -46,9 +46,13 @@ tFile x = do f <- readFile x
 -- Tests for transition system:
 -------------------------------
 
+-- Test transition system for enzyme example:
 tTrans = do file <- readFile "testEnzyme.cpi"
             let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
-            print defns
+            let mts = trans defns (MTS []) (Def "S" ["s"])
+            let mts' = trans defns mts (Def "P" [])
+            let mts'' = trans defns mts' (Def "E" ["e"])
+            putStr $ pretty mts''
 
 -- Test trans of Def/Nil
 tTrans' = trans [tcSpecP0] (MTS []) tcP

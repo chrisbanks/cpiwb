@@ -30,14 +30,14 @@ import CpiLib
 data MTS = MTS [Trans]
            deriving (Show)
 
-data Trans = TransSC Species Name Concretion    -- A ----a-----> (x;y)B
-           | TransSST Species TTau Species      -- A ---t@k----> B
-           | TransSSTA Species TTauAff Species  -- A -t<a,b>@k-> B
+data Trans = TransSC Species Name Concretion  -- A ----a-----> (x;y)B
+           | TransT Species TTau Species      -- A ---t@k----> B
+           | TransTA Species TTauAff Species  -- A -t<a,b>@k-> B
              deriving (Show)
 
 data Concretion = ConcBase Species OutNames InNames
                 | ConcPar Concretion [Species]
-                | ConcNew Concretion AffNet
+                | ConcNew AffNet Concretion
                   deriving (Show)
 
 data TTau = TTau Rate
@@ -55,9 +55,9 @@ instance Pretty MTS where
 instance Pretty Trans where 
     pretty (TransSC s n c) 
         = (pretty s)++" ---"++n++"--> "++(pretty c)
-    pretty (TransSST s t s')
+    pretty (TransT s t s')
         = prettyTauTrans s t s'
-    pretty (TransSSTA s t s')
+    pretty (TransTA s t s')
         = prettyTauTrans s t s'
 
 instance Pretty Concretion where
@@ -66,7 +66,7 @@ instance Pretty Concretion where
     pretty (ConcPar c ss)
         = (pretty c)++" | "++concat(L.intersperse " | " (map pretty ss))
           -- TODO: parens?
-    pretty (ConcNew c net)
+    pretty (ConcNew net c)
         = (pretty net)++" "++(pretty c)
 
 instance Pretty TTau where
@@ -82,31 +82,59 @@ getMTS (Process ss net) = undefined -- TODO:
 
 -- Add the transitions for a species to the MTS
 trans :: [Definition] -> MTS -> Species -> MTS
-trans env mts s = ifnotnil (lookupTrans mts s) (\x -> mts) (trans' env mts s)
+trans env mts s = trans' env mts s
     where
-      trans' :: [Definition] -> MTS -> Species -> MTS
-      -- Nil
-      trans' env mts Nil = mts
-      -- Def
-      trans' env mts (Def _ _)
-          = maybe ex (trans env mts) (lookupDef env s)
-            where ex = X.throw (CpiException
-                       ("Species "++(show s)++" not in the Environment."))
-      -- Sum
-      trans' _ mts (Sum []) = mts
-      -- Sum(Tau + ...)
-      trans' env mts (Sum (((Tau r),dst):pss))
-          = MTS ((TransSST s (TTau r) dst):
-                 ((\(MTS x) -> x)(trans env mts (Sum pss))))
-      -- Sum(Comm + ...)
-      trans' env mts (Sum (((Comm n o i),dst):pss))
-          = MTS ((TransSC s n (ConcBase dst o i)):
-                 ((\(MTS x) -> x)(trans env mts (Sum pss))))
-      -- Par
-      -- New
-      -- TODO: finish this.
+      trans' env mts s' 
+          = ifnotnil (lookupTrans mts s') (\x -> mts) (trans'' env mts s')
+          where
+            trans'' :: [Definition] -> MTS -> Species -> MTS
+            -- Nil
+            trans'' env mts Nil = mts
+            -- Def
+            trans'' env mts (Def _ _)
+                = maybe ex (trans' env mts) (lookupDef env s)
+                where ex = X.throw (CpiException
+                                    ("Species "++(pretty s)++" not in the Environment."))
+            -- Sum
+            trans'' _ mts (Sum []) = mts
+            -- Sum(Tau + ...)
+            trans'' env mts (Sum (((Tau r),dst):pss))
+                = MTS ((TransT s (TTau r) dst):
+                       (openMTS(trans' env mts (Sum pss))))
+            -- Sum(Comm + ...)
+            trans'' env mts (Sum (((Comm n o i),dst):pss))
+                = MTS ((TransSC s n (ConcBase dst o i)):
+                       (openMTS(trans' env mts (Sum pss))))
+            -- Par
+            trans'' _ mts (Par []) = mts
+            trans'' env mts (Par (c:cs))
+                = MTS ((openMTS(trans' env mts c))++
+                       (openMTS(trans' env mts (Par cs))))
+            -- New
+            trans'' env mts (New net c)
+                = MTS ((restrict(openMTS(trans' env (MTS []) c)))
+                       ++(openMTS mts))
+                where 
+                  restrict [] = []
+                  restrict ((TransSC _ n dst):trs) 
+                      | n `elem` (sites net) 
+                          = restrict trs
+                      | otherwise
+                          = (TransSC s n (ConcNew net dst)):(restrict trs)
+                  restrict ((TransT _ t dst):trs)
+                          = (TransT s t (New net dst)):(restrict trs)
+                  restrict ((TransTA _ t@(TTauAff (n,n')) dst):trs)
+                      | (r /= Nothing)
+                          = (TransT s (TTau ((\(Just x)->x)r)) (New net dst))
+                            :(restrict trs)
+                      | otherwise
+                          = (TransTA s t (New net dst)):(restrict trs)
+                      where r = (aff net (n,n'))
 
+-- Get the transition list of an MTS:
+openMTS = \(MTS x) -> x
 
+-- Lookup the transitions for a species in an MTS.
 lookupTrans :: MTS -> Species -> [Trans]
 lookupTrans (MTS []) _ =  []
 lookupTrans (MTS (tran:trans)) s
@@ -116,8 +144,8 @@ lookupTrans (MTS (tran:trans)) s
 -- The source Species of a transition:
 transSrc :: Trans -> Species
 transSrc (TransSC s _ _) = s
-transSrc (TransSST s _ _) = s
-transSrc (TransSSTA s _ _) = s
+transSrc (TransT s _ _) = s
+transSrc (TransTA s _ _) = s
 
 -- Pseudo-application of concretions:
 pseudoapp :: Concretion -> Concretion -> Species
@@ -125,11 +153,11 @@ pseudoapp (ConcBase s1 a x) (ConcBase s2 b y)
     = Par [(sub (zip x b) s1),(sub (zip y a) s2)]
 pseudoapp c1 (ConcPar c2 s2)
     = Par $ (pseudoapp c1 c2):s2
-pseudoapp c1 (ConcNew c2 net)
+pseudoapp c1 (ConcNew net c2)
     = New net (pseudoapp c1 c2)
 pseudoapp (ConcPar c1 ss) c2
     = Par $ (pseudoapp c1 c2):ss
-pseudoapp (ConcNew c1 net) c2
+pseudoapp (ConcNew net c1) c2
     = New net (pseudoapp c1 c2)
 
 
