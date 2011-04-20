@@ -45,8 +45,6 @@ data TTau = TTau Rate
 data TTauAff = TTauAff (Name,Name)
                deriving (Show)
 
--- TODO: pretty print Multi-Transition System
---       (instantiate pretty)
 -- Pretty printing:
 instance Pretty MTS where
     pretty (MTS (t:ts)) = ((pretty t)++"\n")++(pretty (MTS ts))
@@ -80,7 +78,7 @@ prettyTauTrans s t s' = (pretty s)++" ---"++(pretty t)++"--> "++(pretty s')
 getMTS :: Process -> MTS
 getMTS (Process ss net) = undefined -- TODO:
 
--- Add the transitions for a species to the MTS
+-- Add the immediate transitions for a species to the MTS
 trans :: [Definition] -> MTS -> Species -> MTS
 trans env mts s = trans' env mts s
     where
@@ -92,7 +90,7 @@ trans env mts s = trans' env mts s
             trans'' env mts Nil = mts
             -- Def
             trans'' env mts (Def _ _)
-                = maybe ex (trans' env mts) (lookupDef env s)
+                = maybe ex (trans' env mts) (lookupDef env s')
                 where ex = X.throw (CpiException
                                     ("Species "++(pretty s)++" not in the Environment."))
             -- Sum
@@ -107,9 +105,16 @@ trans env mts s = trans' env mts s
                        (openMTS(trans' env mts (Sum pss))))
             -- Par
             trans'' _ mts (Par []) = mts
-            trans'' env mts (Par (c:cs))
-                = MTS ((openMTS(trans' env mts c))++
-                       (openMTS(trans' env mts (Par cs))))
+            -- trans'' env mts (Par (c:cs))
+            --     = MTS ((openMTS(trans' env mts c))++
+            --            (openMTS(trans' env mts (Par cs))))
+            trans'' env mts (Par (c:cs)) = transPar (c:cs) [] []
+                where transPar (c:cs) res taus
+                          = transPar cs (tr++res) (taus'++taus)
+                            where taus' = getTaus s tr res
+                                  tr = openMTS(trans' env mts c)
+                      transPar [] res taus
+                          = MTS (res++taus)
             -- New
             trans'' env mts (New net c)
                 = MTS ((restrict(openMTS(trans' env (MTS []) c)))
@@ -148,18 +153,38 @@ transSrc (TransT s _ _) = s
 transSrc (TransTA s _ _) = s
 
 -- Pseudo-application of concretions:
-pseudoapp :: Concretion -> Concretion -> Species
-pseudoapp (ConcBase s1 a x) (ConcBase s2 b y) 
-    = Par [(sub (zip x b) s1),(sub (zip y a) s2)]
+pseudoapp :: Concretion -> Concretion -> Maybe Species
+pseudoapp (ConcBase s1 a x) (ConcBase s2 b y)
+    | (length a == length y)&&(length x == length b)
+        = Just $ Par [(sub (zip x b) s1),(sub (zip y a) s2)]
+    | otherwise
+        = Nothing
 pseudoapp c1 (ConcPar c2 s2)
-    = Par $ (pseudoapp c1 c2):s2
+    = maybe Nothing (Just.(\x->Par (x:s2))) (pseudoapp c1 c2)
 pseudoapp c1 (ConcNew net c2)
-    = New net (pseudoapp c1 c2)
+    = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
 pseudoapp (ConcPar c1 ss) c2
-    = Par $ (pseudoapp c1 c2):ss
+    = maybe Nothing (Just.(\x->Par (x:ss))) (pseudoapp c1 c2)
 pseudoapp (ConcNew net c1) c2
-    = New net (pseudoapp c1 c2)
+    = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
 
+-- Compare two lists of transitions for pseudoapplication compatability
+-- and return any resultant tau transitions:
+getTaus :: Species -> [Trans] -> [Trans] -> [Trans]
+getTaus src (tr:trs) trs'
+    | (TransSC s n c) <- tr
+        = (getTaus' tr trs')++(getTaus src trs trs')
+    | otherwise
+        = getTaus src trs trs'
+    where getTaus' (TransSC _ n c) ((TransSC _ n' c'):trs')
+              | Just dst <- pseudoapp c c'
+                  = (TransTA src (TTauAff (n,n')) dst):
+                    (getTaus' tr trs')
+              | otherwise
+                  = getTaus' tr trs'
+          getTaus' tr (_:trs') = getTaus' tr trs'
+          getTaus' _ [] = []
+getTaus _ [] _ = []
 
 --------------------
 -- Process semantics
