@@ -57,6 +57,8 @@ instance Pretty Trans where
         = prettyTauTrans s t s'
     pretty (TransTA s t s')
         = prettyTauTrans s t s'
+    
+prettyTauTrans s t s' = (pretty s)++" ---"++(pretty t)++"--> "++(pretty s')
 
 instance Pretty Concretion where
     pretty (ConcBase s o i) 
@@ -72,13 +74,33 @@ instance Pretty TTau where
 instance Pretty TTauAff where
     pretty (TTauAff (n1,n2)) = "tau@<"++n1++","++n2++">"
 
-prettyTauTrans s t s' = (pretty s)++" ---"++(pretty t)++"--> "++(pretty s')
 
 -- Get the Multi-Transition System for a Process:
-getMTS :: Process -> MTS
-getMTS (Process ss net) = undefined -- TODO:
+processMTS :: Process -> MTS
+processMTS (Process ss net) = undefined -- TODO:
 
--- Add the immediate transitions for a species to the MTS
+-- Given an MTS calculate the complete transition graph:
+-- NOTE: will not terminate for infinite state models
+calcMTS :: [Definition] -> MTS -> MTS
+calcMTS env mts = calc (openMTS mts) mts 
+    where calc (tr:trs) mts'
+              | (TransSC _ _ _) <- tr
+                  = calc trs mts'
+              | (TransT _ _ s) <- tr
+                  = calc trs (trans env mts' s)
+              | (TransTA _ _ s) <- tr
+                  = calc trs (trans env mts' s)
+          calc [] mts'
+              | (mtsCard mts) == (mtsCard mts')
+                  = mts' --bottom out at fixpoint
+              | otherwise
+                  = calcMTS env mts' --otherwise recurse over new transitions
+
+-- Cardinality of an MTS:
+mtsCard :: MTS -> Int
+mtsCard x = length $ openMTS x
+
+-- Add the immediate transitions for a species to the MTS:
 trans :: [Definition] -> MTS -> Species -> MTS
 trans env mts s = trans' env mts s
     where

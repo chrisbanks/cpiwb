@@ -58,6 +58,21 @@ tTrans = do file <- readFile "testEnzyme.cpi"
             let pr = Par [(Def "S" ["s"]),(Def "E" ["e"]),(Def "P" [])]
             let mts2 = trans defns (MTS []) pr
             putStrLn $ pretty mts2
+            -- full graph:
+            let mtsfull = calcMTS defns mts2
+            putStrLn $ pretty mtsfull
+
+-- test recursive species
+tTransRec = do let defns = (\(Right x)->x)(parse pDefinitionLines "" "species P() = tau<1>.P();")
+               let mts = trans defns (MTS []) (Def "P" [])
+               let mts' = calcMTS defns mts
+               putStrLn $ pretty mts'
+
+-- test infinite species
+tTransInf = do let defns = (\(Right x)->x)(parse pDefinitionLines "" "species P() = tau<1>.(P()|P());")
+               let mts = trans defns (MTS []) (Def "P" [])
+               let mts' = calcMTS defns mts
+               putStrLn $ pretty mts'
 
 -- Test trans of Def/Nil
 tTrans' = trans [tcSpecP0] (MTS []) tcP
