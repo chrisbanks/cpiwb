@@ -49,30 +49,39 @@ tFile x = do f <- readFile x
 -- Test transition system for enzyme example:
 tTrans = do file <- readFile "testEnzyme.cpi"
             let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
+            putStrLn $ concat $ map (\x->(pretty x)++"\n") defns
             -- transitions of the species individually:
             let mts = trans defns (MTS []) (Def "S" ["s"])
             let mts' = trans defns mts (Def "P" [])
             let mts'' = trans defns mts' (Def "E" ["e"])
+            -- let mts''' = trans defns mts'' (Def "I" ["i"])
+            putStrLn "Initial species transtions:\n"
             putStrLn $ pretty mts''
-            -- transitions of the species in parallel (with taus)
-            let pr = Par [(Def "S" ["s"]),(Def "E" ["e"]),(Def "P" [])]
-            let mts2 = trans defns (MTS []) pr
-            putStrLn $ pretty mts2
-            -- full graph:
-            let mtsfull = calcMTS defns mts2
-            putStrLn $ pretty mtsfull
+            -- find resultant complexes (pseudoapps):
+            let compxs = appls mts''
+            putStrLn "Complexes formed (pseudoapplications):\n"
+            putStrLn $ concat $ map (\x->(pretty x)++"\n") compxs
+            -- find transitions for the complexes and add to MTS
+            let finalmts = transs [] mts'' compxs
+            putStrLn "Multi-transition system:\n"
+            putStrLn $ pretty finalmts
+
+-- Test get full MTS of a process:
+tPTrans = do file <- readFile "testEnzyme.cpi"
+             let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
+             let pi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
+             let mts = processMTS defns pi
+             putStrLn $ (prettys defns)++"\nTransitions:\n"++(pretty mts)
 
 -- test recursive species
 tTransRec = do let defns = (\(Right x)->x)(parse pDefinitionLines "" "species P() = tau<1>.P();")
                let mts = trans defns (MTS []) (Def "P" [])
-               let mts' = calcMTS defns mts
-               putStrLn $ pretty mts'
+               putStrLn $ pretty mts
 
 -- test infinite species
 tTransInf = do let defns = (\(Right x)->x)(parse pDefinitionLines "" "species P() = tau<1>.(P()|P());")
                let mts = trans defns (MTS []) (Def "P" [])
-               let mts' = calcMTS defns mts
-               putStrLn $ pretty mts'
+               putStrLn $ pretty mts
 
 -- Test trans of Def/Nil
 tTrans' = trans [tcSpecP0] (MTS []) tcP

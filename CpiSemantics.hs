@@ -76,31 +76,38 @@ instance Pretty TTauAff where
 
 
 -- Get the Multi-Transition System for a Process:
-processMTS :: Process -> MTS
-processMTS (Process ss net) = undefined -- TODO:
+processMTS :: [Definition] -> Process -> MTS
+processMTS defs (Process ss net) = finalmts 
+    where 
+      initmts = transs defs (MTS []) (map fst ss)
+      compxs = appls initmts
+      finalmts = transs defs initmts compxs
 
 -- Given an MTS calculate the complete transition graph:
 -- NOTE: will not terminate for infinite state models
-calcMTS :: [Definition] -> MTS -> MTS
-calcMTS env mts = calc (openMTS mts) mts 
-    where calc (tr:trs) mts'
-              | (TransSC _ _ _) <- tr
-                  = calc trs mts'
-              | (TransT _ _ s) <- tr
-                  = calc trs (trans env mts' s)
-              | (TransTA _ _ s) <- tr
-                  = calc trs (trans env mts' s)
-          calc [] mts'
-              | (mtsCard mts) == (mtsCard mts')
-                  = mts' --bottom out at fixpoint
-              | otherwise
-                  = calcMTS env mts' --otherwise recurse over new transitions
+-- NOTE: this is unnecessary and WRONG! Stupid boy.
+-- calcMTS :: [Definition] -> MTS -> MTS
+-- calcMTS env mts = calc (openMTS mts) mts 
+--     where calc (tr:trs) mts'
+--               | (TransSC _ _ _) <- tr
+--                   = calc trs mts'
+--               | (TransT _ _ s) <- tr
+--                   = calc trs (trans env mts' s)
+--               | (TransTA _ _ s) <- tr
+--                   = calc trs (trans env mts' s)
+--           calc [] mts'
+--               | (mtsCard mts) == (mtsCard mts')
+--                   = mts' --bottom out at fixpoint
+--               | otherwise
+--                   = calcMTS env mts' --otherwise recurse over new transitions
 
 -- Cardinality of an MTS:
 mtsCard :: MTS -> Int
 mtsCard x = length $ openMTS x
 
 -- Add the immediate transitions for a species to the MTS:
+-- TODO: Species want to be in normal form. (Don't they?)
+-- TODO: First need to define normal form!
 trans :: [Definition] -> MTS -> Species -> MTS
 trans env mts s = trans' env mts s
     where
@@ -127,9 +134,6 @@ trans env mts s = trans' env mts s
                        (openMTS(trans' env mts (Sum pss))))
             -- Par
             trans'' _ mts (Par []) = mts
-            -- trans'' env mts (Par (c:cs))
-            --     = MTS ((openMTS(trans' env mts c))++
-            --            (openMTS(trans' env mts (Par cs))))
             trans'' env mts (Par (c:cs)) = transPar (c:cs) [] []
                 where transPar (c:cs) res taus
                           = transPar cs (tr++res) (taus'++taus)
@@ -157,6 +161,17 @@ trans env mts s = trans' env mts s
                       | otherwise
                           = (TransTA s t (New net dst)):(restrict trs)
                       where r = (aff net (n,n'))
+
+-- Concatenate MTSs
+(->++) :: MTS -> MTS -> MTS
+x ->++ y = MTS ((openMTS x)++(openMTS y))
+
+-- Add multiple species to the MTS:
+transs :: [Definition] -> MTS -> [Species] -> MTS
+transs _ mts [] = mts
+transs defs mts (spec:specs)
+    = (transs defs mts' specs)
+      where mts' = (trans defs mts spec)
 
 -- Get the transition list of an MTS:
 openMTS = \(MTS x) -> x
@@ -190,8 +205,28 @@ pseudoapp (ConcPar c1 ss) c2
 pseudoapp (ConcNew net c1) c2
     = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
 
--- Compare two lists of transitions for pseudoapplication compatability
+-- get the resultants (complexes!) of pseudoapplications in an MTS
+-- TODO: this seems a bit dirty... can I do better?
+appls :: MTS -> [Species]
+appls (MTS []) = []
+appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
+    where concs :: [Trans] -> [Concretion]
+          concs [] = []
+          concs ((TransSC s n c):trs)
+              = c:(concs trs)
+          concs (_:trs)
+              = concs trs
+          appls' :: [Concretion] -> [Species]
+          appls' [] = []
+          appls' (c:cs) = (appls'' c cs)++(appls' cs)
+          appls'' :: Concretion -> [Concretion] -> [Species]
+          appls'' x [] = []
+          appls'' x (c:cs) 
+              = maybe (appls'' x cs) (\y->(y:(appls'' x cs))) (pseudoapp x c)
+
+-- Compare two lists of transitions for pseudoapplication compatibility
 -- and return any resultant tau transitions:
+-- NOTE: WTF was I thinking when I wrote this??
 getTaus :: Species -> [Trans] -> [Trans] -> [Trans]
 getTaus src (tr:trs) trs'
     | (TransSC s n c) <- tr

@@ -251,3 +251,7 @@ s2d x = read x :: Double
 ifnotnil :: [a] -> ([a] -> b) -> b -> b
 ifnotnil [] f b = b
 ifnotnil xs f b = f xs
+
+-- Pretty print a list:
+prettys :: (Pretty a) => [a] -> String
+prettys x = concat $ map (\z->(pretty z)++"\n") x
