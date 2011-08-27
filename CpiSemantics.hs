@@ -245,4 +245,23 @@ getTaus _ [] _ = []
 
 --------------------
 -- Process semantics
---------------------
+ --------------------
+
+-- Prime components of a species:
+primes :: [Definition] -> Species -> [Species]
+primes env Nil = []
+primes env s@(Def _ _) = maybe ex (primes env) (lookupDef env s)
+    where ex = X.throw (CpiException
+                        ("Species "++(pretty s)++" not in the Environment."))
+primes env s@(Sum _) = [s]
+primes env s@(New _ _) = [s]
+primes env (Par []) = []
+primes env (Par (s:ss)) = (primes env s)++(concatMap (primes env) ss)
+
+
+-- Support of a process - prime species in a process:
+-- NOTE: do we want to check conc.>0 ??
+supp :: [Definition] -> Process -> [Species]
+supp env (Process [] _) = []
+supp env (Process [(s,c)] _) = primes env s    
+supp env (Process ((s,c):ps) aff) = (primes env s)++(supp env (Process ps aff))
