@@ -33,17 +33,17 @@ data MTS = MTS [Trans]
 data Trans = TransSC Species Name Concretion  -- A ----a-----> (x;y)B
            | TransT Species TTau Species      -- A ---t@k----> B
            | TransTA Species TTauAff Species  -- A -t<a,b>@k-> B
-             deriving (Show)
+             deriving (Show, Eq)
 
 data Concretion = ConcBase Species OutNames InNames
                 | ConcPar Concretion [Species]
                 | ConcNew AffNet Concretion
-                  deriving (Show)
+                  deriving (Show, Eq)
 
 data TTau = TTau Rate
-            deriving (Show)
+            deriving (Show, Eq)
 data TTauAff = TTauAff (Name,Name)
-               deriving (Show)
+               deriving (Show, Eq)
 
 -- Pretty printing:
 instance Pretty MTS where
@@ -226,7 +226,6 @@ appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
 
 -- Compare two lists of transitions for pseudoapplication compatibility
 -- and return any resultant tau transitions:
--- NOTE: WTF was I thinking when I wrote this??
 getTaus :: Species -> [Trans] -> [Trans] -> [Trans]
 getTaus src (tr:trs) trs'
     | (TransSC s n c) <- tr
@@ -255,9 +254,11 @@ primes env s@(Def _ _) = maybe ex (primes env) (lookupDef env s)
                         ("Species "++(pretty s)++" not in the Environment."))
 primes env s@(Sum _) = [s]
 primes env s@(New _ _) = [s]
+-- FIXME: species inside the New which are not in the local net
+--        can be brought outside the New as (possibly) prime species.
+--        This can be addressed here or buy applying normal form first...?
 primes env (Par []) = []
 primes env (Par (s:ss)) = (primes env s)++(concatMap (primes env) ss)
-
 
 -- Support of a process - prime species in a process:
 -- NOTE: do we want to check conc.>0 ??
@@ -265,3 +266,52 @@ supp :: [Definition] -> Process -> [Species]
 supp env (Process [] _) = []
 supp env (Process [(s,c)] _) = primes env s    
 supp env (Process ((s,c):ps) aff) = (primes env s)++(supp env (Process ps aff))
+
+-- The Class 1 (TransSC) transitions of an MTS
+transSC :: MTS -> [Trans]
+transSC (MTS []) = []
+transSC (MTS (t:ts))
+    | (TransSC _ _ _) <- t
+        = t:(transSC (MTS (ts)))
+    | otherwise
+        = transSC (MTS (ts))
+
+type D = Trans -> Double
+type P = Species -> Double
+
+pplus :: P -> P -> P
+x `pplus` y = undefined --TODO:!
+
+dplus :: D -> D -> D
+x `dplus` y = undefined --TODO:!
+
+-- TODO: these cardinality funs should be moved into Lib
+-- cardinality of an element in a list
+card :: (Eq a) => a -> [a] -> Integer
+card e l = toInteger $ length $ filter (\a->a==e) l
+
+-- cardinality of a transition in an MTS
+cardT :: Trans -> MTS -> Integer
+cardT t (MTS ts) = card t ts
+
+-- cardinality of a species in the prime decomposition of a species
+cardP :: [Definition] -> Species -> Species -> Integer
+cardP env s s' = card s (primes env s')
+
+-- the interaction potential
+partial :: [Definition] -> MTS -> Process -> D
+partial env mts (Process ss net) = partial' env mts ss
+    where
+      partial' _ _ [] = \t->0
+      partial' env mts ((spec,conc):ss)
+          = (\t@(TransSC s n c) -> 
+            (s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) `dplus` (partial' env mts ss)
+-- FIXME: need to implement dplus first
+
+-- the species embedding
+embed :: [Definition] -> Species -> P
+embed env s = embed' $ primes env s
+    where
+      embed' [] = \a->0
+      embed' (s':ss) = (\a->(if a==s' then 1 else 0)) `pplus` (embed' ss)
+-- FIXME: need to implement pplus first
