@@ -69,6 +69,9 @@ commands :: [(String,CmdRec)]
 commands = [("help",
              CmdRec {cmdFn = helpCmd,
                      cmdHelp = helpTextHelp}),
+            ("quit",
+             CmdRec {cmdFn = undefined,
+                     cmdHelp = helpTextQuit}),
             ("load",
              CmdRec {cmdFn = loadCmd,
                      cmdHelp = helpTextLoad}),
@@ -153,6 +156,7 @@ transCmd x = do env <- getEnv;
 ----------------------
 
 helpTextHelp = ("help <command>","Shows help on a specific command.")
+helpTextQuit = ("quit","Quits the session, same as Ctrl+D")
 helpTextLoad = ("load <filename>","Loads a CPi definition file.")
 helpTextEnv = ("env","Shows the contents of the current environment.")
 helpTextSpecies = ("species <definition>","Adds a species definition to the "
