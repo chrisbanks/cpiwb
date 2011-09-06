@@ -1,0 +1,27 @@
+species A(b1,b2,b3) = b1(x,y).(x.A(b1,b2,e3) + y.Ap(b1,b2,e3));
+
+species Ap(b1,b2,e3) = (b2(x,y).(x.Ap(b1,b2,e3) + y.App(b1,b2,e3)))
+					   + tau<0.1>.A(b1,b2,e3);
+
+species App(b1,b2,e3) = {a-u@30, a-t@3}
+					  	e3<u,t>.a.App(b1,b2,e3)
+						+ tau<0.05>.Ap(b1,b2,e3);
+
+species X(e1) = {a-u@100, a-t@10}
+			  	e1<u,t>.a.X(e1);
+
+species Y(e2) = {a-u@80, a-t@8}
+			  	e2<u,t>.a.Y(e2);
+
+species B(b3) = b3(x,y).(x.B(b3) + y.C(b3));
+
+species C(b3) = tau<0.1>.B(b3);
+
+process Pi = [0.05] A(b1,b2,e3) ||
+		   	 [0] Ap(b1,b2,b3) ||
+			 [0] App(b1,b2,b3) ||
+			 [0.01] X(e1) ||
+			 [0.01] Y(e2) ||
+			 [0.1] B(b3) ||
+			 [0.1] C(c3)
+			 : {b1-e1@1666, b2-e2@800, b3-e3@150};
