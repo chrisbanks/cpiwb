@@ -199,6 +199,14 @@ lookupDef ((ProcessDef _ _):env) def = lookupDef env def
 lookupDef _ _ = X.throw $ CpiException 
                 "Unexpected pattern: CpiLib.lookupDef expects a Def!"
 
+-- Process lookup by name:
+lookupProcName :: [Definition] -> String -> Maybe Process
+lookupProcName [] _ = Nothing
+lookupProcName ((SpeciesDef _ _ _):env) str = lookupProcName env str
+lookupProcName ((ProcessDef name proc):env) str
+    | (str == name) = Just proc
+    | (otherwise)   = lookupProcName env str
+
 -- Substitution of names in a Species:
 -- sub (ns,ns') s = find free Names ns in Species s 
 --                  and replace with New Names ns'
@@ -252,6 +260,6 @@ ifnotnil :: [a] -> ([a] -> b) -> b -> b
 ifnotnil [] f b = b
 ifnotnil xs f b = f xs
 
--- Pretty print a list:
+-- Pretty print a list of pretty printable expressions:
 prettys :: (Pretty a) => [a] -> String
 prettys x = concat $ map (\z->(pretty z)++"\n") x
