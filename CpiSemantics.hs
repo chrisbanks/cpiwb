@@ -256,7 +256,7 @@ primes env s@(Sum _) = [s]
 primes env s@(New _ _) = [s]
 -- FIXME: species inside the New which are not in the local net
 --        can be brought outside the New as (possibly) prime species.
---        This can be addressed here or buy applying normal form first...?
+--        This can be addressed here or by applying normal form first...?
 primes env (Par []) = []
 primes env (Par (s:ss)) = (primes env s)++(concatMap (primes env) ss)
 
@@ -296,13 +296,12 @@ cardP env s s' = card s (primes env s')
 partial :: [Definition] -> MTS -> Process -> D
 partial env mts (Process ss net) = partial' env mts ss
     where
-      partial' _ _ [] = \t->0
       partial' env mts ss
           = \t@(TransSC s n c) -> (expr t ss)
       expr _ [] = 0
       expr t@(TransSC s n c) ((spec,conc):ss) =
           ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
-      -- NOTE: if (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x) ??
+      -- NOTE: (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x)
       expr t _ = X.throw (CpiException
                           ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
 
@@ -313,3 +312,7 @@ embed env s = embed' $ primes env s
       embed' ss = (\a->(if (expr a ss) then 1 else 0))
       expr _ [] = False
       expr a (x:xs) = (a==x)||(expr a xs)
+
+-- the interaction tensor
+tensor :: AffNet -> D -> D -> P
+tensor = undefined -- TODO:
