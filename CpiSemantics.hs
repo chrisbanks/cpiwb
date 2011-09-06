@@ -279,12 +279,6 @@ transSC (MTS (t:ts))
 type D = Trans -> Double
 type P = Species -> Double
 
-pplus :: P -> P -> P
-x `pplus` y = undefined --TODO:!
-
-dplus :: D -> D -> D
-x `dplus` y = undefined --TODO:!
-
 -- TODO: these cardinality funs should be moved into Lib
 -- cardinality of an element in a list
 card :: (Eq a) => a -> [a] -> Integer
@@ -303,15 +297,19 @@ partial :: [Definition] -> MTS -> Process -> D
 partial env mts (Process ss net) = partial' env mts ss
     where
       partial' _ _ [] = \t->0
-      partial' env mts ((spec,conc):ss)
-          = (\t@(TransSC s n c) -> 
-            (s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) `dplus` (partial' env mts ss)
--- FIXME: need to implement dplus first
+      partial' env mts ss
+          = \t@(TransSC s n c) -> (expr t ss)
+      expr _ [] = 0
+      expr t@(TransSC s n c) ((spec,conc):ss) =
+          ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
+      -- NOTE: if (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x) ??
+      expr t _ = X.throw (CpiException
+                          ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
 
 -- the species embedding
 embed :: [Definition] -> Species -> P
 embed env s = embed' $ primes env s
     where
-      embed' [] = \a->0
-      embed' (s':ss) = (\a->(if a==s' then 1 else 0)) `pplus` (embed' ss)
--- FIXME: need to implement pplus first
+      embed' ss = (\a->(if (expr a ss) then 1 else 0))
+      expr _ [] = False
+      expr a (x:xs) = (a==x)||(expr a xs)
