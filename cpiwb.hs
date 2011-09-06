@@ -17,6 +17,7 @@
 
 import CpiLib
 import CpiParser
+import CpiSemantics
 
 import System.Console.Haskeline
 import Control.Monad.State
@@ -82,7 +83,10 @@ commands = [("help",
                      cmdHelp = helpTextSpecies}),
             ("process",
              CmdRec {cmdFn = processCmd,
-                     cmdHelp = helpTextProcess})]
+                     cmdHelp = helpTextProcess}),
+            ("trans",
+             CmdRec {cmdFn = transCmd,
+                     cmdHelp = helpTextTrans})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -102,7 +106,7 @@ helpCmd x
                       say $ "\n"++c++"\n\t"++d++"\n"
     | otherwise
         = say $ "\nThe available commands are:\n"
-          ++"\n"++prettyList(map (\(x,_) -> x) commands)++"\n\n"
+          ++"\n"++prettyList (map (\(x,_) -> x) commands)++"\n\n"
           ++"Type \"help <command>\" for help on a specific command.\n"
 
 -- load Command
@@ -118,7 +122,7 @@ loadCmd x = do say $ "Loading: "++(param x);
 -- env Command
 envCmd :: String -> Environment ()
 envCmd _ = do s <- getEnv;
-              say $ prettyList $ map pretty $ L.sort s
+              say $ prettys $ L.sort s
 
 -- species Command
 speciesCmd :: String -> Environment ()
@@ -135,6 +139,15 @@ processCmd = speciesCmd
 clearCmd :: String -> Environment ()
 clearCmd _ = putEnv []
 
+-- trans Command
+transCmd :: String -> Environment ()
+transCmd x = do env <- getEnv;
+                case lookupProcName env (param x) of
+                  Nothing   -> say $ "Process \""++(param x)
+                               ++"\" is not in the Environment."
+                  Just proc -> do let mts = processMTS env proc;
+                                  say $ pretty mts
+
 ----------------------
 -- Command help texts:
 ----------------------
@@ -147,6 +160,7 @@ helpTextSpecies = ("species <definition>","Adds a species definition to the "
 helpTextClear = ("clear","Clears the environment.")
 helpTextProcess = ("process <definition>","Adds a process definition to the "
                    ++"environment.")
+helpTextTrans = ("trans <process>","Shows the transitions of a process.")
 
 ---------------------
 -- Utility functions:
@@ -182,5 +196,5 @@ param cmdln = let ps = params cmdln in
                 []     -> []
                 (p:ps) -> p
 
--- [String] to String seperated by newlines:
+-- pretty print a list
 prettyList x = L.concat $ L.intersperse "\n" x
