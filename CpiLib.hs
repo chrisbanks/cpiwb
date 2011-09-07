@@ -269,8 +269,17 @@ instance Nf Species where
               where
                 f (Par ss) = ss 
                 f s = [s]
-    nf (New net (New net' s))
-        | net##net' = undefined -- FIXME: finish struct.cong. of New...
+    nf (New net@(AffNet ns) (New net'@(AffNet ns') s))
+        | (net##net') && not(net#s) && not(net'#s) 
+            = nf (New (net `netUnion` net') s)
+        | net#s
+            = nf (New net' s)
+        | net'#s
+            = nf (New net s)
+        | otherwise 
+            = (New (AffNet (L.sort ns)) (New (AffNet (L.sort ns')) (nf s)))
+    -- TODO: (New N)A|B = A|(New N)B where N#A
+    nf (New net (Par ss)) = undefined -- TODO:
     nf (New net@(AffNet ns) s)
         | net#s     = nf s
         | otherwise = New (AffNet (L.sort ns)) (nf s)
