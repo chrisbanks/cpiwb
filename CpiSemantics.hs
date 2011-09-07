@@ -79,29 +79,34 @@ instance Pretty TTauAff where
 
 -- Get the Multi-Transition System for a Process:
 processMTS :: [Definition] -> Process -> MTS
-processMTS defs (Process ss net) = finalmts 
+-- FIXME: change intermts to finalmts to give the full closed MTS...
+--        but not until we have normal form or it has a tendency to
+--        be infinite...
+processMTS defs (Process ss net) = intermts 
     where 
       initmts = transs defs (MTS []) (map fst ss)
       compxs = appls initmts
-      finalmts = transs defs initmts compxs
+      intermts = transs defs initmts compxs
+      finalmts = fixMTS defs intermts
 
--- Given an MTS calculate the complete transition graph:
+-- Given an initial MTS calculate the complete transition graph:
 -- NOTE: will not terminate for infinite state models
--- NOTE: this is unnecessary and WRONG! Stupid boy.
--- calcMTS :: [Definition] -> MTS -> MTS
--- calcMTS env mts = calc (openMTS mts) mts 
---     where calc (tr:trs) mts'
---               | (TransSC _ _ _) <- tr
---                   = calc trs mts'
---               | (TransT _ _ s) <- tr
---                   = calc trs (trans env mts' s)
---               | (TransTA _ _ s) <- tr
---                   = calc trs (trans env mts' s)
---           calc [] mts'
---               | (mtsCard mts) == (mtsCard mts')
---                   = mts' --bottom out at fixpoint
---               | otherwise
---                   = calcMTS env mts' --otherwise recurse over new transitions
+fixMTS :: [Definition] -> MTS -> MTS
+fixMTS env mts = calc (openMTS mts) mts 
+    where calc (tr:trs) mts'
+              | (TransSC _ _ _) <- tr
+                  = calc trs mts'
+              | (TransT _ _ s) <- tr
+                  = calc trs (trans env mts' s)
+              | (TransTA _ _ s) <- tr
+                  = calc trs (trans env mts' s)
+              | otherwise
+                  = calc trs mts'
+          calc [] mts'
+              | (mtsCard mts) == (mtsCard mts')
+                  = mts' --bottom out at fixpoint
+              | otherwise
+                  = fixMTS env mts' --otherwise recurse over new transitions
 
 -- Cardinality of an MTS:
 mtsCard :: MTS -> Int

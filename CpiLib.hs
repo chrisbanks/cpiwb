@@ -15,7 +15,7 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-{-# OPTIONS_GHC -XDeriveDataTypeable #-}
+{-# OPTIONS_GHC -XDeriveDataTypeable -XTypeSynonymInstances #-}
 
 module CpiLib where
 
@@ -64,12 +64,12 @@ data Definition = SpeciesDef Name [Name] Species
 
 -- Referential equality of Species (e.g. for lookup).
 instance Eq Species where
-    Nil == Nil               =  True
-    (Def s _) == (Def s' _)  =  s==s'
-    (Sum ss) == (Sum ss')    =  ss==ss'
-    (Par ss) == (Par ss')    =  ss==ss'
-    (New n s) == (New n' s') =  (n==n')&&(s==s')
-    _ == _                   =  False
+    Nil == Nil                 =  True
+    (Def s ns) == (Def s' ns') =  (s==s')&&(ns==ns')
+    (Sum ss) == (Sum ss')      =  ss==ss'
+    (Par ss) == (Par ss')      =  ss==ss'
+    (New n s) == (New n' s')   =  (n==n')&&(s==s')
+    _ == _                     =  False
 
 ----------------------
 -- Pretty printing:
@@ -178,6 +178,9 @@ aff (AffNet affs) (n,n')
               | k == (x,y) =  Just r
               | otherwise  =  aff' k affs'
 
+netUnion :: AffNet -> AffNet -> AffNet
+netUnion (AffNet n) (AffNet n') = AffNet (n \/ n')
+
 --Free/Bound names:
 fn :: Species -> [Name]
 fn Nil = []
@@ -233,6 +236,51 @@ nameSub :: [Name] -> [(Name,Name)] -> [Name]
 nameSub [] _ = []
 nameSub (n:ns) ss = (maybe n id (L.lookup n ss)):(nameSub ns ss)
 
+-- Fresh-for tests for restrictions
+(#) :: AffNet -> Species -> Bool
+net#s = ((sites net)/\(fn s)) == []
+
+(##) :: AffNet -> AffNet -> Bool
+net##net' = ((sites net)/\(sites net')) == []
+
+------------------
+-- Normal form
+------------------
+-- The "normal form" here is reduction by structural congruence
+-- (not including alpha equiv.) and alphanumeric ordering of term/name lists
+-- This allows us to define a smaller equivalence based on the referential
+-- equality (see above).
+class Nf a where
+    nf :: a -> a
+
+-- normal form for species
+instance Nf Species where
+    nf Nil = Nil
+    nf (Def s ns) = Def s (L.sort ns)
+    nf (Sum []) = Nil
+    nf (Sum pfs) = Sum (L.sort (map nf pfs))
+    nf (Par []) = Nil
+    nf (Par [s]) = nf s
+    nf (Par ss) = Par (L.sort (dropNils (flatten (map nf ss))))
+        where
+          dropNils = filter (\x->x/=Nil)
+          flatten [] = []
+          flatten (x:xs) = (f x)++(flatten xs)
+              where
+                f (Par ss) = ss 
+                f s = [s]
+    nf (New net (New net' s))
+        | net##net' = undefined -- FIXME: finish struct.cong. of New...
+    nf (New net@(AffNet ns) s)
+        | net#s     = nf s
+        | otherwise = New (AffNet (L.sort ns)) (nf s)
+    
+instance Nf PrefixSpecies where
+    nf (p,s) = (p,(nf s))
+
+-- TODO: normal form for concretions
+
+-- TODO: normal form for processes
 
 ---------------------
 -- Utility functions:
