@@ -264,6 +264,9 @@ instance Nf Species where
     nf (Par [s]) = nf s
     -- commutativity and associativity of Par 
     -- and 0|A = A
+    -- FIXME: Need to test for Par [] after dropping nils
+    --        at the moment nf(Par [Nil,Nil]) -> Par []
+    --        should be Nil.
     nf (Par ss) = Par (L.sort (dropNils (flatten (map nf ss))))
         where
           dropNils = filter (\x->x/=Nil)
