@@ -258,9 +258,12 @@ instance Nf Species where
     nf Nil = Nil
     nf (Def s ns) = Def s (L.sort ns)
     nf (Sum []) = Nil
+    -- commutativity and associativity of Sum
     nf (Sum pfs) = Sum (L.sort (map nf pfs))
     nf (Par []) = Nil
     nf (Par [s]) = nf s
+    -- commutativity and associativity of Par 
+    -- and 0|A = A
     nf (Par ss) = Par (L.sort (dropNils (flatten (map nf ss))))
         where
           dropNils = filter (\x->x/=Nil)
@@ -269,8 +272,9 @@ instance Nf Species where
               where
                 f (Par ss) = ss 
                 f s = [s]
+    -- (new M)(new N)A = (new MUN)A  when M#N and ¬(M#A or N#A)
     nf (New net@(AffNet ns) (New net'@(AffNet ns') s))
-        | (net##net') && not(net#s) && not(net'#s) 
+        | (net##net') && not(net#s || net'#s) 
             = nf (New (net `netUnion` net') s)
         | net#s
             = nf (New net' s)
@@ -278,8 +282,20 @@ instance Nf Species where
             = nf (New net s)
         | otherwise 
             = (New (AffNet (L.sort ns)) (New (AffNet (L.sort ns')) (nf s)))
-    -- TODO: (New N)A|B = A|(New N)B where N#A
-    nf (New net (Par ss)) = undefined -- TODO:
+    -- (new M)(A|B) = A|(new M)B  when M#A
+    nf (New net (Par ss)) = liftfps net ss [] []
+        where
+          liftfps :: AffNet -> [Species] -> [Species] -> [Species] -> Species
+          liftfps net [] [] ins
+              = New net (nf (Par ins))
+          liftfps net [] outs []
+              = nf (Par outs)
+          liftfps net [] outs ins
+              = Par ((New net (nf (Par ins))):(map nf outs))
+          liftfps net (s:ss) outs ins
+              | net#s     = liftfps net ss (s:outs) ins
+              | otherwise = liftfps net ss outs (s:ins)
+    -- (new M)A = A  when M#A
     nf (New net@(AffNet ns) s)
         | net#s     = nf s
         | otherwise = New (AffNet (L.sort ns)) (nf s)

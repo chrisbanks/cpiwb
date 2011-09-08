@@ -111,3 +111,16 @@ tcSpecP0 = SpeciesDef "P" [] Nil
 -- species Q() = 0
 tcSpecQ0 = SpeciesDef "Q" [] Nil
 
+-- tests for some struct.cong. rules
+tcSs = Def "S" ["s"]
+tcSsa = Def "S" ["s","a"]
+tcXx = Def "X" ["x"]
+tcNet0 = AffNet []
+tcNet1 = AffNet [Aff (("s","s'"),"1")]
+tcNet2 = AffNet [Aff (("a","b"),"1")]
+tcNet3 = AffNet [Aff (("s","s'"),"1"),Aff (("x","y"),"1")]
+tcNNS = New tcNet1 (New tcNet2 tcSs)
+tcNNSsa = New tcNet1 (New tcNet2 tcSsa)
+tcNSX = New tcNet1 (Par [tcXx,tcSs])
+tcN3SX = New tcNet3 (Par [tcXx,tcSs])
+tcN0SX = New tcNet0 (Par [tcXx,tcSs])
