@@ -76,6 +76,39 @@ instance Pretty TTau where
 instance Pretty TTauAff where
     pretty (TTauAff (n1,n2)) = "tau@<"++n1++","++n2++">"
 
+-- Normal form for concretions
+-- NOTE: see note on normal form in CpiLib
+instance Nf Concretion where
+    -- (b;y)(A|B)=A|(b;y)B  when y#A
+    nf (ConcBase (Par ss) o i) = liftfps ((L.sort o),(L.sort i)) ss [] []
+        where
+          liftfps (o,i) [] [] ins
+              = ConcBase (nf (Par ins)) o i
+          liftfps (o,i) [] outs ins
+              = ConcPar (ConcBase (nf (Par ins)) o i) (map nf outs)
+          liftfps (o,i) (s:ss) outs ins
+              | (i/\(fn s))==[]     
+                  = liftfps (o,i) ss (s:outs) ins
+              | otherwise 
+                  = liftfps (o,i) ss outs (s:ins)
+    -- (b;y)A=(b;y)B  when A=B
+    nf (ConcBase s o i) = ConcBase (nf s) (L.sort o) (L.sort i)
+    -- Commu. and assoc. of ConcPar and F|0 = F
+    nf (ConcPar c []) = nf c
+    -- FIXME: need to test for (ConcPar c []) after dropping Nils
+    --        should evaluate to nf(c)
+    -- FIXME: if (nf c) below is a ConcPar we need to lift the ss to the top 
+    --        level and use the base as c.  (???)
+    nf (ConcPar c ss) 
+        = ConcPar (nf c) (L.sort (dropNils (flatten (map nf ss))))
+          where
+            dropNils = filter (\x->x/=Nil)
+            flatten [] = []
+            flatten (x:xs) = (f x)++(flatten xs)
+                where
+                  f (Par ss) = ss 
+                  f s = [s]
+    --nf (ConcNew net ) = 
 
 -- Get the Multi-Transition System for a Process:
 processMTS :: [Definition] -> Process -> MTS

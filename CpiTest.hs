@@ -124,3 +124,8 @@ tcNNSsa = New tcNet1 (New tcNet2 tcSsa)
 tcNSX = New tcNet1 (Par [tcXx,tcSs])
 tcN3SX = New tcNet3 (Par [tcXx,tcSs])
 tcN0SX = New tcNet0 (Par [tcXx,tcSs])
+
+tcC1 = ConcBase (Par [tcXx,tcSs]) ["a"] ["s"]
+tcC2 = ConcPar tcC1 [tcQ,tcP]
+
+tcNestPar = Par [tcQ, tcP,Par [tcXx,Par [tcSs,Nil]]]
