@@ -254,6 +254,7 @@ getTaus _ [] _ = []
  --------------------
 
 -- Prime components of a species:
+-- NOTE: should only be applied to the normal form of a species
 primes :: [Definition] -> Species -> [Species]
 primes env Nil = []
 primes env s@(Def _ _) = maybe ex (primes env) (lookupDef env s)
@@ -261,11 +262,8 @@ primes env s@(Def _ _) = maybe ex (primes env) (lookupDef env s)
                         ("Species "++(pretty s)++" not in the Environment."))
 primes env s@(Sum _) = [s]
 primes env s@(New _ _) = [s]
--- FIXME: species inside the New which are not in the local net
---        can be brought outside the New as (possibly) prime species.
---        This can be addressed here or by applying normal form first...?
 primes env (Par []) = []
-primes env (Par (s:ss)) = (primes env s)++(concatMap (primes env) ss)
+primes env (Par ss) = concatMap (primes env) ss
 
 -- Support of a process - prime species in a process:
 -- NOTE: do we want to check conc.>0 ??
