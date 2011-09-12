@@ -82,6 +82,10 @@ fnc (ConcBase s o i) = o \/ ((fn s) \\ i)
 fnc (ConcPar c ss) = (fnc c) \/ (fn (Par ss))
 fnc (ConcNew n c) = (fnc c) \\ (sites n)
 
+-- Fresh-for test for restricted concretions
+(#<) :: AffNet -> Concretion -> Bool
+net#<c = ((sites net) /\ (fnc c)) == []
+
 -- Normal form for concretions
 -- NOTE: see note on normal form in CpiLib
 instance Nf Concretion where
