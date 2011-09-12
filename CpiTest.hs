@@ -62,9 +62,13 @@ tTrans = do file <- readFile "testEnzyme.cpi"
             putStrLn "Complexes formed (pseudoapplications):\n"
             putStrLn $ concat $ map (\x->(pretty x)++"\n") compxs
             -- find transitions for the complexes and add to MTS
-            let finalmts = transs [] mts'' compxs
+            let finalmts = transs defns mts'' compxs
             putStrLn "Multi-transition system:\n"
             putStrLn $ pretty finalmts
+            -- calculate the closure of the MTS
+            let fixedmts = fixMTS defns finalmts
+            putStrLn "Closed MTS:\n"
+            putStrLn $ pretty fixedmts
 
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
