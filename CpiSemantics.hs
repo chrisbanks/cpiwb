@@ -135,10 +135,7 @@ instance Nf Concretion where
 
 -- Get the Multi-Transition System for a Process:
 processMTS :: [Definition] -> Process -> MTS
--- FIXME: change intermts to finalmts to give the full closed MTS...
---        but not until we have normal form or it has a tendency to
---        be infinite...
-processMTS defs (Process ss net) = intermts 
+processMTS defs (Process ss net) = finalmts 
     where 
       initmts = transs defs (MTS []) (map fst ss)
       compxs = appls initmts
@@ -170,7 +167,7 @@ mtsCard x = length $ openMTS x
 
 -- Add the immediate transitions for a species to the MTS:
 trans :: [Definition] -> MTS -> Species -> MTS
-trans env mts s = trans' env mts (nf s)
+trans env mts s = trans' env mts s
     where
       trans' env mts s' 
           = ifnotnil (lookupTrans mts s') (\x -> mts) (trans'' env mts s')
@@ -242,8 +239,8 @@ openMTS = \(MTS x) -> x
 lookupTrans :: MTS -> Species -> [Trans]
 lookupTrans (MTS []) _ =  []
 lookupTrans (MTS (tran:trans)) s
-    | s == (transSrc tran)   = tran:(lookupTrans (MTS trans) s) 
-    | otherwise              = lookupTrans (MTS trans) s
+    | (nf s) == (nf(transSrc tran))   = tran:(lookupTrans (MTS trans) s) 
+    | otherwise                       = lookupTrans (MTS trans) s
 
 -- The source Species of a transition:
 transSrc :: Trans -> Species
