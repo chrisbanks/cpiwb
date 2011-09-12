@@ -76,6 +76,12 @@ instance Pretty TTau where
 instance Pretty TTauAff where
     pretty (TTauAff (n1,n2)) = "tau@<"++n1++","++n2++">"
 
+-- Free names of concretions:
+fnc :: Concretion -> [Name]
+fnc (ConcBase s o i) = o \/ ((fn s) \\ i)
+fnc (ConcPar c ss) = (fnc c) \/ (fn (Par ss))
+fnc (ConcNew n c) = (fnc c) \\ (sites n)
+
 -- Normal form for concretions
 -- NOTE: see note on normal form in CpiLib
 instance Nf Concretion where
