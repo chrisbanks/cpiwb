@@ -169,10 +169,8 @@ mtsCard :: MTS -> Int
 mtsCard x = length $ openMTS x
 
 -- Add the immediate transitions for a species to the MTS:
--- TODO: Species want to be in normal form. (Don't they?)
--- TODO: First need to define normal form!
 trans :: [Definition] -> MTS -> Species -> MTS
-trans env mts s = trans' env mts s
+trans env mts s = trans' env mts (nf s)
     where
       trans' env mts s' 
           = ifnotnil (lookupTrans mts s') (\x -> mts) (trans'' env mts s')
@@ -193,7 +191,7 @@ trans env mts s = trans' env mts s
                        (openMTS(trans' env mts (Sum pss))))
             -- Sum(Comm + ...)
             trans'' env mts (Sum (((Comm n o i),dst):pss))
-                = MTS ((TransSC s n (ConcBase dst o i)):
+                = MTS ((TransSC s n (nf(ConcBase dst o i))):
                        (openMTS(trans' env mts (Sum pss))))
             -- Par
             trans'' _ mts (Par []) = mts
@@ -214,15 +212,16 @@ trans env mts s = trans' env mts s
                       | n `elem` (sites net) 
                           = restrict trs
                       | otherwise
-                          = (TransSC s n (ConcNew net dst)):(restrict trs)
+                          = (TransSC s n (nf(ConcNew net dst))):(restrict trs)
                   restrict ((TransT _ t dst):trs)
-                          = (TransT s t (New net dst)):(restrict trs)
+                          = (TransT s t (nf(New net dst))):(restrict trs)
                   restrict ((TransTA _ t@(TTauAff (n,n')) dst):trs)
                       | (r /= Nothing)
-                          = (TransT s (TTau ((\(Just x)->x)r)) (New net dst))
+                          = (TransT s (TTau ((\(Just x)->x)r)) 
+                                        (nf(New net dst)))
                             :(restrict trs)
                       | otherwise
-                          = (TransTA s t (New net dst)):(restrict trs)
+                          = (TransTA s t (nf(New net dst))):(restrict trs)
                       where r = (aff net (n,n'))
 
 -- Concatenate MTSs
@@ -256,7 +255,7 @@ transSrc (TransTA s _ _) = s
 pseudoapp :: Concretion -> Concretion -> Maybe Species
 pseudoapp (ConcBase s1 a x) (ConcBase s2 b y)
     | (length a == length y)&&(length x == length b)
-        = Just $ Par [(sub (zip x b) s1),(sub (zip y a) s2)]
+        = Just $ nf(Par [(sub (zip x b) s1),(sub (zip y a) s2)])
     | otherwise
         = Nothing
 pseudoapp c1 (ConcPar c2 s2)
