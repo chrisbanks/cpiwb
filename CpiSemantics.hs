@@ -119,9 +119,6 @@ instance Nf Concretion where
                       where
                         f (Par ss) = ss 
                         f s = [s]
-          nf' (ConcNew net@(AffNet ns) c)
-              | net#<c    = nf c
-              | otherwise = ConcNew (AffNet (L.sort ns)) (nf c)
           nf' (ConcNew net@(AffNet ns) (ConcNew net'@(AffNet ns') c))
               | net##net' && not(net#<c || net'#<c)
                   = nf (ConcNew (net `netUnion` net') c)
@@ -133,7 +130,9 @@ instance Nf Concretion where
               | net#<c       = ConcPar (nf c) [(nf(New net (Par ss)))]
               | net#(Par ss) = ConcPar (nf (ConcNew net c)) [(nf (Par ss))]
               | otherwise    = ConcNew (AffNet (L.sort ns)) (nf c)
-
+          nf' (ConcNew net@(AffNet ns) c)
+              | net#<c    = nf c
+              | otherwise = ConcNew (AffNet (L.sort ns)) (nf c)
 
 -- Get the Multi-Transition System for a Process:
 processMTS :: [Definition] -> Process -> MTS
