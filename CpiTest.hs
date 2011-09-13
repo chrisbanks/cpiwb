@@ -70,6 +70,12 @@ tTrans = do file <- readFile "testEnzyme.cpi"
             putStrLn "Closed MTS:\n"
             putStrLn $ pretty fixedmts
 
+-- Some constants for playing with the Enzyme example:
+tEnzDefs = do file <- readFile "testEnzyme.cpi"
+              return ((\(Right x) -> x)(parse pDefinitionLines "" file))
+
+tEnzPi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
+
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
              let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
