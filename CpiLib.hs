@@ -345,21 +345,11 @@ prettys :: (Pretty a) => [a] -> String
 prettys x = concat $ map (\z->(pretty z)++"\n") x
 
 -- Replace matched elements of a list with something else:
-replace :: (Eq a) => [a] -> [a] -> [a] -> [a]
-replace src dst xs =
-   concatMap (M.fromMaybe dst) (markSublists src xs)
-       where
-         markSublists :: (Eq a) => [a] -> [a] -> [Maybe [a]]
-         markSublists sub ys =
-             let ~(hd', rest') =
-                     foldr (\c ~(hd, rest) ->
-                        let xs = c:hd
-                        in  case maybePrefixOf sub xs of
-                              Just suffix -> ([], Nothing : Just suffix : rest)
-                              Nothing -> (xs, rest)) ([],[]) ys
-             in  Just hd' : rest'
-         maybePrefixOf :: Eq a => [a] -> [a] -> Maybe [a]
-         maybePrefixOf (x:xs) (y:ys) = guard (x==y) >> maybePrefixOf xs ys
-         maybePrefixOf [] ys = Just ys
-         maybePrefixOf _  [] = Nothing
-
+replace :: (Eq a) => a -> a -> [a] -> [a]
+replace src dst xs = rep src dst xs []
+    where
+      rep _ _ [] result = reverse result
+      rep src dst (x:xs) result
+          | x==src    = rep src dst xs (dst:result)
+          | otherwise = rep src dst xs (x:result)
+            
