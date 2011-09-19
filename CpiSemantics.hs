@@ -206,7 +206,7 @@ trans env mts s = trans' env mts s
                     alphas (_,[]) = []
                     alphas (_,(a:as)) = undefined -- TODO: 
                     taus ([],_) = []
-                    taus ((t:ts),[]) = undefined -- TODO:
+                    taus ((t:ts),_) = undefined -- TODO:
                     parts = L.partition sc indtrans
                     indtrans = openMTS $ transs env (MTS []) ss
                     sc x
