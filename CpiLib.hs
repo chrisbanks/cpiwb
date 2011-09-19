@@ -22,6 +22,8 @@ module CpiLib where
 import qualified Data.List as L
 import qualified Control.Exception as X
 import qualified Data.Typeable as T
+import qualified Data.Maybe as M
+import Control.Monad (guard)
 
 data CpiException = CpiException String
                     deriving (Show,T.Typeable)
@@ -341,3 +343,23 @@ ifnotnil xs f b = f xs
 -- Pretty print a list of pretty printable expressions:
 prettys :: (Pretty a) => [a] -> String
 prettys x = concat $ map (\z->(pretty z)++"\n") x
+
+-- Replace matched elements of a list with something else:
+replace :: (Eq a) => [a] -> [a] -> [a] -> [a]
+replace src dst xs =
+   concatMap (M.fromMaybe dst) (markSublists src xs)
+       where
+         markSublists :: (Eq a) => [a] -> [a] -> [Maybe [a]]
+         markSublists sub ys =
+             let ~(hd', rest') =
+                     foldr (\c ~(hd, rest) ->
+                        let xs = c:hd
+                        in  case maybePrefixOf sub xs of
+                              Just suffix -> ([], Nothing : Just suffix : rest)
+                              Nothing -> (xs, rest)) ([],[]) ys
+             in  Just hd' : rest'
+         maybePrefixOf :: Eq a => [a] -> [a] -> Maybe [a]
+         maybePrefixOf (x:xs) (y:ys) = guard (x==y) >> maybePrefixOf xs ys
+         maybePrefixOf [] ys = Just ys
+         maybePrefixOf _  [] = Nothing
+
