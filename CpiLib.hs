@@ -352,4 +352,8 @@ replace src dst xs = rep src dst xs []
       rep src dst (x:xs) result
           | x==src    = rep src dst xs (dst:result)
           | otherwise = rep src dst xs (x:result)
-            
+
+replace' _ _ [] = []
+replace' src dst (x:xs)
+    | x==src    = dst:(replace src dst xs)
+    | otherwise = x:(replace src dst xs)
