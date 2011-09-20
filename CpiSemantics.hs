@@ -193,27 +193,36 @@ trans env mts s = trans' env mts s
                        (openMTS(trans' env mts (Sum pss))))
             -- Par
             trans'' _ mts (Par []) = mts
-            -- trans'' env mts (Par (c:cs)) = transPar (c:cs) [] []
-            --     where transPar (c:cs) res taus
-            --               = transPar cs (tr++res) (taus'++taus)
-            --                 where taus' = getTaus s tr res
-            --                       tr = openMTS(trans' env mts c)
-            --           transPar [] res taus
-            --               = MTS (res++taus)
             trans'' env mts (Par (ss)) 
-                = MTS ((alphas parts)++(taus parts)) ->++ mts 
-                  where
-                    alphas (_,[]) = []
-                    alphas (_,(a:as)) = undefined -- TODO: 
-                    taus ([],_) = []
-                    taus ((t:ts),_) = undefined -- TODO:
-                    parts = L.partition sc indtrans
-                    indtrans = openMTS $ transs env (MTS []) ss
-                    sc x
-                        | (TransSC _ _ _) <- x
-                            = True
-                        | otherwise
-                            = False
+                = MTS (transPar ss [] []) ->++ mts
+                  where 
+                    transPar (x:xs) alphas taus
+                        = transPar xs (alphas'++alphas) ((taus' s alphas' alphas)++taus)
+                          where 
+                            alphas' = openMTS(trans env (MTS []) x)
+                            taus' src (tr:trs) trs'
+                                | (TransSC s n c) <- tr
+                                    = (taus'' tr trs')++(taus' src trs trs')
+                                | otherwise
+                                    = taus' src trs trs'
+                                where 
+                                  taus'' (TransSC src n c) ((TransSC src' n' c'):trs')
+                                      | Just dst <- pseudoapp c c'
+                                          = (TransTA s (TTauAff (n,n'))
+                                             (Par (filter (\z->z/=src) (replace src' dst ss))))
+                                            :(taus'' tr trs')
+                                      | otherwise
+                                          = taus'' tr trs'
+                                  taus'' tr (_:trs') = taus'' tr trs'
+                                  taus'' _ [] = []
+                            taus' _ [] _ = []
+                    transPar [] alphas taus
+                        = ((evs alphas)++taus)
+                          where 
+                            evs ((TransT src tau dst):ts)
+                                = (TransT s tau (Par (replace src dst ss))):(evs ts)
+                            evs (_:ts) = evs ts
+                            evs [] = []
             -- New
             trans'' env mts (New net c)
                 = MTS ((restrict(openMTS(trans' env (MTS []) c)))
@@ -280,8 +289,7 @@ pseudoapp (ConcPar c1 ss) c2
 pseudoapp (ConcNew net c1) c2
     = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
 
--- get the resultants (complexes!) of pseudoapplications in an MTS
--- TODO: this seems a bit dirty... can I do better?
+-- get the resultants (complexes) of pseudoapplications in an MTS
 appls :: MTS -> [Species]
 appls (MTS []) = []
 appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
@@ -299,23 +307,6 @@ appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
           appls'' x (c:cs) 
               = maybe (appls'' x cs) (\y->(y:(appls'' x cs))) (pseudoapp x c)
 
--- Compare two lists of transitions for pseudoapplication compatibility
--- and return any resultant tau transitions:
--- getTaus :: Species -> [Trans] -> [Trans] -> [Trans]
--- getTaus src (tr:trs) trs'
---     | (TransSC s n c) <- tr
---         = (getTaus' tr trs')++(getTaus src trs trs')
---     | otherwise
---         = getTaus src trs trs'
---     where getTaus' (TransSC _ n c) ((TransSC _ n' c'):trs')
---               | Just dst <- pseudoapp c c'
---                   = (TransTA src (TTauAff (n,n')) dst):
---                     (getTaus' tr trs')
---               | otherwise
---                   = getTaus' tr trs'
---           getTaus' tr (_:trs') = getTaus' tr trs'
---           getTaus' _ [] = []
--- getTaus _ [] _ = []
 
 --------------------
 -- Process semantics
