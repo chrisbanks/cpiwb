@@ -209,7 +209,7 @@ trans env mts s = trans' env mts s
                                   taus'' (TransSC src n c) ((TransSC src' n' c'):trs')
                                       | Just dst <- pseudoapp c c'
                                           = (TransTA s (TTauAff (n,n'))
-                                             (Par (filter (\z->z/=src) (replace src' dst ss))))
+                                             (Par (remove src (replace src' dst ss))))
                                             :(taus'' tr trs')
                                       | otherwise
                                           = taus'' tr trs'

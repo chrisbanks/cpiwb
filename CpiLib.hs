@@ -344,16 +344,15 @@ ifnotnil xs f b = f xs
 prettys :: (Pretty a) => [a] -> String
 prettys x = concat $ map (\z->(pretty z)++"\n") x
 
--- Replace matched elements of a list with something else:
+-- Replace first matched element of a list with something else:
 replace :: (Eq a) => a -> a -> [a] -> [a]
-replace src dst xs = rep src dst xs []
-    where
-      rep _ _ [] result = reverse result
-      rep src dst (x:xs) result
-          | x==src    = rep src dst xs (dst:result)
-          | otherwise = rep src dst xs (x:result)
-
-replace' _ _ [] = []
-replace' src dst (x:xs)
-    | x==src    = dst:(replace src dst xs)
+replace _ _ [] = []
+replace src dst (x:xs)
+    | x==src    = dst:xs
     | otherwise = x:(replace src dst xs)
+
+-- Remove first matched element of a list
+remove _ [] = []
+remove m (x:xs)
+    | x==m      = xs
+    | otherwise = x:(remove m xs)
