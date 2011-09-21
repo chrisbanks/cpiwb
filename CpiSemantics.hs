@@ -21,6 +21,8 @@ module CpiSemantics where
 
 import qualified Data.List as L
 import qualified Control.Exception as X
+import qualified Data.Map as Map
+import Data.Map (Map)
 
 import CpiLib
 
@@ -313,16 +315,17 @@ appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
  --------------------
 
 -- Prime components of a species:
--- NOTE: should only be applied to the normal form of a species
 primes :: [Definition] -> Species -> [Species]
-primes env Nil = []
-primes env s@(Def _ _) = maybe ex (primes env) (lookupDef env s)
-    where ex = X.throw (CpiException
-                        ("Species "++(pretty s)++" not in the Environment."))
-primes env s@(Sum _) = [s]
-primes env s@(New _ _) = [s]
-primes env (Par []) = []
-primes env (Par ss) = concatMap (primes env) ss
+primes env spec = primes' env (nf spec)
+    where
+      primes' env Nil = []
+      primes' env s@(Def _ _) = maybe ex (primes env) (lookupDef env s)
+          where ex = X.throw (CpiException
+                              ("Species "++(pretty s)++" not in the Environment."))
+      primes' env s@(Sum _) = [s]
+      primes' env s@(New _ _) = [s]
+      primes' env (Par []) = []
+      primes' env (Par ss) = concatMap (primes env) ss
 
 -- Support of a process - prime species in a process:
 -- NOTE: do we want to check conc.>0 ??
@@ -340,14 +343,6 @@ transSC (MTS (t:ts))
     | otherwise
         = transSC (MTS (ts))
 
-type D = Trans -> Double
-type P = Species -> Double
-
--- TODO: these cardinality funs should be moved into Lib
--- cardinality of an element in a list
-card :: (Eq a) => a -> [a] -> Integer
-card e l = toInteger $ length $ filter (\a->a==e) l
-
 -- cardinality of a transition in an MTS
 cardT :: Trans -> MTS -> Integer
 cardT t (MTS ts) = card t ts
@@ -356,27 +351,34 @@ cardT t (MTS ts) = card t ts
 cardP :: [Definition] -> Species -> Species -> Integer
 cardP env s s' = card s (primes env s')
 
--- the interaction potential
-partial :: [Definition] -> MTS -> Process -> D
-partial env mts (Process ss net) = partial' env mts ss
-    where
-      partial' env mts ss
-          = \t@(TransSC s n c) -> (expr t ss)
-      expr _ [] = 0
-      expr t@(TransSC s n c) ((spec,conc):ss) =
-          ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
-      -- NOTE: (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x)
-      expr t _ = X.throw (CpiException
-                          ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
+-----------------------------------------
+-- Process space P and potential space D:
+type P = Map Species Double
+type D = Map (Species,Name,Concretion) Double
 
--- the species embedding
-embed :: [Definition] -> Species -> P
-embed env s = embed' $ primes env s
-    where
-      embed' ss = (\a->(if (expr a ss) then 1 else 0))
-      expr _ [] = False
-      expr a (x:xs) = (a==x)||(expr a xs)
 
--- the interaction tensor
-tensor :: AffNet -> D -> D -> P
-tensor = undefined -- TODO:
+
+-- -- the interaction potential
+-- partial :: [Definition] -> MTS -> Process -> D
+-- partial env mts (Process ss net) = partial' env mts ss
+--     where
+--       partial' env mts ss
+--           = \t@(TransSC s n c) -> (expr t ss)
+--       expr _ [] = 0
+--       expr t@(TransSC s n c) ((spec,conc):ss) =
+--           ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
+--       -- NOTE: (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x)
+--       expr t _ = X.throw (CpiException
+--                           ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
+
+-- -- the species embedding
+-- embed :: [Definition] -> Species -> P
+-- embed env s = embed' $ primes env s
+--     where
+--       embed' ss = (\a->(if (expr a ss) then 1 else 0))
+--       expr _ [] = False
+--       expr a (x:xs) = (a==x)||(expr a xs)
+
+-- -- the interaction tensor
+-- tensor :: AffNet -> D -> D -> P
+-- tensor = undefined -- TODO:
