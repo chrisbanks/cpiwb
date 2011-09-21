@@ -22,8 +22,6 @@ module CpiLib where
 import qualified Data.List as L
 import qualified Control.Exception as X
 import qualified Data.Typeable as T
-import qualified Data.Maybe as M
-import Control.Monad (guard)
 
 data CpiException = CpiException String
                     deriving (Show,T.Typeable)
@@ -356,3 +354,7 @@ remove _ [] = []
 remove m (x:xs)
     | x==m      = xs
     | otherwise = x:(remove m xs)
+
+-- cardinality of an element in a list
+card :: (Eq a) => a -> [a] -> Integer
+card e l = toInteger $ length $ filter (\a->a==e) l
