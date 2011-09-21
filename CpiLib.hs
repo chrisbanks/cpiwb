@@ -62,6 +62,8 @@ data Definition = SpeciesDef Name [Name] Species
                 | ProcessDef Name Process
                   deriving (Eq,Show)
 
+type Env = [Definition] -- Env(ironment) is a list of definitions
+
 -- Referential equality of Species (e.g. for lookup).
 instance Eq Species where
     Nil == Nil                 =  True
@@ -193,7 +195,7 @@ fn (Sum (((Tau r),s):xs)) = fn s
 fn (Sum (((Comm n o i),s):xs)) = [n] \/ o \/ ((fn s) \\ i) \/ (fn (Sum xs))
 
 -- Definition lookup:
-lookupDef :: [Definition] -> Species -> Maybe Species
+lookupDef :: Env -> Species -> Maybe Species
 lookupDef [] (Def _ _) = Nothing
 lookupDef ((SpeciesDef i ps s):env) def@(Def x ns)
     | i == x    = Just (sub (zip ps ns) s)
@@ -203,7 +205,7 @@ lookupDef _ _ = X.throw $ CpiException
                 "Unexpected pattern: CpiLib.lookupDef expects a Def!"
 
 -- Process lookup by name:
-lookupProcName :: [Definition] -> String -> Maybe Process
+lookupProcName :: Env -> String -> Maybe Process
 lookupProcName [] _ = Nothing
 lookupProcName ((SpeciesDef _ _ _):env) str = lookupProcName env str
 lookupProcName ((ProcessDef name proc):env) str

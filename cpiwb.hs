@@ -32,7 +32,7 @@ prompt = "CPiWB:> "
 
 -- Our environment will be a stack of the Haskeline,
 -- State transformer (of CPi Definitions), and IO monads:
-type Environment = InputT (StateT [Definition] IO)
+type Environment = InputT (StateT Env IO)
 
 -- Main function:
 main :: IO ()
@@ -174,11 +174,11 @@ helpTextTrans = ("trans <process>","Shows the transitions of a process.")
 say = outputStrLn
 
 -- Get the Environment state:
-getEnv :: Environment [Definition]
+getEnv :: Environment Env
 getEnv = lift get
 
 -- Write the Environment state:
-putEnv :: [Definition] -> Environment ()
+putEnv :: Env -> Environment ()
 putEnv = lift . put
 
 -- Add to the Environment state:

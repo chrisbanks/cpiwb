@@ -137,7 +137,7 @@ instance Nf Concretion where
               | otherwise = ConcNew (AffNet (L.sort ns)) (nf c)
 
 -- Get the Multi-Transition System for a Process:
-processMTS :: [Definition] -> Process -> MTS
+processMTS :: Env -> Process -> MTS
 processMTS defs (Process ss net) = finalmts 
     where 
       initmts = transs defs (MTS []) (map fst ss)
@@ -147,7 +147,7 @@ processMTS defs (Process ss net) = finalmts
 
 -- Given an initial MTS calculate the complete transition graph:
 -- NOTE: will not terminate for infinite state models
-fixMTS :: [Definition] -> MTS -> MTS
+fixMTS :: Env -> MTS -> MTS
 fixMTS env mts = calc (openMTS mts) mts 
     where calc (tr:trs) mts'
               | (TransSC _ _ _) <- tr
@@ -169,13 +169,13 @@ mtsCard :: MTS -> Int
 mtsCard x = length $ openMTS x
 
 -- Add the immediate transitions for a species to the MTS:
-trans :: [Definition] -> MTS -> Species -> MTS
+trans :: Env -> MTS -> Species -> MTS
 trans env mts s = trans' env mts s
     where
       trans' env mts s' 
           = ifnotnil (lookupTrans mts s') (\x -> mts) (trans'' env mts s')
           where
-            trans'' :: [Definition] -> MTS -> Species -> MTS
+            trans'' :: Env -> MTS -> Species -> MTS
             -- Nil
             trans'' env mts Nil = mts
             -- Def
@@ -253,7 +253,7 @@ trans env mts s = trans' env mts s
 x ->++ y = MTS ((openMTS x)++(openMTS y))
 
 -- Add multiple species to the MTS:
-transs :: [Definition] -> MTS -> [Species] -> MTS
+transs :: Env -> MTS -> [Species] -> MTS
 transs _ mts [] = mts
 transs defs mts (spec:specs)
     = (transs defs mts' specs)
@@ -315,7 +315,7 @@ appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
  --------------------
 
 -- Prime components of a species:
-primes :: [Definition] -> Species -> [Species]
+primes :: Env -> Species -> [Species]
 primes env spec = primes' env (nf spec)
     where
       primes' env Nil = []
@@ -329,7 +329,7 @@ primes env spec = primes' env (nf spec)
 
 -- Support of a process - prime species in a process:
 -- NOTE: do we want to check conc.>0 ??
-supp :: [Definition] -> Process -> [Species]
+supp :: Env -> Process -> [Species]
 supp env (Process [] _) = []
 supp env (Process [(s,c)] _) = primes env s    
 supp env (Process ((s,c):ps) aff) = (primes env s)++(supp env (Process ps aff))
@@ -348,7 +348,7 @@ cardT :: Trans -> MTS -> Integer
 cardT t (MTS ts) = card t ts
 
 -- cardinality of a species in the prime decomposition of a species
-cardP :: [Definition] -> Species -> Species -> Integer
+cardP :: Env -> Species -> Species -> Integer
 cardP env s s' = card s (primes env s')
 
 -----------------------------------------
@@ -359,7 +359,7 @@ type D = Map (Species,Name,Concretion) Double
 
 
 -- -- the interaction potential
--- partial :: [Definition] -> MTS -> Process -> D
+-- partial :: Env -> MTS -> Process -> D
 -- partial env mts (Process ss net) = partial' env mts ss
 --     where
 --       partial' env mts ss
@@ -372,7 +372,7 @@ type D = Map (Species,Name,Concretion) Double
 --                           ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
 
 -- -- the species embedding
--- embed :: [Definition] -> Species -> P
+-- embed :: Env -> Species -> P
 -- embed env s = embed' $ primes env s
 --     where
 --       embed' ss = (\a->(if (expr a ss) then 1 else 0))
