@@ -335,13 +335,13 @@ supp env (Process [(s,c)] _) = primes env s
 supp env (Process ((s,c):ps) aff) = (primes env s)++(supp env (Process ps aff))
 
 -- The Class 1 (TransSC) transitions of an MTS
-transSC :: MTS -> [Trans]
-transSC (MTS []) = []
-transSC (MTS (t:ts))
+potentials :: MTS -> [Trans]
+potentials (MTS []) = []
+potentials (MTS (t:ts))
     | (TransSC _ _ _) <- t
-        = t:(transSC (MTS (ts)))
+        = t:(potentials (MTS (ts)))
     | otherwise
-        = transSC (MTS (ts))
+        = potentials (MTS (ts))
 
 -- cardinality of a transition in an MTS
 cardT :: Trans -> MTS -> Integer
@@ -356,29 +356,71 @@ cardP env s s' = card s (primes env s')
 type P = Map Species Double
 type D = Map (Species,Name,Concretion) Double
 
+-- Addition of elements in P and D:
+pplus :: P -> P -> P
+pplus x y = Map.unionWith (+) x y
+dplus x y = Map.unionWith (+) x y
 
+-- Interaction potential
+partial :: Env -> Process -> D
+partial env (Process [] _) = Map.empty
+partial env proc@(Process ((spec,conc):ps) _) 
+    = undefined -- TODO:
+      where
+        -- TODO:
+        pots = potentials (processMTS env proc)
 
--- -- the interaction potential
--- partial :: Env -> MTS -> Process -> D
--- partial env mts (Process ss net) = partial' env mts ss
---     where
---       partial' env mts ss
---           = \t@(TransSC s n c) -> (expr t ss)
---       expr _ [] = 0
---       expr t@(TransSC s n c) ((spec,conc):ss) =
---           ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
---       -- NOTE: (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x)
---       expr t _ = X.throw (CpiException
---                           ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
+-- Species embedding
+embed :: Env -> Species -> P
+embed env Nil = Map.empty
+embed env d@(Def _ _) = maybe ex (\s->embed env s) (lookupDef env d)
+    where
+      ex = X.throw $ CpiException
+           ("Error: Tried to embed unknown definition "++(pretty d)++".")
+    -- NOTE: if the Def is in S# maybe we want to embed the Def itself
+    --       rather than its expression? (for UI reasons)
+embed env (Par ss) = foldr pplus Map.empty (map (embed env) ss)
+embed env s = Map.singleton s 1
 
--- -- the species embedding
--- embed :: Env -> Species -> P
--- embed env s = embed' $ primes env s
---     where
---       embed' ss = (\a->(if (expr a ss) then 1 else 0))
---       expr _ [] = False
---       expr a (x:xs) = (a==x)||(expr a xs)
+-- Interaction tensor
+tensor :: Env -> D -> D -> P
+tensor = undefined -- TODO:
 
--- -- the interaction tensor
--- tensor :: AffNet -> D -> D -> P
--- tensor = undefined -- TODO:
+-- Immediate behaviour
+dPdt :: Env -> Process -> P
+dPdt = undefined -- TODO:
+
+{-
+---------------------------
+Here lies an attempted implementation of process semantics 
+in a nice, lazy way...
+---------------------------
+
+type P = Species -> Double
+type D = Trans -> Double
+
+-- the interaction potential
+partial :: Env -> MTS -> Process -> D
+partial env mts (Process ss net) = partial' env mts ss
+    where
+      partial' env mts ss
+          = \t@(TransSC s n c) -> (expr t ss)
+      expr _ [] = 0
+      expr t@(TransSC s n c) ((spec,conc):ss) =
+          ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
+      -- NOTE: (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x)
+      expr t _ = X.throw (CpiException
+                          ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
+
+-- the species embedding
+embed :: Env -> Species -> P
+embed env s = embed' $ primes env s
+    where
+      embed' ss = (\a->(if (expr a ss) then 1 else 0))
+      expr _ [] = False
+      expr a (x:xs) = (a==x)||(expr a xs)
+
+-- the interaction tensor
+tensor :: AffNet -> D -> D -> P
+tensor = undefined -- TODO:
+-}
