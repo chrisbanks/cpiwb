@@ -37,17 +37,17 @@ data MTS = MTS [Trans]
 data Trans = TransSC Species Name Concretion  -- A ----a-----> (x;y)B
            | TransT Species TTau Species      -- A ---t@k----> B
            | TransTA Species TTauAff Species  -- A -t<a,b>@k-> B
-             deriving (Show, Eq)
+             deriving (Show,Eq,Ord)
 
 data Concretion = ConcBase Species OutNames InNames
                 | ConcPar Concretion [Species]
                 | ConcNew AffNet Concretion
-                  deriving (Show, Eq)
+                  deriving (Show,Eq,Ord)
 
 data TTau = TTau Rate
-            deriving (Show, Eq)
+            deriving (Show,Eq,Ord)
 data TTauAff = TTauAff (Name,Name)
-               deriving (Show, Eq)
+               deriving (Show,Eq,Ord)
 
 -- Pretty printing:
 instance Pretty MTS where
@@ -347,28 +347,60 @@ potentials (MTS (t:ts))
 cardT :: Trans -> MTS -> Integer
 cardT t (MTS ts) = card t ts
 
--- cardinality of a species in the prime decomposition of a species
+-- cardinality of a species (s) in the prime decomposition of a species (s')
 cardP :: Env -> Species -> Species -> Integer
-cardP env s s' = card s (primes env s')
+cardP env d@(Def _ _) s' = case lookupDef env d of
+                             Just s -> card (nf s) (primes env s')
+                             Nothing -> X.throw (CpiException 
+                                                 ("Species "++(pretty d)++" not in the Environment."))
+cardP env s s' = card (nf s) (primes env s')
 
 -----------------------------------------
 -- Process space P and potential space D:
 type P = Map Species Double
 type D = Map (Species,Name,Concretion) Double
 
--- Addition of elements in P and D:
+-- Zero vectors:
+p0 :: P
+p0 = Map.empty
+d0 :: D
+d0 = Map.empty
+
+-- Basis vectors:
+p1 :: Species -> P
+p1 x = Map.singleton x 1
+d1 :: (Species,Name,Concretion) -> D
+d1 x = Map.singleton x 1
+
+-- Scaled basis vectors:
+pVec :: Species -> Double -> P
+pVec s x = Map.singleton s x
+dVec :: (Species,Name,Concretion) -> Double -> D
+dVec t x = Map.singleton t x
+
+-- Vector addition in P and D:
 pplus :: P -> P -> P
 pplus x y = Map.unionWith (+) x y
+dplus :: D -> D -> D
 dplus x y = Map.unionWith (+) x y
 
 -- Interaction potential
 partial :: Env -> Process -> D
 partial env (Process [] _) = Map.empty
-partial env proc@(Process ((spec,conc):ps) _) 
-    = undefined -- TODO:
+partial env proc@(Process ps _)
+    = foldr dplus d0 (map partial' ps)
       where
-        -- TODO:
-        pots = potentials (processMTS env proc)
+        partial' (s,c) = foldr dplus d0 
+                         (map (\tr-> 
+                               dVec (triple tr)
+                               ((s2d c)*
+                                (fromInteger(cardT tr mts))*
+                                (fromInteger(cardP env (transSrc tr) s))
+                               )
+                              ) pots)
+        pots = potentials mts
+        mts = processMTS env proc
+        triple (TransSC s n c) = (s,n,c)
 
 -- Species embedding
 embed :: Env -> Species -> P
@@ -379,8 +411,8 @@ embed env d@(Def _ _) = maybe ex (\s->embed env s) (lookupDef env d)
            ("Error: Tried to embed unknown definition "++(pretty d)++".")
     -- NOTE: if the Def is in S# maybe we want to embed the Def itself
     --       rather than its expression? (for UI reasons)
-embed env (Par ss) = foldr pplus Map.empty (map (embed env) ss)
-embed env s = Map.singleton s 1
+embed env (Par ss) = foldr pplus p0 (map (embed env) ss)
+embed env s = p1(s)
 
 -- Interaction tensor
 tensor :: Env -> D -> D -> P
