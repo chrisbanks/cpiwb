@@ -310,9 +310,6 @@ instance Nf Species where
 instance Nf PrefixSpecies where
     nf (p,s) = (p,(nf s))
 
--- TODO: normal form for concretions
-
--- TODO: normal form for processes
 
 ---------------------
 -- Utility functions:
@@ -360,3 +357,8 @@ remove m (x:xs)
 -- cardinality of an element in a list
 card :: (Eq a) => a -> [a] -> Integer
 card e l = toInteger $ length $ filter (\a->a==e) l
+
+-- elements of a triple:
+tri1 (x,_,_) = x
+tri2 (_,x,_) = x
+tri3 (_,_,x) = x
