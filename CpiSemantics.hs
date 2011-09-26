@@ -445,7 +445,20 @@ tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
       
 -- Immediate behaviour
 dPdt :: Env -> Process -> P
-dPdt = undefined -- TODO:
+dPdt _ (Process [] _) = p0
+dPdt env p@(Process [(s,c)] net)
+    = (foldr pplus p0 (map tauexpr taus)) -- TODO: plus potentials expression!
+      where
+        tauexpr (TransT src (TTau r) dst)
+            = (((embed env src) `pminus` (embed env dst)) 
+               `ptimes` (s2d r)) `ptimes` (s2d c)
+        tauexpr _ = X.throw $ CpiException
+                    ("Bug: CpiSemantics.dPdt.tauexpr passed something other than a TransT")
+        taus = [x|x<-openMTS(processMTS env p), tau x]
+        tau (TransT _ _ _) = True
+        tau _ = False
+dPdt env p@(Process ps net)
+    = undefined -- TODO:sum
 
 {-
 ---------------------------
