@@ -23,6 +23,7 @@ import qualified Data.List as L
 import qualified Control.Exception as X
 import qualified Data.Map as Map
 import Data.Map (Map)
+import Data.Maybe
 
 import CpiLib
 
@@ -384,6 +385,18 @@ pplus x y = Map.unionWith (+) x y
 dplus :: D -> D -> D
 dplus x y = Map.unionWith (+) x y
 
+-- Scalar multiplication in P and D:
+ptimes :: P -> Double -> P
+ptimes p v = Map.map (v *) p
+dtimes :: D -> Double -> D
+dtimes d v = Map.map (v *) d
+
+-- Vector subtraction in P and D:
+pminus :: P -> P -> P
+pminus x y = x `pplus` (y `ptimes` (-1))
+dminus :: D -> D -> D
+dminus x y = x `dplus` (y `dtimes` (-1))
+
 -- Interaction potential
 partial :: Env -> Process -> D
 partial env (Process [] _) = Map.empty
@@ -401,6 +414,7 @@ partial env proc@(Process ps _)
         pots = potentials mts
         mts = processMTS env proc
         triple (TransSC s n c) = (s,n,c)
+        triple _ = X.throw $ CpiException ("Bug: CpiSemantics.partial.triple passed something other than a TransSC")
 
 -- Species embedding
 embed :: Env -> Species -> P
@@ -415,9 +429,20 @@ embed env (Par ss) = foldr pplus p0 (map (embed env) ss)
 embed env s = p1(s)
 
 -- Interaction tensor
-tensor :: Env -> D -> D -> P
-tensor = undefined -- TODO:
-
+tensor :: Env -> AffNet -> D -> D -> P
+tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
+    where
+      ds = [(x,y,a,p)
+            |x<-Map.toList ds1, y<-Map.toList ds2,
+             a<-[maybe 0.0 s2d (aff net ((tri2(fst(x))),(tri2(fst(y)))))],
+                a/=0.0,
+             p<-[maybe Nil id (pseudoapp (tri3(fst(x))) (tri3(fst(y))))],
+                p/=Nil
+           ]
+      f (((s,n,c),v),((s',n',c'),v'),a,p)
+          = ((((embed env p) `pminus` (p1 s)) `pminus` (p1 s')) 
+            `ptimes` a) `ptimes` (v*v')
+      
 -- Immediate behaviour
 dPdt :: Env -> Process -> P
 dPdt = undefined -- TODO:

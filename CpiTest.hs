@@ -104,6 +104,13 @@ tTrans'3 = trans [tcSpecP0,tcSpecQ0] (MTS []) tcSum2TauPQ
 
 tLookupDef = lookupDef [tcSpecP0] (tcP) 
 
+-- Test tensor:
+tTensor = do env <- tEnzDefs
+             let net = AffNet [Aff (("e","s"),"1.0")]
+             let e = Process [(Def "E" ["e"],"0.1")] net
+             let s = Process [(Def "S" ["s"],"1.0")] net
+             print $ tensor env net (partial env e) (partial env s)      
+
 ------------------
 -- Test constants:
 ------------------
