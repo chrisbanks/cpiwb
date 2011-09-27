@@ -447,7 +447,8 @@ tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
 dPdt :: Env -> Process -> P
 dPdt _ (Process [] _) = p0
 dPdt env p@(Process [(s,c)] net)
-    = (foldr pplus p0 (map tauexpr taus)) -- TODO: plus potentials expression!
+    = (foldr pplus p0 (map tauexpr taus)) 
+      `pplus` ((tensor env net part1 part1) `ptimes` 0.5)
       where
         tauexpr (TransT src (TTau r) dst)
             = (((embed env src) `pminus` (embed env dst)) 
@@ -457,8 +458,14 @@ dPdt env p@(Process [(s,c)] net)
         taus = [x|x<-openMTS(processMTS env p), tau x]
         tau (TransT _ _ _) = True
         tau _ = False
-dPdt env p@(Process ps net)
-    = undefined -- TODO:sum
+        part1 = partial env (Process [(s,c)] net)
+dPdt env (Process (p:ps) net)
+    = (tensor env net partT partH) `pplus` (dPdt env procT) `pplus` (dPdt env procH)
+      where
+        partH = partial env procH
+        partT = partial env procT
+        procH = Process [p] net
+        procT = Process ps net
 
 {-
 ---------------------------
