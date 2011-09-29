@@ -24,6 +24,7 @@ import CpiODE
 
 import Text.ParserCombinators.Parsec
 import System.IO
+import Data.Map (showTree)
 
 -- Parser Test harnesses:
 tParse :: (Pretty a) => Parser a -> String -> IO ()
@@ -110,7 +111,19 @@ tTensor = do env <- tEnzDefs
              let net = AffNet [Aff (("e","s"),"1.0")]
              let e = Process [(Def "E" ["e"],"0.1")] net
              let s = Process [(Def "S" ["s"],"1.0")] net
-             print $ tensor env net (partial env e) (partial env s)      
+             print $ tensor env net (partial env e) (partial env s)
+
+-- Test tensor':
+tTensor' = do env <- tEnzDefs
+              let net = AffNet [Aff (("e","s"),"1.0")]
+              let e = Process [(Def "E" ["e"],"0.1")] net
+              let s = Process [(Def "S" ["s"],"1.0")] net
+              putStrLn $ showTree $ tensor' env net (partial' env e) (partial' env s)
+
+-- Test symbolic dPdt:
+tdPdt = do env <- tEnzDefs
+           let pi = tEnzPi
+           putStrLn $ showTree $ dPdt' env pi
 
 ------------------
 -- Test constants:
