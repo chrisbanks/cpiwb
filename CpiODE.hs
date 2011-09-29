@@ -42,6 +42,7 @@ import CpiSemantics
 data Expr = Var Species
           | Plus Expr Expr
           | Scale Double Expr
+          | Times Expr Expr
             deriving (Show)
 
 -- Symbolic process space P and potential space D:
@@ -53,6 +54,12 @@ p0' :: P'
 p0' = Map.empty
 d0' :: D'
 d0' = Map.empty
+
+-- Basis vectors:
+p1' :: Species -> P'
+p1' s = Map.singleton s (Var s)
+d1' :: (Species,Name,Concretion) -> D'
+d1' t@(s,n,c) = Map.singleton t (Var s)
 
 -- Construct vectors:
 pVec' :: Species -> Expr -> P'
@@ -67,16 +74,21 @@ dplus' :: D' -> D' -> D'
 dplus' x y = Map.unionWith Plus x y
 
 -- Scalar multiplication in P and D:
-ptimes' :: P' -> Double -> P'
-ptimes' p v = Map.map (Scale v) p
-dtimes' :: D' -> Double -> D'
-dtimes' d v = Map.map (Scale v) d
+ptimes' :: P' -> Expr -> P'
+ptimes' p v = Map.map (Times v) p
+dtimes' :: D' -> Expr -> D'
+dtimes' d v = Map.map (Times v) d
+
+pscale' ::  P' -> Double -> P'
+pscale' p v = Map.map (Scale v) p
+dscale' :: D' -> Double -> D'
+dscale' d v = Map.map (Scale v) d
 
 -- Vector subtraction in P and D:
 pminus' :: P' -> P' -> P'
-pminus' x y = x `pplus'` (y `ptimes'` (-1))
+pminus' x y = x `pplus'` (y `pscale'` (-1))
 dminus' :: D' -> D' -> D'
-dminus' x y = x `dplus'` (y `dtimes'` (-1))
+dminus' x y = x `dplus'` (y `dscale'` (-1))
 
 -- Interaction potential
 partial' :: Env -> Process -> D'
@@ -96,24 +108,21 @@ partial' env proc@(Process ps _)
         triple (TransSC s n c) = (s,n,c)
         triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
 
--- ####################################
--- TODO: Continue adapting from here:
-{-
 -- Species embedding
-embed :: Env -> Species -> P
-embed env Nil = Map.empty
-embed env d@(Def _ _) = maybe ex (\s->embed env s) (lookupDef env d)
+embed' :: Env -> Species -> P'
+embed' env Nil = Map.empty
+embed' env d@(Def _ _) = maybe ex (\s->embed' env s) (lookupDef env d)
     where
       ex = X.throw $ CpiException
            ("Error: Tried to embed unknown definition "++(pretty d)++".")
     -- NOTE: if the Def is in S# maybe we want to embed the Def itself
     --       rather than its expression? (for UI reasons)
-embed env (Par ss) = foldr pplus p0 (map (embed env) ss)
-embed env s = p1(s)
+embed' env (Par ss) = foldr pplus' p0' (map (embed' env) ss)
+embed' env s = p1' s
 
 -- Interaction tensor
-tensor :: Env -> AffNet -> D -> D -> P
-tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
+tensor' :: Env -> AffNet -> D' -> D' -> P'
+tensor' env net ds1 ds2 = foldr pplus' p0' (map f ds)
     where
       ds = [(x,y,a,p)
             |x<-Map.toList ds1, y<-Map.toList ds2,
@@ -123,24 +132,30 @@ tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
                 p/=Nil
            ]
       f (((s,n,c),v),((s',n',c'),v'),a,p)
-          = ((((embed env p) `pminus` (p1 s)) `pminus` (p1 s')) 
-            `ptimes` a) `ptimes` (v*v')
-      
+          = ((((embed' env p) `pminus'` (p1' s)) `pminus'` (p1' s')) 
+            `pscale'` a) `ptimes'` (Times (Var s) (Var s'))
+
+    
 -- Immediate behaviour
-dPdt :: Env -> Process -> P
-dPdt _ (Process [] _) = p0
-dPdt env p@(Process [(s,c)] net)
-    = (foldr pplus p0 (map tauexpr taus)) -- TODO: plus potentials expression!
+dPdt' :: Env -> Process -> P'
+dPdt' _ (Process [] _) = p0'
+dPdt' env p@(Process [(s,c)] net)
+    = (foldr pplus' p0' (map tauexpr taus)) 
+      `pplus'` ((tensor' env net part1 part1) `pscale'` 0.5)
       where
         tauexpr (TransT src (TTau r) dst)
-            = (((embed env src) `pminus` (embed env dst)) 
-               `ptimes` (s2d r)) `ptimes` (s2d c)
+            = (((embed' env src) `pminus'` (embed' env dst)) 
+               `pscale'` (s2d r)) `ptimes'` (Var s)
         tauexpr _ = X.throw $ CpiException
                     ("Bug: CpiSemantics.dPdt.tauexpr passed something other than a TransT")
         taus = [x|x<-openMTS(processMTS env p), tau x]
         tau (TransT _ _ _) = True
         tau _ = False
-dPdt env p@(Process ps net)
-    = undefined -- TODO:sum
-
--}
+        part1 = partial' env (Process [(s,c)] net)
+dPdt' env (Process (p:ps) net)
+    = (tensor' env net partT partH) `pplus'` (dPdt' env procT) `pplus'` (dPdt' env procH)
+      where
+        partH = partial' env procH
+        partT = partial' env procT
+        procH = Process [p] net
+        procT = Process ps net
