@@ -441,6 +441,8 @@ tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
              p<-[maybe Nil id (pseudoapp (tri3(fst(x))) (tri3(fst(y))))],
                 p/=Nil
            ]
+      -- x,y are (Spec,Name,Conc),Concentration);
+      -- a is Rate; p is Species result of pseudoapplication
       f (((s,n,c),v),((s',n',c'),v'),a,p)
           = ((((embed env p) `pminus` (p1 s)) `pminus` (p1 s')) 
             `ptimes` a) `ptimes` (v*v')
