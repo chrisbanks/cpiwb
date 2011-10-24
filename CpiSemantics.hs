@@ -361,6 +361,8 @@ cardP env s s' = card (nf s) (primes env s')
 type P = Map Species Double
 type D = Map (Species,Name,Concretion) Double
 
+prettyP x = concat $ map (\(k,v)->((pretty k)++" |-> "++(show v)++"\n")) (Map.toList x)
+
 -- Zero vectors:
 p0 :: P
 p0 = Map.empty
@@ -407,7 +409,7 @@ partial env proc@(Process ps _)
                          (map (\tr-> 
                                dVec (triple tr)
                                ((s2d c)*
-                                (fromInteger(cardT tr mts))*
+                                -- (fromInteger(cardT tr mts))* [Not needed; we're working on lists not multisets here!]
                                 (fromInteger(cardP env (transSrc tr) s))
                                )
                               ) pots)
