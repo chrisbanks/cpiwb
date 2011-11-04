@@ -43,11 +43,26 @@ data Expr = Var Species
           | Plus Expr Expr
           | Scale Double Expr
           | Times Expr Expr
-            deriving (Show)
+            deriving (Show,Eq,Ord)
+
+instance Pretty Expr where
+    pretty (Var x) = "[" ++ (pretty x) ++ "]"
+    pretty (Plus x y) = pretty x ++ " + " ++ pretty y
+    pretty (Times (Plus x y) (Plus x' y')) = "(" ++ pretty (Plus x y) ++ ") * (" ++ pretty (Plus x' y') ++ ")"
+    pretty (Times (Plus x y) z) = "(" ++ pretty (Plus x y) ++ ") * " ++ pretty z 
+    pretty (Times x (Plus y z)) = pretty x ++ " * (" ++ pretty (Plus y z) ++ ")"
+    pretty (Times x y) = pretty x ++ " * " ++ pretty y
+    pretty (Scale k (Plus x y)) = (show k) ++ " * (" ++ pretty (Plus x y) ++ ")"
+    pretty (Scale k x) = (show k) ++ " * " ++ pretty x
+    -- show (Const k) = k
+    -- TODO: Used Marek's print fun for now, needs sorting out?
 
 -- Symbolic process space P and potential space D:
 type P' = Map Species Expr 
 type D' = Map (Species,Name,Concretion) Expr
+
+-- pretty print our symbolic immediate behaviour:
+prettyP' x = concat $ map (\(k,v)->((pretty k)++" |-> "++(pretty v)++"\n")) (Map.toList x)
 
 -- Zero vectors:
 p0' :: P'
@@ -55,105 +70,80 @@ p0' = Map.empty
 d0' :: D'
 d0' = Map.empty
 
--- Basis vectors:
-p1' :: Species -> P'
-p1' s = Map.singleton s (Var s)
-d1' :: (Species,Name,Concretion) -> D'
-d1' t@(s,n,c) = Map.singleton t (Var s)
-
--- Construct vectors:
-pVec' :: Species -> Expr -> P'
-pVec' s x = Map.singleton s x
+-- vector constructors:
+pVec' :: Env -> Species -> Expr -> P'
+pVec' env s x 
+    = foldr (\s' -> \m -> Map.insertWith Plus s' x m) p0' (primes env s)
 dVec' :: (Species,Name,Concretion) -> Expr -> D'
 dVec' t x = Map.singleton t x
 
--- Vector addition in P and D:
+-- Vector addition in P' and D':
 pplus' :: P' -> P' -> P'
-pplus' x y = Map.unionWith Plus x y
+pplus' x y = Map.unionWith (Plus) x y
 dplus' :: D' -> D' -> D'
-dplus' x y = Map.unionWith Plus x y
+dplus' x y = Map.unionWith (Plus) x y
 
 -- Scalar multiplication in P and D:
-ptimes' :: P' -> Expr -> P'
-ptimes' p v = Map.map (Times v) p
-dtimes' :: D' -> Expr -> D'
-dtimes' d v = Map.map (Times v) d
-
-pscale' ::  P' -> Double -> P'
-pscale' p v = Map.map (Scale v) p
-dscale' :: D' -> Double -> D'
-dscale' d v = Map.map (Scale v) d
+ptimes' :: P' -> Double -> P'
+ptimes' p v = Map.map (Scale v) p
+dtimes' :: D' -> Double -> D'
+dtimes' d v = Map.map (Scale v) d
 
 -- Vector subtraction in P and D:
 pminus' :: P' -> P' -> P'
-pminus' x y = x `pplus'` (y `pscale'` (-1))
+pminus' x y = x `pplus'` (y `ptimes'` (-1))
 dminus' :: D' -> D' -> D'
-dminus' x y = x `dplus'` (y `dscale'` (-1))
+dminus' x y = x `dplus'` (y `dtimes'` (-1))
 
--- Interaction potential
 partial' :: Env -> Process -> D'
-partial' env (Process [] _) = Map.empty
-partial' env proc@(Process ps _)
-    = foldr dplus' d0' (map partial'' ps)
-      where
-        partial'' (s,c) = foldr dplus' d0' 
-                         (map (\tr-> 
-                               dVec' (triple tr)
-                               (Scale ((fromInteger(cardT tr mts))*
-                                       (fromInteger(cardP env (transSrc tr) s))
-                                      ) (Var s))
-                              ) pots)
-        pots = potentials mts
-        mts = processMTS env proc
-        triple (TransSC s n c) = (s,n,c)
-        triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
-
--- Species embedding
-embed' :: Env -> Species -> P'
-embed' env Nil = Map.empty
-embed' env d@(Def _ _) = maybe ex (\s->embed' env s) (lookupDef env d)
+partial' _ (Process [] _) = d0'
+partial' env proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
     where
-      ex = X.throw $ CpiException
-           ("Error: Tried to embed unknown definition "++(pretty d)++".")
-    -- NOTE: if the Def is in S# maybe we want to embed the Def itself
-    --       rather than its expression? (for UI reasons)
-embed' env (Par ss) = foldr pplus' p0' (map (embed' env) ss)
-embed' env s = p1' s
+      partial'' (s,_) = foldr dplus' d0' 
+                        (map (\tr->dVec' (triple tr) (Var s)) 
+                         (filter (only s) pots))
+      pots = potentials mts
+      mts = processMTS env proc
+      triple (TransSC s n c) = (s,n,c)
+      triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
+      only x y
+          | nf x == nf (transSrc y) = True
+          | otherwise = False
 
--- Interaction tensor
 tensor' :: Env -> AffNet -> D' -> D' -> P'
-tensor' env net ds1 ds2 = foldr pplus' p0' (map f ds)
+tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
     where
-      ds = [(x,y,a,p)
+      expr (x,y,p) = pVec' env p (expr' x y) `pminus'`
+                     pVec' env (tri1(fst(x))) (expr' x y) `pminus'`
+                     pVec' env (tri1(fst(y))) (expr' x y)
+      ds = [(x,y,p)
             |x<-Map.toList ds1, y<-Map.toList ds2,
-             a<-[maybe 0.0 s2d (aff net ((tri2(fst(x))),(tri2(fst(y)))))],
-                a/=0.0,
              p<-[maybe Nil id (pseudoapp (tri3(fst(x))) (tri3(fst(y))))],
                 p/=Nil
            ]
-      f (((s,n,c),v),((s',n',c'),v'),a,p)
-          = ((((embed' env p) `pminus'` (p1' s)) `pminus'` (p1' s')) 
-            `pscale'` a) `ptimes'` (Times (Var s) (Var s'))
+      -- above: x,y are (Spec,Name,Conc),Concentration);
+      -- a is Rate; p is Species result of pseudoapplication
+      expr' ((s,n,c),e) ((s',n',c'),e') 
+          = Scale (s2d (maybe "0.0" id (aff net (n,n')))) (Times e e')
 
-    
--- Immediate behaviour
 dPdt' :: Env -> Process -> P'
 dPdt' _ (Process [] _) = p0'
 dPdt' env p@(Process [(s,c)] net)
-    = (foldr pplus' p0' (map tauexpr taus)) 
-      `pplus'` ((tensor' env net part1 part1) `pscale'` 0.5)
+    = foldr pplus' p0' (map f taus)
+      `pplus'` Map.map (\x->(Scale 0.5 x)) 
+             (tensor' env net (partial' env p) (partial' env p))
       where
-        tauexpr (TransT src (TTau r) dst)
-            = (((embed' env src) `pminus'` (embed' env dst)) 
-               `pscale'` (s2d r)) `ptimes'` (Var s)
-        tauexpr _ = X.throw $ CpiException
-                    ("Bug: CpiSemantics.dPdt.tauexpr passed something other than a TransT")
-        taus = [x|x<-openMTS(processMTS env p), tau x]
+        taus = [x|x<-openMTS(trans env (MTS []) s), tau x]
         tau (TransT _ _ _) = True
         tau _ = False
-        part1 = partial' env (Process [(s,c)] net)
+        f (TransT src r dst)
+            = pVec' env dst (Scale k (Var s)) `pplus'` 
+              pVec' env s (Scale (-1*k) (Var s))
+                  where k = s2d $ rate r
+                        rate (TTau r) = r
+        f _ = X.throw $ CpiException ("Bug: CpiODE.dPdt'.f passed something other than a TransT")
 dPdt' env (Process (p:ps) net)
-    = (tensor' env net partT partH) `pplus'` (dPdt' env procT) `pplus'` (dPdt' env procH)
+    = (tensor' env net partH partT) `pplus'` (dPdt' env procH)  `pplus'` (dPdt' env procT) 
       where
         partH = partial' env procH
         partT = partial' env procT
