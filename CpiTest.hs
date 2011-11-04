@@ -24,7 +24,7 @@ import CpiODE
 
 import Text.ParserCombinators.Parsec
 import System.IO
-import Data.Map (showTree)
+import qualified Data.Map as Map
 
 -- Parser Test harnesses:
 tParse :: (Pretty a) => Parser a -> String -> IO ()
@@ -76,7 +76,9 @@ tTrans = do file <- readFile "testEnzyme.cpi"
 tEnzDefs = do file <- readFile "testEnzyme.cpi"
               return ((\(Right x) -> x)(parse pDefinitionLines "" file))
 
-tEnzPi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
+tEnzPi = Process [(Def "S" ["s"],"2.3"),(Def "E" ["e"],"0.2"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.1")])
+
+tEnzPi' = Process [(Def "S" ["s"],"2.3"),(Def "E" ["e"],"0.2"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"0.9"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "S" ["s"]),(Comm "u" [] [],Def "P" [])]])),"0.0")] (AffNet [Aff (("e","s"),"1.1")])
 
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
@@ -118,12 +120,17 @@ tTensor' = do env <- tEnzDefs
               let net = AffNet [Aff (("e","s"),"1.0")]
               let e = Process [(Def "E" ["e"],"0.1")] net
               let s = Process [(Def "S" ["s"],"1.0")] net
-              putStrLn $ showTree $ tensor' env net (partial' env e) (partial' env s)
+              putStrLn $ prettyMap $ tensor' env net (partial' env e) (partial' env s)
 
 -- Test symbolic dPdt:
 tdPdt = do env <- tEnzDefs
-           let pi = tEnzPi
-           putStrLn $ showTree $ dPdt' env pi
+           let pi = tEnzPi'
+           putStrLn $ prettyMap $ dPdt' env pi
+
+prettyMap map = pp (Map.toList map)
+    where
+      pp [] = []
+      pp ((x,y):z) = pretty x ++ " ===> " ++ pretty y ++ "\n" ++ pp z
 
 ------------------
 -- Test constants:
