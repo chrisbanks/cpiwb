@@ -100,10 +100,9 @@ partial' _ (Process [] _) = d0'
 partial' env proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
     where
       partial'' (s,_) = foldr dplus' d0' 
-                        (map (\tr->dVec' (triple tr) (Var s)) 
-                         (filter (only s) pots))
-      pots = potentials mts
-      mts = processMTS env proc
+                        (map (\tr->dVec' (triple tr) (Var s)) (pots s))
+      pots x = potentials (trans env (MTS []) x)
+      -- mts = processMTS env proc
       triple (TransSC s n c) = (s,n,c)
       triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
       only x y
