@@ -232,6 +232,7 @@ sub subs (Sum ps) = (Sum (map prefixSub ps))
 sub subs (Par ss) = (Par (map (sub subs) ss))
 sub subs (New net s) = (New net (sub subs' s))
     where subs' = [x | x <- subs, not (elem (fst x) (sites net))]
+-- FIXME: (see above note on name capture^) + if snd(subs) is in net then sub all net names for a fresh alternative (e.g. add an integer and check fresh) and sub these into the term.... ?? So in above example the a,u,t should be subbed with fresh names, then e subbed in as normal.
 
 -- Substitution on name vectors
 nameSub :: [Name] -> [(Name,Name)] -> [Name]
