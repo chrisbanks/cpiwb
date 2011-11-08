@@ -26,6 +26,15 @@ import Text.ParserCombinators.Parsec
 import System.IO
 import qualified Data.Map as Map
 
+import qualified Numeric.GSL as GSL
+import qualified Numeric.LinearAlgebra as LA
+import qualified Graphics.Plot as Plot
+
+
+-----------------------------------
+-- Parser tests:
+-----------------------------------
+
 -- Parser Test harnesses:
 tParse :: (Pretty a) => Parser a -> String -> IO ()
 tParse p input = case (parse p "" input) of
@@ -167,3 +176,24 @@ tcC1 = ConcBase (Par [tcXx,tcSs]) ["a"] ["s"]
 tcC2 = ConcPar tcC1 [tcQ,tcP]
 
 tcNestPar = Par [tcQ, tcP,Par [tcXx,Par [tcSs,Nil]]]
+
+
+
+-----------------------------------
+-- ODE solver tests
+-----------------------------------
+
+
+-- -- xdot t [x,v] = [v, -0.95*x - 0.1*v]
+-- xdot t [e,s,p,c] = [-1.1*e*s - 0.9*c + 0.5*c,
+--                     -1.1*e*s + 0.9*c,
+--                     -0.5*p + 0.5*c,
+--                     1.1*e*s - 0.9*c - 0.5*c]
+-- ts = LA.linspace 100 (0,20)
+-- -- sol = GSL.odeSolve xdot [10,0] ts
+-- sol = GSL.odeSolve xdot [0.2,2.3,0,0] ts
+-- tODE = Plot.mplot (ts : LA.toColumns sol)
+
+tXdot = do env <- tEnzDefs
+           let pi = tEnzPi'
+           return $ xdot env (dPdt' env pi)
