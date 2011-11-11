@@ -85,9 +85,9 @@ tTrans = do file <- readFile "testEnzyme.cpi"
 tEnzDefs = do file <- readFile "testEnzyme.cpi"
               return ((\(Right x) -> x)(parse pDefinitionLines "" file))
 
-tEnzPi = Process [(Def "S" ["s"],"2.3"),(Def "E" ["e"],"0.2"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.1")])
+tEnzPi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
 
-tEnzPi' = Process [(Def "S" ["s"],"2.3"),(Def "E" ["e"],"0.2"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"0.9"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "S" ["s"]),(Comm "u" [] [],Def "P" [])]])),"0.0")] (AffNet [Aff (("e","s"),"1.1")])
+tEnzPi' = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.5"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"1.0"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "u" [] [],Def "S" ["s"]),(Comm "t" [] [],Def "P" [])]])),"0.0")] (AffNet [Aff (("e","s"),"1.0")])
 
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
@@ -184,16 +184,20 @@ tcNestPar = Par [tcQ, tcP,Par [tcXx,Par [tcSs,Nil]]]
 -----------------------------------
 
 
--- -- xdot t [x,v] = [v, -0.95*x - 0.1*v]
--- xdot t [e,s,p,c] = [-1.1*e*s - 0.9*c + 0.5*c,
---                     -1.1*e*s + 0.9*c,
---                     -0.5*p + 0.5*c,
---                     1.1*e*s - 0.9*c - 0.5*c]
--- ts = LA.linspace 100 (0,20)
--- -- sol = GSL.odeSolve xdot [10,0] ts
--- sol = GSL.odeSolve xdot [0.2,2.3,0,0] ts
--- tODE = Plot.mplot (ts : LA.toColumns sol)
+-- xdot t [x,v] = [v, -0.95*x - 0.1*v]
+txdot t [e,s,p,c] = [(-1.0)*1.1*e*s + (-1.0)*0.9*c + 0.5*c,
+                    (-1.0)*1.1*e*s + 0.9*c,
+                    (-1.0)*0.5*p + 0.5*c,
+                    1.1*e*s + (-1.0)*0.9*c + (-1.0)*0.5*c]
+txdot _ _ = undefined
+ts = LA.linspace 250 (0,25)
+-- sol = GSL.odeSolve xdot [10,0] ts
+sol = GSL.odeSolve txdot [0.4,2.3,0,0] ts
+tODE = Plot.mplot (ts : LA.toColumns sol)
 
 tXdot = do env <- tEnzDefs
            let pi = tEnzPi'
-           return $ xdot env (dPdt' env pi)
+           let x = xdot env (dPdt' env pi)
+           print x
+           {-let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
+           Plot.mplot (ts : LA.toColumns sol')-}

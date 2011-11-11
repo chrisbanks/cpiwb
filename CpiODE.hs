@@ -34,7 +34,8 @@ import CpiSemantics
 -- Output the ODEs describing a CPi system
 --------------------------------------------
 
-xdot env p = vmap -- TODO:
+--xdot :: Env -> P' -> (Double -> [Double] -> [Double])
+xdot env p = vmap
     where
       -- replace species with their Defs (for human reading):
       key2Def :: Env -> [(Species,Expr)] -> [(Species,Expr)]
@@ -45,18 +46,26 @@ xdot env p = vmap -- TODO:
       p' = key2Def env (Map.toList p)
       -- map species to vars:
       -- TODO: cache the map of vars->defs (in Env)?
-      -- NOTE: Do we actually need this? I don't think so.
-      defs2vars :: [(Species,Expr)] -> [String] -> [(Species,String)]
+      defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
       defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
       defs2vars [] _ = []
       defs2vars _ [] = X.throw $ CpiException "CpiODE.xdot: run out of vars!"
-      xvars :: [String]
-      xvars = [x++(show n)|x<-["x"],n<-[1..]]
-      vmap :: [(Species,String)]
+      xvars :: [Int]
+      xvars = [0..]
+      vmap :: [(Species,Int)]
       vmap = defs2vars p' xvars
-      -- get ODE expressions from CPi expressions:
-      toODE ((k,v):ks) vars = undefined -- TODO: define
-      -- xdot' t vs = toODE ...
+      -- get ODE expressions from P' expressions:
+      toODE :: [(Species,Expr)] -> [(Species,Int)] -> [Double] -> [Double]
+      toODE ps vmap xs = map (convert . snd) ps
+          where
+            convert (Var s') = xs!!(maybe (err s') id (lookup s' vmap))
+            convert (Plus e e') = (convert e) + (convert e')
+            convert (Scale d e) = d * (convert e)
+            convert (Times e e') = (convert e) * (convert e')
+            err s' = X.throw $ CpiException 
+                     ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
+      -- the xdot function we need to return
+      xdot' t xs = toODE p' vmap xs
 
 --------------------------------------------
 -- Symbolic semantics
