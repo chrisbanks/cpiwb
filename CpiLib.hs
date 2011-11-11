@@ -140,7 +140,7 @@ instance Ord Definition where
     compare (ProcessDef n _)   (ProcessDef n' _)   = compare n n'
 
 prettyNames :: [Name] -> String
-prettyNames ns = concat(L.intersperse "," (L.sort ns))
+prettyNames ns = concat(L.intersperse "," ns)
 
 -- Parenthesisation
 prettyPs :: Species -> Species -> String
