@@ -220,11 +220,12 @@ trans env mts s = trans' env mts s
                                   taus'' _ [] = []
                             taus' _ [] _ = []
                     transPar [] alphas taus
-                        = ((evs alphas)++taus)
+                        = ((evs alphas)++taus) 
                           where 
                             evs ((TransT src tau dst):ts)
-                                = (TransT s tau (Par (replace src dst ss))):(evs ts)
-                            evs (_:ts) = evs ts
+                                = (TransT s tau (nf(Par (replace src dst ss)))):(evs ts)
+                            evs ((TransSC src n dst):ts) 
+                                = (TransSC s n (nf(ConcPar dst (remove src ss)))):(evs ts)
                             evs [] = []
             -- New
             trans'' env mts (New net c)

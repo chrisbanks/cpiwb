@@ -44,6 +44,16 @@ tParse' p input = case (parse p "" input) of
 tFile x = do f <- readFile x
              tParse' pDefinitionLines f
 
+-- Load an Env for testing:
+tEnv x = do f <- readFile x
+            case parse pDefinitionLines "" f of
+              Left err -> return []
+              Right x -> return x
+
+tProc env x = maybe tEmptyProc id (lookupProcName env x)
+
+tEmptyProc = Process [] (AffNet [])
+
 -------------------------------
 -- Tests for transition system:
 -------------------------------
