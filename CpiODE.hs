@@ -35,7 +35,7 @@ import CpiSemantics
 --------------------------------------------
 
 --xdot :: Env -> P' -> (Double -> [Double] -> [Double])
-xdot env p = vmap
+xdot env p = xdot'
     where
       -- replace species with their Defs (for human reading):
       key2Def :: Env -> [(Species,Expr)] -> [(Species,Expr)]

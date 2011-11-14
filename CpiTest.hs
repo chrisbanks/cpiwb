@@ -87,7 +87,7 @@ tEnzDefs = do file <- readFile "testEnzyme.cpi"
 
 tEnzPi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
 
-tEnzPi' = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.5"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"1.0"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "u" [] [],Def "S" ["s"]),(Comm "t" [] [],Def "P" [])]])),"0.0")] (AffNet [Aff (("e","s"),"1.0")])
+tEnzPi' = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.5"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"1.0"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "P" []),(Comm "u" [] [],Def "S" ["s"])]])),"0.0")] (AffNet [Aff (("e","s"),"1.0")])
 
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
@@ -198,6 +198,6 @@ tODE = Plot.mplot (ts : LA.toColumns sol)
 tXdot = do env <- tEnzDefs
            let pi = tEnzPi'
            let x = xdot env (dPdt' env pi)
-           print x
-           {-let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
-           Plot.mplot (ts : LA.toColumns sol')-}
+           -- return $ x ts [1.0,0,0.5,0]
+           let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
+           Plot.mplot (ts : LA.toColumns sol')
