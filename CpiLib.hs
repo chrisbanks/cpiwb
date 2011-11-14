@@ -271,7 +271,7 @@ instance Nf Species where
         where
           result = nf' s
           nf' Nil = Nil
-          nf' (Def s ns) = Def s (L.sort ns)
+          nf' (Def s ns) = Def s ns
           nf' (Sum []) = Nil
           -- commutativity and associativity of Sum
           nf' (Sum pfs) = Sum (L.sort (map nf pfs))
