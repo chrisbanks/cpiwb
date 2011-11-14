@@ -140,7 +140,7 @@ instance Ord Definition where
     compare (ProcessDef n _)   (ProcessDef n' _)   = compare n n'
 
 prettyNames :: [Name] -> String
-prettyNames ns = concat(L.intersperse "," (L.sort ns))
+prettyNames ns = concat(L.intersperse "," ns)
 
 -- Parenthesisation
 prettyPs :: Species -> Species -> String
@@ -204,6 +204,14 @@ lookupDef ((ProcessDef _ _):env) def = lookupDef env def
 lookupDef _ _ = X.throw $ CpiException 
                 "Unexpected pattern: CpiLib.lookupDef expects a Def!"
 
+-- Reverse definition lookup:
+revLookupDef :: Env -> Species -> Maybe Species
+revLookupDef [] _ = Nothing
+revLookupDef ((SpeciesDef i ps s):env) spec
+    | nf spec == nf s  = Just (Def i ps)
+    | otherwise        = revLookupDef env spec
+revLookupDef ((ProcessDef _ _):env) spec = revLookupDef env spec
+
 -- Process lookup by name:
 lookupProcName :: Env -> String -> Maybe Process
 lookupProcName [] _ = Nothing
@@ -264,7 +272,7 @@ instance Nf Species where
         where
           result = nf' s
           nf' Nil = Nil
-          nf' (Def s ns) = Def s (L.sort ns)
+          nf' (Def s ns) = Def s ns
           nf' (Sum []) = Nil
           -- commutativity and associativity of Sum
           nf' (Sum pfs) = Sum (L.sort (map nf pfs))

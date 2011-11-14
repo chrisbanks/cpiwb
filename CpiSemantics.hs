@@ -98,7 +98,7 @@ instance Nf Concretion where
         where
           result = nf' s
           -- (b;y)(A|B)=A|(b;y)B  when y#A
-          nf' (ConcBase (Par ss) o i) = liftfps ((L.sort o),(L.sort i)) ss [] []
+          nf' (ConcBase (Par ss) o i) = liftfps (o,i) ss [] []
               where
                 liftfps (o,i) [] [] ins
                     = ConcBase (nf (Par ins)) o i
@@ -110,7 +110,7 @@ instance Nf Concretion where
                     | otherwise 
                         = liftfps (o,i) ss outs (s:ins)
           -- (b;y)A=(b;y)B  when A=B
-          nf' (ConcBase s o i) = ConcBase (nf s) (L.sort o) (L.sort i)
+          nf' (ConcBase s o i) = ConcBase (nf s) o i
           -- Commu. and assoc. of ConcPar and F|0 = F
           nf' (ConcPar c []) = nf c
           nf' (ConcPar c ss) 

@@ -26,6 +26,15 @@ import Text.ParserCombinators.Parsec
 import System.IO
 import qualified Data.Map as Map
 
+import qualified Numeric.GSL as GSL
+import qualified Numeric.LinearAlgebra as LA
+import qualified Graphics.Plot as Plot
+
+
+-----------------------------------
+-- Parser tests:
+-----------------------------------
+
 -- Parser Test harnesses:
 tParse :: (Pretty a) => Parser a -> String -> IO ()
 tParse p input = case (parse p "" input) of
@@ -86,9 +95,9 @@ tTrans = do file <- readFile "testEnzyme.cpi"
 tEnzDefs = do file <- readFile "testEnzyme.cpi"
               return ((\(Right x) -> x)(parse pDefinitionLines "" file))
 
-tEnzPi = Process [(Def "S" ["s"],"2.3"),(Def "E" ["e"],"0.2"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.1")])
+tEnzPi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
 
-tEnzPi' = Process [(Def "S" ["s"],"2.3"),(Def "E" ["e"],"0.2"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"0.9"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "S" ["s"]),(Comm "u" [] [],Def "P" [])]])),"0.0")] (AffNet [Aff (("e","s"),"1.1")])
+tEnzPi' = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.5"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"1.0"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "P" []),(Comm "u" [] [],Def "S" ["s"])]])),"0.0")] (AffNet [Aff (("e","s"),"1.0")])
 
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
@@ -177,3 +186,28 @@ tcC1 = ConcBase (Par [tcXx,tcSs]) ["a"] ["s"]
 tcC2 = ConcPar tcC1 [tcQ,tcP]
 
 tcNestPar = Par [tcQ, tcP,Par [tcXx,Par [tcSs,Nil]]]
+
+
+
+-----------------------------------
+-- ODE solver tests
+-----------------------------------
+
+
+-- xdot t [x,v] = [v, -0.95*x - 0.1*v]
+txdot t [e,s,p,c] = [(-1.0)*1.1*e*s + (-1.0)*0.9*c + 0.5*c,
+                    (-1.0)*1.1*e*s + 0.9*c,
+                    (-1.0)*0.5*p + 0.5*c,
+                    1.1*e*s + (-1.0)*0.9*c + (-1.0)*0.5*c]
+txdot _ _ = undefined
+ts = LA.linspace 250 (0,25)
+-- sol = GSL.odeSolve xdot [10,0] ts
+sol = GSL.odeSolve txdot [0.4,2.3,0,0] ts
+tODE = Plot.mplot (ts : LA.toColumns sol)
+
+tXdot = do env <- tEnzDefs
+           let pi = tEnzPi'
+           let x = xdot env (dPdt' env pi)
+           -- return $ x ts [1.0,0,0.5,0]
+           let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
+           Plot.mplot (ts : LA.toColumns sol')

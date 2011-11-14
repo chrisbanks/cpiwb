@@ -23,6 +23,10 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Maybe
 
+import qualified Numeric.GSL as GSL
+import qualified Numeric.LinearAlgebra as LA
+import qualified Graphics.Plot as Plot
+
 import CpiLib
 import CpiSemantics
 
@@ -30,6 +34,38 @@ import CpiSemantics
 -- Output the ODEs describing a CPi system
 --------------------------------------------
 
+--xdot :: Env -> P' -> (Double -> [Double] -> [Double])
+xdot env p = xdot'
+    where
+      -- replace species with their Defs (for human reading):
+      key2Def :: Env -> [(Species,Expr)] -> [(Species,Expr)]
+      key2Def env ((k,v):ks) 
+          = (maybe k id (revLookupDef env k),v) : (key2Def env ks)
+      key2Def _ [] = []
+      p' :: [(Species,Expr)]
+      p' = key2Def env (Map.toList p)
+      -- map species to vars:
+      -- TODO: cache the map of vars->defs (in Env)?
+      defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
+      defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
+      defs2vars [] _ = []
+      defs2vars _ [] = X.throw $ CpiException "CpiODE.xdot: run out of vars!"
+      xvars :: [Int]
+      xvars = [0..]
+      vmap :: [(Species,Int)]
+      vmap = defs2vars p' xvars
+      -- get ODE expressions from P' expressions:
+      toODE :: [(Species,Expr)] -> [(Species,Int)] -> [Double] -> [Double]
+      toODE ps vmap xs = map (convert . snd) ps
+          where
+            convert (Var s') = xs!!(maybe (err s') id (lookup s' vmap))
+            convert (Plus e e') = (convert e) + (convert e')
+            convert (Scale d e) = d * (convert e)
+            convert (Times e e') = (convert e) * (convert e')
+            err s' = X.throw $ CpiException 
+                     ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
+      -- the xdot function we need to return
+      xdot' t xs = toODE p' vmap xs
 
 --------------------------------------------
 -- Symbolic semantics
@@ -48,11 +84,15 @@ data Expr = Var Species
 instance Pretty Expr where
     pretty (Var x) = "[" ++ (pretty x) ++ "]"
     pretty (Plus x y) = pretty x ++ " + " ++ pretty y
-    pretty (Times (Plus x y) (Plus x' y')) = "(" ++ pretty (Plus x y) ++ ") * (" ++ pretty (Plus x' y') ++ ")"
-    pretty (Times (Plus x y) z) = "(" ++ pretty (Plus x y) ++ ") * " ++ pretty z 
-    pretty (Times x (Plus y z)) = pretty x ++ " * (" ++ pretty (Plus y z) ++ ")"
+    pretty (Times (Plus x y) (Plus x' y')) 
+        = "(" ++ pretty (Plus x y) ++ ") * (" ++ pretty (Plus x' y') ++ ")"
+    pretty (Times (Plus x y) z) 
+        = "(" ++ pretty (Plus x y) ++ ") * " ++ pretty z 
+    pretty (Times x (Plus y z)) 
+        = pretty x ++ " * (" ++ pretty (Plus y z) ++ ")"
     pretty (Times x y) = pretty x ++ " * " ++ pretty y
-    pretty (Scale k (Plus x y)) = (show k) ++ " * (" ++ pretty (Plus x y) ++ ")"
+    pretty (Scale k (Plus x y)) 
+        = (show k) ++ " * (" ++ pretty (Plus x y) ++ ")"
     pretty (Scale k x) = (show k) ++ " * " ++ pretty x
     -- show (Const k) = k
     -- TODO: Used Marek's print fun for now, needs sorting out?
