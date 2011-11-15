@@ -89,7 +89,10 @@ commands = [("help",
                      cmdHelp = helpTextProcess}),
             ("trans",
              CmdRec {cmdFn = transCmd,
-                     cmdHelp = helpTextTrans})]
+                     cmdHelp = helpTextTrans}),
+            ("plot",
+             CmdRec {cmdFn = plotCmd,
+                     cmdHelp = helpTextPlot})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -151,6 +154,11 @@ transCmd x = do env <- getEnv;
                   Just proc -> do let mts = processMTS env proc;
                                   say $ pretty mts
 
+-- plot Command
+plotCmd :: String -> Environment ()
+plotCmd x = undefined
+
+
 ----------------------
 -- Command help texts:
 ----------------------
@@ -165,6 +173,7 @@ helpTextClear = ("clear","Clears the environment.")
 helpTextProcess = ("process <definition>","Adds a process definition to the "
                    ++"environment.")
 helpTextTrans = ("trans <process>","Shows the transitions of a process.")
+helpTextPlot = ("plot <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points.")
 
 ---------------------
 -- Utility functions:
