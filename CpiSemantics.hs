@@ -129,10 +129,10 @@ instance Nf Concretion where
                   = nf (ConcNew net' c)
               | net'#<c
                   = nf (ConcNew net c)
-          nf' (ConcNew net@(AffNet ns) (ConcPar c ss))
+          nf' (ConcNew net@(AffNet ns) cp@(ConcPar c ss))
               | net#<c       = ConcPar (nf c) [(nf(New net (Par ss)))]
               | net#(Par ss) = ConcPar (nf (ConcNew net c)) [(nf (Par ss))]
-              | otherwise    = ConcNew (AffNet (L.sort ns)) (nf c)
+              | otherwise    = ConcNew (AffNet (L.sort ns)) (nf cp)
           nf' (ConcNew net@(AffNet ns) c)
               | net#<c    = nf c
               | otherwise = ConcNew (AffNet (L.sort ns)) (nf c)
@@ -226,6 +226,7 @@ trans env mts s = trans' env mts s
                                 = (TransT s tau (nf(Par (replace src dst ss)))):(evs ts)
                             evs ((TransSC src n dst):ts) 
                                 = (TransSC s n (nf(ConcPar dst (remove src ss)))):(evs ts)
+                            evs (_:ts) = evs ts
                             evs [] = []
             -- New
             trans'' env mts (New net c)
