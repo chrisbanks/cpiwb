@@ -34,7 +34,8 @@ import CpiSemantics
 -- Output the ODEs describing a CPi system
 --------------------------------------------
 
---xdot :: Env -> P' -> (Double -> [Double] -> [Double])
+-- Get the ODEs in hmatrix form.
+xdot :: Env -> P' -> (Double -> [Double] -> [Double])
 xdot env p = xdot'
     where
       -- replace species with their Defs (for human reading):
@@ -66,6 +67,23 @@ xdot env p = xdot'
                      ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
       -- the xdot function we need to return
       xdot' t xs = toODE p' vmap xs
+
+-- get the initial conditions from a process:
+initials :: Env -> Process -> [Double]
+initials env p = undefined -- TODO:
+
+-- Get the time points
+timePoints :: Int -> (Double,Double) -> LA.Vector Double
+timePoints r (o,l) = LA.linspace r (o,l)
+
+-- solve the ODEs with hmatrix
+solveODE :: (Double -> [Double] -> [Double]) -> [Double] -> LA.Vector Double ->
+            LA.Matrix Double
+solveODE x init ts = GSL.odeSolve x init ts
+
+-- plot the time series with GNUPlot
+plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
+plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
 --------------------------------------------
 -- Symbolic semantics
@@ -165,6 +183,12 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
       expr' ((s,n,c),e) ((s',n',c'),e') 
           = Scale (s2d (maybe "0.0" id (aff net (n,n')))) (Times e e')
 
+-- The symbolic immediate behaviour (the set of ODEs):
+{- FIXME: this requires the process with all species (inc. generated primes)
+          change this so we take the pre-calculated MTS and get our primes
+          from this. and avoids recalculating the MTS.
+   Can apply this principle for partial too. We also then need a function to
+   get the initial concentratiosn from the process. -}
 dPdt' :: Env -> Process -> P'
 dPdt' _ (Process [] _) = p0'
 dPdt' env p@(Process [(s,c)] net)
