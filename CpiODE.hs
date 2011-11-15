@@ -85,6 +85,7 @@ solveODE x init ts = GSL.odeSolve x init ts
 plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
 plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
+
 --------------------------------------------
 -- Symbolic semantics
 --------------------------------------------
