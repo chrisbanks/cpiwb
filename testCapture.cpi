@@ -12,4 +12,4 @@ species B(b) = {u-v@1}
 species P() = 0;
 species Q() = 0;
 
-process Pi = [1.0] A() || [1.0] B() : {a-b@1};
+process Pi = [1.0] A(a) || [1.0] B(b) : {a-b@1};
