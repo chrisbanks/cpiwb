@@ -258,7 +258,7 @@ net##net' = ((sites net)/\(sites net')) == []
 -- Normal form
 ------------------
 -- The "normal form" here is reduction by structural congruence
--- (not including alpha equiv.) and alphanumeric ordering of term/name lists
+-- (not including alpha equiv.) and alphanumeric ordering of term lists
 -- This allows us to define a smaller equivalence based on the referential
 -- equality (see above).
 class Nf a where
