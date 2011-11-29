@@ -250,8 +250,7 @@ trans env mts s = trans' env mts s
                                         (nf(New net dst)))
                             :(restrict trs)
                       -- restrict tau<n,m> where n or m not in net
-                      | (r = Nothing) && 
-                        (not(null((sites net)/\[n,n']))
+                      | (r == Nothing) && (not(null((sites net) /\ [n,n'])))
                           = restrict trs
                       -- allow tau<n,m> otherwise.
                       | otherwise
