@@ -1,15 +1,15 @@
 -- A model for testing the avoidance of name capture in substitution.
--- A = ν(u-k-v).(v.P|a<u>)
--- B = ν(u-k-v).(v.Q|b(x).x)
--- In a global affinity network where a talks to b, the parallel composition A|B should be able to produce P in two steps, but never Q.  If the u's become confused, then there may be some Q.
+-- A = ν(u-v)a<u>.0
+-- B = ν(u-v)(b(x).u.0|v.P())
 
 species A(a) = {u-v@1}
-			   (v.P()|a<u>.0);
+			   (a<u>.0);
 
 species B(b) = {u-v@1}
-			   (v.Q()|b(x).x.0);
+			   (b(x).u.0|v.P());
 
 species P() = 0;
-species Q() = 0;
+
 
 process Pi = [1.0] A(a) || [1.0] B(b) : {a-b@1};
+process Pi2 = [1.0] B(b) || [1.0] A(a) : {a-b@1};
