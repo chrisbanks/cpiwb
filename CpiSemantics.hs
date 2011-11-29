@@ -234,18 +234,26 @@ trans env mts s = trans' env mts s
                        ++(openMTS mts))
                 where 
                   restrict [] = []
+                  -- restrict (new x...) x.A ----x---> A
                   restrict ((TransSC _ n dst):trs) 
                       | n `elem` (sites net) 
                           = restrict trs
                       | otherwise
                           = (TransSC s n (nf(ConcNew net dst))):(restrict trs)
+                  -- allow taus
                   restrict ((TransT _ t dst):trs)
                           = (TransT s t (nf(New net dst))):(restrict trs)
                   restrict ((TransTA _ t@(TTauAff (n,n')) dst):trs)
+                      -- allow tau<n,m> 
                       | (r /= Nothing)
                           = (TransT s (TTau ((\(Just x)->x)r)) 
                                         (nf(New net dst)))
                             :(restrict trs)
+                      -- restrict tau<n,m> where n or m not in net
+                      | (r = Nothing) && 
+                        (not(null((sites net)/\[n,n']))
+                          = restrict trs
+                      -- allow tau<n,m> otherwise.
                       | otherwise
                           = (TransTA s t (nf(New net dst))):(restrict trs)
                       where r = (aff net (n,n'))
