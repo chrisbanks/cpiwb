@@ -191,8 +191,18 @@ fn (Par []) = []
 fn (Par (x:xs)) = (fn x) \/ (fn (Par xs))
 fn (New n s) = (fn s) \\ (sites n)
 fn (Sum []) = []
-fn (Sum (((Tau r),s):xs)) = fn s
+fn (Sum (((Tau r),s):xs)) = (fn s) \/ (fn (Sum xs))
 fn (Sum (((Comm n o i),s):xs)) = [n] \/ o \/ ((fn s) \\ i) \/ (fn (Sum xs))
+
+bn :: Species -> [Name]
+bn Nil = []
+bn (Def _ _) = []
+bn (Par []) = []
+bn (Par (x:xs)) = (bn x) \/ (bn (Par xs))
+bn (New n s) = (bn s) \/ ((fn s) /\ (sites n))
+bn (Sum []) = []
+bn (Sum (((Tau r),s):xs)) = (bn s) \/ (bn (Sum xs))
+bn (Sum (((Comm n o i),s):xs)) = (bn s) \/ ((fn s) /\ i) \/ (bn (Sum xs))
 
 -- Definition lookup:
 lookupDef :: Env -> Species -> Maybe Species
