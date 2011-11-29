@@ -13,3 +13,11 @@ species P() = 0;
 
 process Pi = [1.0] A(a) || [1.0] B(b) : {a-b@1};
 process Pi2 = [1.0] B(b) || [1.0] A(a) : {a-b@1};
+
+
+-- And another:
+
+species C(c) = {u-v@1}c<u>.0;
+species D(d) = d(x).{u-v@1}x.u.0|v.0;
+
+process Pi3 = [1]C(c) || [1]D(d) : {c-d@1};
