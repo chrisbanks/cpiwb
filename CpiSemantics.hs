@@ -295,11 +295,17 @@ pseudoapp (ConcBase s1 a x) (ConcBase s2 b y)
 pseudoapp c1 (ConcPar c2 s2)
     = maybe Nothing (Just.(\x->Par (x:s2))) (pseudoapp c1 c2)
 pseudoapp c1 (ConcNew net c2)
-    = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
+    | net#<c1
+        = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
+    | otherwise
+        = undefined -- TODO: alpha-convert net first
 pseudoapp (ConcPar c1 ss) c2
     = maybe Nothing (Just.(\x->Par (x:ss))) (pseudoapp c1 c2)
 pseudoapp (ConcNew net c1) c2
-    = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
+    | net#<c2
+        = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
+    | otherwise
+        = undefined -- TODO: alpha-convert net first
 
 -- get the resultants (complexes) of pseudoapplications in an MTS
 appls :: MTS -> [Species]
