@@ -63,6 +63,10 @@ tProc env x = maybe tEmptyProc id (lookupProcName env x)
 
 tEmptyProc = Process [] (AffNet [])
 
+tSpec x = case (parse pSpecies "" x) of
+            Left err -> error $ show err
+            Right x -> return x
+
 -------------------------------
 -- Tests for transition system:
 -------------------------------
