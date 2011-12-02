@@ -204,6 +204,15 @@ bn (Sum []) = []
 bn (Sum (((Tau r),s):xs)) = (bn s) \/ (bn (Sum xs))
 bn (Sum (((Comm n o i),s):xs)) = (bn s) \/ ((fn s) /\ i) \/ (bn (Sum xs))
 
+-- alpha conversion of species:
+aconv :: Species -> [(Name,Name)] -> Species
+aconv Nil _ = Nil
+aconv (Def l ns) subs = (Def l (nameSub ns subs))
+-- TODO: complete + avoid capture!
+
+-- a stream of possible renamings for a given name
+renames x = [x++p | p <- iterate (++"'") "'"]
+
 -- Definition lookup:
 lookupDef :: Env -> Species -> Maybe Species
 lookupDef [] (Def _ _) = Nothing
