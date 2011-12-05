@@ -204,40 +204,9 @@ bn (Sum []) = []
 bn (Sum (((Tau r),s):xs)) = (bn s) \/ (bn (Sum xs))
 bn (Sum (((Comm n o i),s):xs)) = (bn s) \/ ((fn s) /\ i) \/ (bn (Sum xs))
 
--- alpha conversion of species:
-aconv :: Species -> [(Name,Name)] -> Species
-aconv Nil _ = Nil
-aconv (Def l ns) subs = (Def l (nameSub ns subs))
--- TODO: complete + avoid capture!
-
 -- a stream of possible renamings for a given name
-renames x = [x++p | p <- iterate (++"'") "'"]
-
--- Definition lookup:
-lookupDef :: Env -> Species -> Maybe Species
-lookupDef [] (Def _ _) = Nothing
-lookupDef ((SpeciesDef i ps s):env) def@(Def x ns)
-    | i == x    = Just (sub (zip ps ns) s)
-    | otherwise = lookupDef env def
-lookupDef ((ProcessDef _ _):env) def = lookupDef env def
-lookupDef _ _ = X.throw $ CpiException 
-                "Unexpected pattern: CpiLib.lookupDef expects a Def!"
-
--- Reverse definition lookup:
-revLookupDef :: Env -> Species -> Maybe Species
-revLookupDef [] _ = Nothing
-revLookupDef ((SpeciesDef i ps s):env) spec
-    | nf spec == nf s  = Just (Def i ps)
-    | otherwise        = revLookupDef env spec
-revLookupDef ((ProcessDef _ _):env) spec = revLookupDef env spec
-
--- Process lookup by name:
-lookupProcName :: Env -> String -> Maybe Process
-lookupProcName [] _ = Nothing
-lookupProcName ((SpeciesDef _ _ _):env) str = lookupProcName env str
-lookupProcName ((ProcessDef name proc):env) str
-    | (str == name) = Just proc
-    | (otherwise)   = lookupProcName env str
+renames :: Name -> Name
+renames x = concat [x++p | p <- iterate (++"'") "'"]
 
 -- Substitution of names in a Species:
 -- sub (ns,ns') s = find free Names ns in Species s 
@@ -272,6 +241,33 @@ net#s = ((sites net)/\(fn s)) == []
 
 (##) :: AffNet -> AffNet -> Bool
 net##net' = ((sites net)/\(sites net')) == []
+
+-- Definition lookup:
+lookupDef :: Env -> Species -> Maybe Species
+lookupDef [] (Def _ _) = Nothing
+lookupDef ((SpeciesDef i ps s):env) def@(Def x ns)
+    | i == x    = Just (sub (zip ps ns) s)
+    | otherwise = lookupDef env def
+lookupDef ((ProcessDef _ _):env) def = lookupDef env def
+lookupDef _ _ = X.throw $ CpiException 
+                "Unexpected pattern: CpiLib.lookupDef expects a Def!"
+
+-- Reverse definition lookup:
+revLookupDef :: Env -> Species -> Maybe Species
+revLookupDef [] _ = Nothing
+revLookupDef ((SpeciesDef i ps s):env) spec
+    | nf spec == nf s  = Just (Def i ps)
+    | otherwise        = revLookupDef env spec
+revLookupDef ((ProcessDef _ _):env) spec = revLookupDef env spec
+
+-- Process lookup by name:
+lookupProcName :: Env -> String -> Maybe Process
+lookupProcName [] _ = Nothing
+lookupProcName ((SpeciesDef _ _ _):env) str = lookupProcName env str
+lookupProcName ((ProcessDef name proc):env) str
+    | (str == name) = Just proc
+    | (otherwise)   = lookupProcName env str
+
 
 ------------------
 -- Normal form
