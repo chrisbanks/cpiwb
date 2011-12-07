@@ -79,15 +79,41 @@ instance Pretty TTau where
 instance Pretty TTauAff where
     pretty (TTauAff (n1,n2)) = "tau@<"++n1++","++n2++">"
 
--- Free names of concretions:
+-- Free/bound names of concretions:
 fnc :: Concretion -> [Name]
 fnc (ConcBase s o i) = o \/ ((fn s) \\ i)
 fnc (ConcPar c ss) = (fnc c) \/ (fn (Par ss))
 fnc (ConcNew n c) = (fnc c) \\ (sites n)
+bnc :: Concretion -> [Name]
+bnc (ConcBase s o i) = (bn s) \/ ((fn s) /\ i)
+bnc (ConcPar c ss) = (bnc c) \/ (bn (Par ss))
+bnc (ConcNew n c) = (bnc c) \/ ((fnc c) /\ (sites n))
 
 -- Fresh-for test for restricted concretions
 (#<) :: AffNet -> Concretion -> Bool
 net#<c = ((sites net) /\ (fnc c)) == []
+
+-- Renaming function for concretions:
+concRename :: (Name,Name) -> Concretion -> Concretion
+concRename r (ConcBase s ons ins)
+    = ConcBase (rename r s) (vecRename r ons) (vecRename r ins)
+concRename r (ConcPar c ss)
+    = ConcPar (concRename r c) (map (rename r) ss)
+concRename r (ConcNew net c)
+    = ConcNew (netRename r net) (concRename r c)
+
+-- Alpha-conversion of concretions
+concAconv :: (Name,Name) -> Concretion -> Concretion
+concAconv (old,new) c
+    | (not(old `elem` (fnc c))) && (not(new `elem` (fnc c)))
+        = concRename (old,new) c
+    | (new `elem` (fnc c))
+        = X.throw $ CpiException $ 
+          "CpiSemantics.concAconv: " 
+          ++"Tried to alpha-convert to an existing free name."
+    | otherwise
+        = X.throw $ CpiException 
+          "CpiSemantics.concAconv: Tried to alpha-convert a non-bound name."
 
 -- Normal form for concretions
 -- NOTE: see note on normal form in CpiLib
@@ -298,14 +324,35 @@ pseudoapp c1 (ConcNew net c2)
     | net#<c1
         = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
     | otherwise
-        = undefined -- TODO: alpha-convert net first
+        = pseudoapp c1 (makeFresh (ConcNew net c2))
 pseudoapp (ConcPar c1 ss) c2
     = maybe Nothing (Just.(\x->Par (x:ss))) (pseudoapp c1 c2)
 pseudoapp (ConcNew net c1) c2
     | net#<c2
         = maybe Nothing (Just.(\x->New net x)) (pseudoapp c1 c2)
     | otherwise
-        = undefined -- TODO: alpha-convert net first
+        = pseudoapp (makeFresh (ConcNew net c1)) c2
+
+-- give a restricted concretion fresh names for its AffNet
+makeFresh :: Concretion -> Concretion
+makeFresh c@(ConcNew net c') = freshen (sites net) c
+    where
+      freshen [] c = c
+      freshen (n:ns) c = freshen ns (concAconv (n,(concRenaming n c)) c)
+makeFresh x = x
+
+-- a fresh renaming of a name in a concretion
+concRenaming :: Name -> Concretion -> Name
+concRenaming n c = renaming' (renames n) c
+    where
+      renaming' (n:ns) c
+          | not(n `elem` (fnc c)) = n
+          | otherwise             = renaming' ns c
+      renaming' [] _
+          = X.throw $ CpiException
+            "CpiSemantics.concRenaming: Renaming stream has been exhausted."
+      -- a stream of possible renamings for a given name
+      renames x = [x++p | p <- iterate (++"'") "'"]
 
 -- get the resultants (complexes) of pseudoapplications in an MTS
 appls :: MTS -> [Species]

@@ -204,36 +204,89 @@ bn (Sum []) = []
 bn (Sum (((Tau r),s):xs)) = (bn s) \/ (bn (Sum xs))
 bn (Sum (((Comm n o i),s):xs)) = (bn s) \/ ((fn s) /\ i) \/ (bn (Sum xs))
 
--- a stream of possible renamings for a given name
-renames :: Name -> Name
-renames x = concat [x++p | p <- iterate (++"'") "'"]
+-- rename the given name in a species:
+rename :: (Name,Name) -> Species -> Species
+rename _ Nil = Nil
+rename r (Def l ns) = Def l (vecRename r ns)
+rename r (Par ss) = Par (map (rename r) ss)
+rename r (New net s) = New (netRename r net) (rename r s)
+rename r (Sum pfxs) = Sum (pfxRename r pfxs)
+      
+-- Renaming on name vectors
+vecRename :: (Name,Name) -> [Name] -> [Name]
+vecRename _ [] = []
+vecRename r@(old,new) (n:ns) 
+    | n == old  = new : vecRename r ns
+    | otherwise = n : vecRename r ns
 
--- Substitution of names in a Species:
--- sub (ns,ns') s = find free Names ns in Species s 
---                  and replace with New Names ns'
--- FIXME: can allow the substitution of names already bound e.g.:
--- !!!!!  A() = New(a,u,t) e<u,t>.a.E(e)
--- !!!!!   sub will allow A{e\a}, but here 'a' is bound!
--- !!!!!  Need to check the name really is free before sub'ing!
+-- Renaming on affinity networks:
+netRename :: (Name,Name) -> AffNet -> AffNet
+netRename r (AffNet affs) = AffNet (netRename' r affs)
+    where
+      netRename' _ [] = []
+      netRename' r@(old,new) ((Aff ((n,n'),p)):affs)
+          | n == old =  (Aff ((new,n'),p)):(netRename' r affs)
+          | n' == old = (Aff ((n,new),p)):(netRename' r affs)
+          | otherwise = (Aff ((n,n'),p)):(netRename' r affs)
+
+-- Renaming on PrefixSpecies
+pfxRename :: (Name,Name) -> [PrefixSpecies] -> [PrefixSpecies]
+pfxRename _ [] = []
+pfxRename r ((pfx,s):pfxs)
+    = ((pfxRename' r pfx),(rename r s)):(pfxRename r pfxs)
+      where
+        pfxRename' _ (Tau rate) = Tau rate
+        pfxRename' r@(old,new) (Comm n ons ins)
+            | n == old  = Comm new (vecRename r ons) (vecRename r ins)
+            | otherwise = Comm n (vecRename r ons) (vecRename r ins)
+
+-- Substitution of free names in a Species:
+-- sub [(n,n')] s = find free Names n in Species s 
+--                  and replace with New Names n'
+-- Substitution is capture avoiding (will alpha-convert to avouid name capture)
 sub :: [(Name,Name)] -> Species -> Species
-sub _ Nil = Nil
-sub subs (Def l ns) = (Def l (nameSub ns subs))
-sub subs (Sum ps) = (Sum (map prefixSub ps))
-    where prefixSub :: PrefixSpecies -> PrefixSpecies
-          prefixSub ((Tau r),s) = ((Tau r),(sub subs s))
-          prefixSub ((Comm n o i),s)
-              = ((Comm (maybe n id (L.lookup n subs)) (nameSub o subs) i),
-                 (sub subs' s))
-                     where subs' = [x | x <- subs, not (elem (fst x) i)]
-sub subs (Par ss) = (Par (map (sub subs) ss))
-sub subs (New net s) = (New net (sub subs' s))
-    where subs' = [x | x <- subs, not (elem (fst x) (sites net))]
--- FIXME: (see above note on name capture^) + if snd(subs) is in net then sub all net names for a fresh alternative (e.g. add an integer and check fresh) and sub these into the term.... ?? So in above example the a,u,t should be subbed with fresh names, then e subbed in as normal.
+sub [] s = s
+sub ((old,new):rs) s
+    -- name to be replaced is free and replacement is not bound
+    -- then go ahead and substitute
+    | (old `elem` (fn s)) && (not(new `elem` (bn s)))
+        = sub rs (rename (old,new) s)
+    -- name to be replaced is free, but replacement is bound
+    -- then alpha-convert the bound name before substituting
+    | (old `elem` (fn s)) && (new `elem` (bn s))
+        = sub ((old,new):rs) (aconv (new,(renaming new s)) s)
+    -- name to be replaced is not in the term, ignore
+    | (not(old `elem` (fn s))) && (not(old `elem` (bn s)))
+        = sub rs s
+    | otherwise
+    -- name to be replaced is not free -- error!
+        = X.throw $ CpiException 
+          "CpiLib.sub: Tried to substitute a non-free name."
 
--- Substitution on name vectors
-nameSub :: [Name] -> [(Name,Name)] -> [Name]
-nameSub [] _ = []
-nameSub (n:ns) ss = (maybe n id (L.lookup n ss)):(nameSub ns ss)
+-- alpha-conversion of species
+aconv :: (Name,Name) -> Species -> Species
+aconv (old,new) s
+    | (not(old `elem` (fn s))) && (not(new `elem` (fn s)))
+        = rename (old,new) s
+    | (new `elem` (fn s))
+        = X.throw $ CpiException 
+          "CpiLib.aconv: Tried to alpha-convert to an existing free name."
+    | otherwise
+        = X.throw $ CpiException 
+          "CpiLib.aconv: Tried to alpha-convert a non-bound name."
+
+-- a fresh renaming of a name in s
+renaming :: Name -> Species -> Name
+renaming n s = renaming' (renames n) s
+    where
+      renaming' (n:ns) s
+          | not(n `elem` (fn s)) = n
+          | otherwise            = renaming' ns s
+      renaming' [] _
+          = X.throw $ CpiException
+            "CpiLib.renaming: Renaming stream has been exhausted."
+      -- a stream of possible renamings for a given name
+      renames x = [x++p | p <- iterate (++"'") "'"]
 
 -- Fresh-for tests for restrictions
 (#) :: AffNet -> Species -> Bool
