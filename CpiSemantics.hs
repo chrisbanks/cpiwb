@@ -372,6 +372,28 @@ appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
           appls'' x (c:cs) 
               = maybe (appls'' x cs) (\y->(y:(appls'' x cs))) (pseudoapp x c)
 
+-- List the distinct prime species in an MTS:
+allPrimes :: Env -> MTS -> [Species]
+allPrimes env (MTS ts) 
+    = nice . L.nub . concat . map (primes env) $ map transSrc ts
+      where
+        nice [] = []
+        nice (s:ss) = maybe s id (revLookupDef env s) : nice ss
+
+-- initial concentration of a species:
+initconc :: Process -> Species -> Double
+initconc (Process scs _) s = initconc' scs s
+    where
+      initconc' ((s',c):scs) s
+          | s == s'   = s2d c
+          | otherwise = initconc' scs s
+      initconc' [] _ = 0
+
+-- complete syntactic process, including all generated primes
+wholeProc :: Env -> Process -> MTS -> Process
+wholeProc env p@(Process scs net) mts = Process scs' net
+    where
+      scs' = map (\s->(s,d2s(initconc p s))) (allPrimes env mts)
 
 --------------------
 -- Process semantics
