@@ -70,7 +70,10 @@ xdot env p = xdot'
 
 -- get the initial conditions from a process:
 initials :: Env -> Process -> [Double]
-initials env p = undefined -- TODO:
+initials env (Process scs _) = initials' scs
+    where
+      initials' [] = []
+      initials' ((_,c):scs) = s2d c : initials' scs
 
 -- Get the time points
 timePoints :: Int -> (Double,Double) -> LA.Vector Double

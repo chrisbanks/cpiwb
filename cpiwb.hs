@@ -18,6 +18,7 @@
 import CpiLib
 import CpiParser
 import CpiSemantics
+import CpiODE
 
 import System.Console.Haskeline
 import Control.Monad.State
@@ -156,7 +157,25 @@ transCmd x = do env <- getEnv;
 
 -- plot Command
 plotCmd :: String -> Environment ()
-plotCmd x = undefined
+plotCmd x = do env <- getEnv;
+               let args = words x
+               -- TODO: properly parse the command!
+               let res = read(args!!4)
+               let start = read(args!!2)
+               let end = read(args!!3)
+               case lookupProcName env (args!!1) of
+                 Nothing   -> say $ "Process \""++(args!!1)
+                              ++"\" is not in the Environment."
+                 Just proc -> do let mts = processMTS env proc
+                                 let proc' = wholeProc env proc mts
+                                 let dpdt = dPdt' env proc'
+                                 let odes = xdot env dpdt
+                                 let inits = initials env proc'
+                                 let ts = timePoints res (start,end)
+                                 let solns = solveODE odes inits ts
+                                 -- plotODE solns ts
+                                 say "done."
+                                 
 
 
 ----------------------
