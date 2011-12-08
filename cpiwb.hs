@@ -24,6 +24,7 @@ import System.Console.Haskeline
 import Control.Monad.State
 
 import qualified Data.List as L
+import qualified Data.Map as Map
 
 
 -- Some configurables:
@@ -160,6 +161,7 @@ plotCmd :: String -> Environment ()
 plotCmd x = do env <- getEnv;
                let args = words x
                -- TODO: properly parse the command!
+               --       and have some defaults?
                let res = read(args!!4)
                let start = read(args!!2)
                let end = read(args!!3)
@@ -170,11 +172,10 @@ plotCmd x = do env <- getEnv;
                                  let proc' = wholeProc env proc mts
                                  let dpdt = dPdt' env proc'
                                  let odes = xdot env dpdt
-                                 let inits = initials env proc'
+                                 let inits = initials proc' dpdt
                                  let ts = timePoints res (start,end)
                                  let solns = solveODE odes inits ts
-                                 -- plotODE solns ts
-                                 say "done."
+                                 lift$lift$plotODE solns ts
                                  
 
 
@@ -230,3 +231,9 @@ param cmdln = let ps = params cmdln in
 
 -- pretty print a list
 prettyList x = L.concat $ L.intersperse "\n" x
+
+-- pretty print a Map
+prettyMap map = pp (Map.toList map)
+    where
+      pp [] = []
+      pp ((x,y):z) = pretty x ++ " ===> " ++ pretty y ++ "\n" ++ pp z
