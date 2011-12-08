@@ -68,12 +68,9 @@ xdot env p = xdot'
       -- the xdot function we need to return
       xdot' t xs = toODE p' vmap xs
 
--- get the initial conditions from a process:
-initials :: Env -> Process -> [Double]
-initials env (Process scs _) = initials' scs
-    where
-      initials' [] = []
-      initials' ((_,c):scs) = s2d c : initials' scs
+-- get the initial concentrations of the primes in process space:
+initials :: Process -> P' -> [Double]
+initials = undefined
 
 -- Get the time points
 timePoints :: Int -> (Double,Double) -> LA.Vector Double
