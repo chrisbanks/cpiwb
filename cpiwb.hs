@@ -92,6 +92,9 @@ commands = [("help",
             ("trans",
              CmdRec {cmdFn = transCmd,
                      cmdHelp = helpTextTrans}),
+            ("odes",
+             CmdRec {cmdFn = odesCmd,
+                     cmdHelp = helpTextOdes}),
             ("plot",
              CmdRec {cmdFn = plotCmd,
                      cmdHelp = helpTextPlot})]
@@ -156,6 +159,19 @@ transCmd x = do env <- getEnv;
                   Just proc -> do let mts = processMTS env proc;
                                   say $ pretty mts
 
+-- odes Command
+odesCmd :: String -> Environment ()
+odesCmd x = do env <- getEnv
+               case lookupProcName env (param x) of
+                 Nothing   -> say $ "Process \""++(param x)
+                              ++"\" is not in the Environment."
+                 Just proc -> do let mts = processMTS env proc
+                                 let proc' = wholeProc env proc mts
+                                 let dpdt = dPdt' env proc'
+                                 say $ prettyMap dpdt
+                                 -- TODO: replace prettyMap with something
+                                 --   that prints the ODEs nicely.
+
 -- plot Command
 plotCmd :: String -> Environment ()
 plotCmd x = do env <- getEnv;
@@ -193,6 +209,7 @@ helpTextClear = ("clear","Clears the environment.")
 helpTextProcess = ("process <definition>","Adds a process definition to the "
                    ++"environment.")
 helpTextTrans = ("trans <process>","Shows the transitions of a process.")
+helpTextOdes = ("odes <process>","Shoes the ODEs for a process.")
 helpTextPlot = ("plot <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points.")
 
 ---------------------
