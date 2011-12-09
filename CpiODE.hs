@@ -69,8 +69,12 @@ xdot env p = xdot'
       xdot' t xs = toODE p' vmap xs
 
 -- get the initial concentrations of the primes in process space:
-initials :: Process -> P' -> [Double]
-initials = undefined
+initials :: Env -> Process -> P' -> [Double]
+initials env proc p' = initials' (Map.toList p')
+    where
+      initials' [] = []
+      initials' ((s,_):ss) = (initconc proc (def' s)):(initials' ss)
+      def' s = maybe s id (revLookupDef env s)
 
 -- Get the time points
 timePoints :: Int -> (Double,Double) -> LA.Vector Double
