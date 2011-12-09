@@ -172,7 +172,7 @@ plotCmd x = do env <- getEnv;
                                  let proc' = wholeProc env proc mts
                                  let dpdt = dPdt' env proc'
                                  let odes = xdot env dpdt
-                                 let inits = initials proc' dpdt
+                                 let inits = initials env proc' dpdt
                                  let ts = timePoints res (start,end)
                                  let solns = solveODE odes inits ts
                                  lift$lift$plotODE solns ts
