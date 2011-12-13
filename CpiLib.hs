@@ -20,6 +20,8 @@
 module CpiLib where
 
 import qualified Data.List as L
+import qualified Data.Map as Map
+import Data.Map (Map)
 import qualified Control.Exception as X
 import qualified Data.Typeable as T
 
@@ -417,6 +419,15 @@ ifnotnil xs f b = f xs
 -- Pretty print a list of pretty printable expressions:
 prettys :: (Pretty a) => [a] -> String
 prettys x = concat $ map (\z->(pretty z)++"\n") x
+
+-- pretty print a list
+prettyList x = L.concat $ L.intersperse "\n" x
+
+-- pretty print a Map
+prettyMap map = pp (Map.toList map)
+    where
+      pp [] = []
+      pp ((x,y):z) = pretty x ++ " ===> " ++ pretty y ++ "\n" ++ pp z
 
 -- Replace first matched element of a list with something else:
 replace :: (Eq a) => a -> a -> [a] -> [a]

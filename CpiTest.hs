@@ -150,10 +150,6 @@ tdPdt = do env <- tEnzDefs
            let pi = tEnzPi'
            putStrLn $ prettyMap $ dPdt' env pi
 
-prettyMap map = pp (Map.toList map)
-    where
-      pp [] = []
-      pp ((x,y):z) = pretty x ++ " ===> " ++ pretty y ++ "\n" ++ pp z
 
 ------------------
 -- Test constants:

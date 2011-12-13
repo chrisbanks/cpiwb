@@ -24,7 +24,6 @@ import System.Console.Haskeline
 import Control.Monad.State
 
 import qualified Data.List as L
-import qualified Data.Map as Map
 
 
 -- Some configurables:
@@ -246,11 +245,3 @@ param cmdln = let ps = params cmdln in
                 []     -> []
                 (p:ps) -> p
 
--- pretty print a list
-prettyList x = L.concat $ L.intersperse "\n" x
-
--- pretty print a Map
-prettyMap map = pp (Map.toList map)
-    where
-      pp [] = []
-      pp ((x,y):z) = pretty x ++ " ===> " ++ pretty y ++ "\n" ++ pp z
