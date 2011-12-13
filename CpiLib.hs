@@ -423,12 +423,6 @@ prettys x = concat $ map (\z->(pretty z)++"\n") x
 -- pretty print a list
 prettyList x = L.concat $ L.intersperse "\n" x
 
--- pretty print a Map
-prettyMap map = pp (Map.toList map)
-    where
-      pp [] = []
-      pp ((x,y):z) = pretty x ++ " ===> " ++ pretty y ++ "\n" ++ pp z
-
 -- Replace first matched element of a list with something else:
 replace :: (Eq a) => a -> a -> [a] -> [a]
 replace _ _ [] = []

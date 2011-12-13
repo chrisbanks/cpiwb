@@ -143,12 +143,12 @@ tTensor' = do env <- tEnzDefs
               let net = AffNet [Aff (("e","s"),"1.0")]
               let e = Process [(Def "E" ["e"],"0.1")] net
               let s = Process [(Def "S" ["s"],"1.0")] net
-              putStrLn $ prettyMap $ tensor' env net (partial' env e) (partial' env s)
+              putStrLn $ prettyODE env $ tensor' env net (partial' env e) (partial' env s)
 
 -- Test symbolic dPdt:
 tdPdt = do env <- tEnzDefs
            let pi = tEnzPi'
-           putStrLn $ prettyMap $ dPdt' env pi
+           putStrLn $ prettyODE env $ dPdt' env pi
 
 
 ------------------

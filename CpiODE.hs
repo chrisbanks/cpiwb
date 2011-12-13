@@ -89,6 +89,13 @@ solveODE x init ts = GSL.odeSolve x init ts
 plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
 plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
+-- pretty print a Map of ODEs:
+prettyODE env map = pp (Map.toList map)
+    where
+      pp [] = []
+      pp ((x,y):z) = pretty(nice x) ++ " ===> " ++ pretty y ++ "\n" ++ pp z
+      nice x = maybe x id (revLookupDef env x)
+
 
 --------------------------------------------
 -- Symbolic semantics

@@ -167,7 +167,7 @@ odesCmd x = do env <- getEnv
                  Just proc -> do let mts = processMTS env proc
                                  let proc' = wholeProc env proc mts
                                  let dpdt = dPdt' env proc'
-                                 say $ prettyMap dpdt
+                                 say $ prettyODE env dpdt
                                  -- TODO: replace prettyMap with something
                                  --   that prints the ODEs nicely.
 
