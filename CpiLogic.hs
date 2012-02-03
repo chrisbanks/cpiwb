@@ -46,3 +46,52 @@ data Val = R Double   -- Real
          | Times Val Val -- x*y
          | Quot Val Val  -- x/y
            deriving Show
+
+
+-------------------------
+-- Pretty printing:
+-------------------------
+
+instance Pretty Formula where
+    pretty T = "true"
+    pretty F = "false"
+    pretty (ValGT x y) = pretty x ++ ">" ++ pretty y
+    pretty (ValGE x y) = pretty x ++ ">=" ++ pretty y
+    pretty (ValLT x y) = pretty x ++ "<" ++ pretty y
+    pretty (ValLE x y) = pretty x ++ "<=" ++ pretty y
+    pretty z@(Conj x y) = parens x z ++ " && " ++ parens y z
+    pretty z@(Disj x y) = parens x z ++ " || " ++ parens y z
+    pretty z@(Until x y) = parens x z ++ " U " ++ parens y z
+    pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
+    pretty z@(Neg x) = "¬" ++ parens x z
+    pretty z@(Necc x) = "G" ++ parens x z
+    pretty z@(Poss x) = "F" ++ parens x z
+
+parens x c
+    | ((prio x)<=(prio c))
+        = pretty x
+    | otherwise
+        = "(" ++ pretty x ++ ")"
+    where
+      prio T = 10
+      prio F = 10
+      prio (Neg _) = 10
+      prio (ValGT _ _) = 30
+      prio (ValGE _ _) = 30
+      prio (ValLT _ _) = 30
+      prio (ValLE _ _) = 30
+      prio (Necc _) = 10
+      prio (Poss _) = 10
+      prio (Until _ _) = 40
+      prio (Conj _ _) = 50
+      prio (Disj _ _) = 50
+      prio (Gtee _ _) = 60
+
+instance Pretty Val where
+    pretty (R d) = show d
+    pretty (Conc s) = "[" ++ pretty s ++ "]"
+    pretty (Deriv s) = "[" ++ pretty s ++ "]'"
+    pretty (Plus x y) = pretty x ++ "+" ++ pretty y
+    pretty (Minus x y) = pretty x ++ "-" ++ pretty y
+    pretty (Times x y) = pretty x ++ "*" ++ pretty y
+    pretty (Quot x y) = pretty x ++ "/" ++ pretty y
