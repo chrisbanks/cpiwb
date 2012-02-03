@@ -211,3 +211,12 @@ tXdot = do env <- tEnzDefs
            -- return $ x ts [1.0,0,0.5,0]
            let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
            Plot.mplot (ts : LA.toColumns sol')
+
+tSeries = do env <- tEnzDefs
+             let pi = tEnzPi'
+             let dpdt = dPdt' env pi
+             let odes = xdot env dpdt
+             let inits = initials env pi dpdt
+             let ts = timePoints 250 (0,25)
+             let soln = solveODE odes inits ts
+             return (ts : LA.toColumns soln)
