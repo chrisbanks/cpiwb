@@ -15,6 +15,8 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
+
 module CpiTest where
 
 import CpiLib
@@ -24,6 +26,7 @@ import CpiODE
 
 import Text.ParserCombinators.Parsec
 import System.IO
+import Data.List as L
 import qualified Data.Map as Map
 
 import qualified Numeric.GSL as GSL
@@ -213,10 +216,13 @@ tXdot = do env <- tEnzDefs
            Plot.mplot (ts : LA.toColumns sol')
 
 tSeries = do env <- tEnzDefs
-             let pi = tEnzPi'
-             let dpdt = dPdt' env pi
+             let pi = tEnzPi
+             let mts = processMTS env pi
+             let pi' = wholeProc env pi mts
+             let dpdt = dPdt' env pi'
              let odes = xdot env dpdt
-             let inits = initials env pi dpdt
+             let inits = initials env pi' dpdt
              let ts = timePoints 250 (0,25)
              let soln = solveODE odes inits ts
-             return (ts : LA.toColumns soln)
+             let ss = speciesIn env dpdt
+             return $ timeSeries ts soln ss
