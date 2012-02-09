@@ -46,7 +46,6 @@ xdot env p = xdot'
       p' :: [(Species,Expr)]
       p' = key2Def env (Map.toList p)
       -- map species to vars:
-      -- TODO: cache the map of vars->defs (in Env)?
       defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
       defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
       defs2vars [] _ = []
@@ -95,6 +94,32 @@ prettyODE env map = pp (Map.toList map)
       pp [] = []
       pp ((x,y):z) = pretty(nice x) ++ " ===> " ++ pretty y ++ "\n" ++ pp z
       nice x = maybe x id (revLookupDef env x)
+
+---------------------------------------
+-- Time series output of ODE solutions:
+---------------------------------------
+
+-- e.g. for sending to the model checker
+
+-- A time series here is a list of time points with corresponding 
+-- map from Species to concentration.
+type TimeSeries = [(Double, Map Species Double)]
+
+-- List of species in a process space (reduced to Defs if possible):
+speciesIn :: Env -> P' -> [Species]
+speciesIn env p = map (\s->maybe s id (revLookupDef env s)) (map fst (Map.toList p))
+
+-- Get the raw time series:
+timeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species]-> TimeSeries
+timeSeries v m ss 
+    = timeSeries' (LA.toList v) (map LA.toList (LA.toColumns (LA.trans m))) ss
+      where
+        timeSeries' [] _ _ = []
+        timeSeries' _ [] _ = []
+        timeSeries' _ _ [] = []
+        timeSeries' (t:ts) (cs:css) ss = (t, Map.fromList (zip ss cs)) : timeSeries' ts css ss
+
+
 
 
 --------------------------------------------
