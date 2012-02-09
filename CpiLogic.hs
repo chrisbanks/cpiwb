@@ -19,6 +19,9 @@ module CpiLogic where
 
 import CpiLib 
 
+import Data.Map (Map)
+import Data.Map as Map
+
 -------------------------
 -- Data Structures:
 -------------------------
@@ -46,6 +49,43 @@ data Val = R Double   -- Real
          | Times Val Val -- x*y
          | Quot Val Val  -- x/y
            deriving Show
+
+
+-------------------------
+-- Model Checking:
+-------------------------
+
+-- This is an implementation of the trace-based model checker for LTL(R)+Guarantee
+
+-- A trace is a time series from the ODE solver:
+type Trace = [(Double, Map Species Double)]
+
+-- The model checking function
+modelCheck :: Trace -> Formula -> Bool
+modelCheck ts (Conj x y) = modelCheck ts x && modelCheck ts y
+modelCheck ts (Disj x y) = modelCheck ts x || modelCheck ts y
+modelCheck ts (Neg x) = not $ modelCheck ts x
+modelCheck (t:ts) (Until x y) = modelCheck (t:ts) y ||
+                                (modelCheck (t:ts) x && modelCheck ts (Until x y))
+modelCheck ts (Gtee p x) = modelCheck (solve (compose p (proc ts))) x
+modelCheck ts atomic = atomCheck ts atomic
+
+-- Model checking atomic propositions:
+atomCheck :: Trace -> Formula -> Bool
+atomCheck = undefined
+
+-- Take a process and get a trace from the solver:
+solve :: Process -> Trace
+solve = undefined
+
+-- Take a trace and derive the CPi process
+-- for its initial state:
+proc :: Trace -> Process
+proc = undefined
+
+-- The compostion of two processes:
+compose :: Process -> Process -> Process
+compose = undefined
 
 
 -------------------------
