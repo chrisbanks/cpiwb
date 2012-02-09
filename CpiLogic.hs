@@ -36,8 +36,8 @@ data Formula = T                      -- True
              | Disj Formula Formula   -- a OR b
              | Neg Formula            -- NOT a
              | Until Formula Formula  -- a U b
-             | Necc Formula           -- G a
-             | Poss Formula           -- F a
+             | Nec Formula           -- G a
+             | Pos Formula           -- F a
              | Gtee Process Formula   -- Pi |> a
                deriving Show
 
@@ -62,17 +62,26 @@ type Trace = [(Double, Map Species Double)]
 
 -- The model checking function
 modelCheck :: Trace -> Formula -> Bool
+modelCheck [] _ = False
+modelCheck _ T = True
+modelCheck _ F = False
+modelCheck ts (ValGT x y) = (getVal ts x) > (getVal ts y)
+modelCheck ts (ValLT x y) = (getVal ts x) < (getVal ts y)
+modelCheck ts (ValGE x y) = (getVal ts x) >= (getVal ts y)
+modelCheck ts (ValLE x y) = (getVal ts x) <= (getVal ts y)
 modelCheck ts (Conj x y) = modelCheck ts x && modelCheck ts y
 modelCheck ts (Disj x y) = modelCheck ts x || modelCheck ts y
 modelCheck ts (Neg x) = not $ modelCheck ts x
 modelCheck (t:ts) (Until x y) = modelCheck (t:ts) y ||
                                 (modelCheck (t:ts) x && modelCheck ts (Until x y))
+modelCheck ts (Pos x) = modelCheck ts (Until T x)
+modelCheck ts (Nec x) = modelCheck ts (Neg (Pos (Neg x)))
 modelCheck ts (Gtee p x) = modelCheck (solve (compose p (proc ts))) x
-modelCheck ts atomic = atomCheck ts atomic
 
--- Model checking atomic propositions:
-atomCheck :: Trace -> Formula -> Bool
-atomCheck = undefined
+
+-- Get a value from the trace:
+getVal :: Trace -> Val -> Double
+getVal = undefined
 
 -- Take a process and get a trace from the solver:
 solve :: Process -> Trace
@@ -104,8 +113,8 @@ instance Pretty Formula where
     pretty z@(Until x y) = parens x z ++ " U " ++ parens y z
     pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
     pretty z@(Neg x) = "¬" ++ parens x z
-    pretty z@(Necc x) = "G" ++ parens x z
-    pretty z@(Poss x) = "F" ++ parens x z
+    pretty z@(Nec x) = "G" ++ parens x z
+    pretty z@(Pos x) = "F" ++ parens x z
 
 parens x c
     | ((prio x)<=(prio c))
@@ -120,8 +129,8 @@ parens x c
       prio (ValGE _ _) = 30
       prio (ValLT _ _) = 30
       prio (ValLE _ _) = 30
-      prio (Necc _) = 10
-      prio (Poss _) = 10
+      prio (Nec _) = 10
+      prio (Pos _) = 10
       prio (Until _ _) = 40
       prio (Conj _ _) = 50
       prio (Disj _ _) = 50
