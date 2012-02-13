@@ -20,7 +20,8 @@ module CpiLogic where
 import CpiLib 
 
 import Data.Map (Map)
-import Data.Map as Map
+import qualified Data.Map as Map
+import qualified Control.Exception as X
 
 -------------------------
 -- Data Structures:
@@ -81,7 +82,14 @@ modelCheck ts (Gtee p x) = modelCheck (solve (compose p (proc ts))) x
 
 -- Get a value from the trace:
 getVal :: Trace -> Val -> Double
-getVal = undefined
+getVal _ (R d) = d
+getVal (t:ts) (Conc s) = maybe 0.0 id (Map.lookup s (snd t))
+getVal (t:ts) (Deriv s) = X.throw $ CpiException "Concentration derivaties not implemeted yet."
+getVal ts (Plus x y) = getVal ts x + getVal ts y
+getVal ts (Minus x y) = getVal ts x - getVal ts y
+getVal ts (Times x y) = getVal ts x * getVal ts y
+getVal ts (Quot x y) = getVal ts x / getVal ts y
+getVal [] _ = 0.0
 
 -- Take a process and get a trace from the solver:
 solve :: Process -> Trace
