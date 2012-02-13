@@ -62,22 +62,24 @@ data Val = R Double   -- Real
 type Trace = [(Double, Map Species Double)]
 
 -- The model checking function
-modelCheck :: Trace -> Formula -> Bool
-modelCheck [] _ = False
-modelCheck _ T = True
-modelCheck _ F = False
-modelCheck ts (ValGT x y) = (getVal ts x) > (getVal ts y)
-modelCheck ts (ValLT x y) = (getVal ts x) < (getVal ts y)
-modelCheck ts (ValGE x y) = (getVal ts x) >= (getVal ts y)
-modelCheck ts (ValLE x y) = (getVal ts x) <= (getVal ts y)
-modelCheck ts (Conj x y) = modelCheck ts x && modelCheck ts y
-modelCheck ts (Disj x y) = modelCheck ts x || modelCheck ts y
-modelCheck ts (Neg x) = not $ modelCheck ts x
-modelCheck (t:ts) (Until x y) = modelCheck (t:ts) y ||
-                                (modelCheck (t:ts) x && modelCheck ts (Until x y))
-modelCheck ts (Pos x) = modelCheck ts (Until T x)
-modelCheck ts (Nec x) = modelCheck ts (Neg (Pos (Neg x)))
-modelCheck ts (Gtee p x) = modelCheck (solve (compose p (proc ts))) x
+modelCheck :: Process -> Formula -> Bool
+modelCheck p f = modelCheck' (solve p) f
+    where
+      modelCheck' [] _ = False
+      modelCheck' _ T = True
+      modelCheck' _ F = False
+      modelCheck' ts (ValGT x y) = (getVal ts x) > (getVal ts y)
+      modelCheck' ts (ValLT x y) = (getVal ts x) < (getVal ts y)
+      modelCheck' ts (ValGE x y) = (getVal ts x) >= (getVal ts y)
+      modelCheck' ts (ValLE x y) = (getVal ts x) <= (getVal ts y)
+      modelCheck' ts (Conj x y) = modelCheck' ts x && modelCheck' ts y
+      modelCheck' ts (Disj x y) = modelCheck' ts x || modelCheck' ts y
+      modelCheck' ts (Neg x) = not $ modelCheck' ts x
+      modelCheck' (t:ts) (Until x y) = modelCheck' (t:ts) y ||
+                                       (modelCheck' (t:ts) x && modelCheck' ts (Until x y))
+      modelCheck' ts (Pos x) = modelCheck' ts (Until T x)
+      modelCheck' ts (Nec x) = modelCheck' ts (Neg (Pos (Neg x)))
+      modelCheck' ts (Gtee p' x) = modelCheck' (solve (compose p' p)) x
 
 
 -- Get a value from the trace:
@@ -94,12 +96,6 @@ getVal [] _ = 0.0
 -- Take a process and get a trace from the solver:
 solve :: Process -> Trace
 solve = undefined
-
--- Take a trace and derive the CPi process
--- for its initial state:
-proc :: Trace -> Process
-proc = undefined
-
 
 
 -------------------------
