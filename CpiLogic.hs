@@ -86,7 +86,7 @@ modelCheck p f = modelCheck' (solve p) f
 getVal :: Trace -> Val -> Double
 getVal _ (R d) = d
 getVal (t:ts) (Conc s) = maybe 0.0 id (Map.lookup s (snd t))
-getVal (t:ts) (Deriv s) = X.throw $ CpiException "Concentration derivaties not implemeted yet."
+getVal (t:ts) (Deriv s) = X.throw $ CpiException "Concentration derivatives not implemeted yet."
 getVal ts (Plus x y) = getVal ts x + getVal ts y
 getVal ts (Minus x y) = getVal ts x - getVal ts y
 getVal ts (Times x y) = getVal ts x * getVal ts y
