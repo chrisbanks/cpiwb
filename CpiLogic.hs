@@ -100,9 +100,6 @@ solve = undefined
 proc :: Trace -> Process
 proc = undefined
 
--- The compostion of two processes:
-compose :: Process -> Process -> Process
-compose = undefined
 
 
 -------------------------

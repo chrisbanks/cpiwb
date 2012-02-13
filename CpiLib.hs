@@ -323,6 +323,23 @@ lookupProcName ((ProcessDef name proc):env) str
     | (str == name) = Just proc
     | (otherwise)   = lookupProcName env str
 
+-- Process composition (p1,p2) -> p1||p2:
+compose :: Process -> Process -> Process
+compose (Process p1 a1) (Process p2 a2)
+    = Process (compSpec p1 p2) (netUnion a1 a2)
+      where
+        compSpec s' ((s,c):ss)
+            | lookup s s' == Nothing
+                = compSpec ((s,c):s') ss
+            | otherwise
+                = compSpec (incSpec s c s') ss
+        compSpec s' [] = s'
+        incSpec s' c' ((s,c):ss)
+            | s == s'
+                = (s,(d2s (s2d c + s2d c'))) : ss
+            | otherwise
+                = (s,c) : incSpec s' c' ss
+        incSpec s' c' [] = [(s',c')]
 
 ------------------
 -- Normal form
