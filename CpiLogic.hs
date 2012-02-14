@@ -18,6 +18,8 @@
 module CpiLogic where
 
 import CpiLib 
+import CpiODE (timeSeries,timePoints,solveODE,xdot,dPdt',speciesIn,initials)
+import CpiSemantics
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -60,10 +62,11 @@ data Val = R Double   -- Real
 
 -- A trace is a time series from the ODE solver:
 type Trace = [(Double, Map Species Double)]
+type LinSpace = ((Double,Double),Int)
 
 -- The model checking function
-modelCheck :: Process -> Formula -> Bool
-modelCheck p f = modelCheck' (solve p) f
+modelCheck :: Env -> Process -> LinSpace -> Formula -> Bool
+modelCheck env p tps f = modelCheck' (solve env tps p) f
     where
       modelCheck' [] _ = False
       modelCheck' _ T = True
@@ -79,7 +82,7 @@ modelCheck p f = modelCheck' (solve p) f
                                        (modelCheck' (t:ts) x && modelCheck' ts (Until x y))
       modelCheck' ts (Pos x) = modelCheck' ts (Until T x)
       modelCheck' ts (Nec x) = modelCheck' ts (Neg (Pos (Neg x)))
-      modelCheck' ts (Gtee p' x) = modelCheck' (solve (compose p' p)) x
+      modelCheck' ts (Gtee p' x) = modelCheck' (solve env tps (compose p' p)) x
 
 
 -- Get a value from the trace:
@@ -94,8 +97,18 @@ getVal ts (Quot x y) = getVal ts x / getVal ts y
 getVal [] _ = 0.0
 
 -- Take a process and get a trace from the solver:
-solve :: Process -> Trace
-solve = undefined
+solve :: Env -> LinSpace -> Process -> Trace
+solve env ((b,e),r) p = timeSeries ts soln ss
+    where
+      ts = timePoints r (b,e)
+      soln = solveODE odes inits ts
+      ss = speciesIn env dpdt
+      odes = xdot env dpdt
+      inits = initials env p' dpdt
+      dpdt = dPdt' env p'
+      p' = wholeProc env p mts
+      mts = processMTS env p
+
 
 
 -------------------------
