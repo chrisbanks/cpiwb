@@ -233,8 +233,21 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
 -- Model checker tests:
 -------------------------
 
-tModelCheck f = do env <- tEnv "testEnzyme.cpi"
-                   let pi = tProc env "Pi"
-                   return $ modelCheck env pi ((0,25),250) f
+tModelCheck p f = do env <- tEnv "testGT.cpi"
+                     let pi = tProc env p
+                     return $ modelCheck env pi ((0,25),250) f
 -- F(S<0.1)
 tF1 = Pos (ValLT (Conc (Def "S" ["s"])) (R 0.1))
+
+-- test gaurantee (introduce an inhibitor)
+inhib = Process [(Def "I" ["i"],"2.0")] (AffNet [Aff (("e","i"),"2.0")])
+tF2 = Gtee inhib tF1
+
+-- G(E>0.001) enzyme never runs out
+tF3 = Nec (ValGT (Conc (Def "E" ["e"])) (R 0.001))
+
+-- still true with inhibitor:
+tF4 = Gtee inhib tF3
+
+-- test nested guarantee (re-solves for every time-point):
+tF5 = Nec (Gtee inhib tF3)
