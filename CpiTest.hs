@@ -23,6 +23,7 @@ import CpiLib
 import CpiParser
 import CpiSemantics
 import CpiODE
+import CpiLogic
 
 import Text.ParserCombinators.Parsec
 import System.IO
@@ -215,8 +216,8 @@ tXdot = do env <- tEnzDefs
            let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
            Plot.mplot (ts : LA.toColumns sol')
 
-tSeries = do env <- tEnzDefs
-             let pi = tEnzPi
+tSeries = do env <- tEnv "testEnzyme.cpi"
+             let pi = tProc env "Pi"
              let mts = processMTS env pi
              let pi' = wholeProc env pi mts
              let dpdt = dPdt' env pi'
@@ -226,3 +227,14 @@ tSeries = do env <- tEnzDefs
              let soln = solveODE odes inits ts
              let ss = speciesIn env dpdt
              return $ timeSeries ts soln ss
+
+
+-------------------------
+-- Model checker tests:
+-------------------------
+
+tModelCheck f = do env <- tEnv "testEnzyme.cpi"
+                   let pi = tProc env "Pi"
+                   return $ modelCheck env pi ((0,25),250) f
+-- F(S<0.1)
+tF1 = Pos (ValLT (Conc (Def "S" ["s"])) (R 0.1))
