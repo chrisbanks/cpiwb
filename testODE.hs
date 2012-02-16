@@ -1,3 +1,0 @@
-import CpiTest
-
-main = tXdot
