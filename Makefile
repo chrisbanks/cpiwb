@@ -1,5 +1,5 @@
 cpiwb : 
-		ghc --make cpiwb
+		ghc -O2 --make cpiwb
 
 clean : 
 		rm *.o *.hi cpiwb
