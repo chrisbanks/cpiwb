@@ -1,7 +1,6 @@
 cpiwb : 
-		ghc -O2 --make cpiwb
+		ghc -O2 -fllvm --make cpiwb
 
 clean : 
-		rm *.o *.hi cpiwb
+		rm cpiwb *.o *.hi
 
-.PHONY : clean cpiwb
