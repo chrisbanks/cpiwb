@@ -23,14 +23,67 @@ import Data.Colour.Names
 import Data.Colour.SRGB
 import Data.Colour
 import Data.Accessor
+import qualified Control.Exception as X
+import CpiLib
+
 
 plot :: [Double] -> [(String,[Double])] -> IO ()
+-- Plots the time series in a GTK window
 plot ts dims = undefined
 
-{--- test data
-testT = [0.0,0.5,1.0,1.5,2.0,2.5,3.0]::[Double]
-testD1 = [0,1,2,3,4,5,6,7]::[Double]
-testD2 = [0,1,2,4,8,16,32,64]::[Double]
+-- gets a plot layout with plots for each dimension
+layout ts dims = undefined
+
+plots :: [Double] -> [AlphaColour Double] -> [(String,[Double])] -> 
+         [Either (Plot Double Double) b]
+-- gets the plots for each dimension
+plots _ _ [] = []
+plots ts (colour:cs) ((lbl,pts):dims) 
+    = (Left $ toPlot $
+       plot_lines_style ^= solidLine 1 colour $
+       plot_lines_values ^= [zip ts pts] $
+       plot_lines_title ^= lbl $
+       defaultPlotLines
+      ) : plots ts cs dims
+plots _ [] _ = X.throw $ CpiException 
+               "CpiPlot.plots: Run out of colours!"
+
+colours :: Int -> [AlphaColour Double]
+-- gives n visually distinct colours
+-- algorithm taken from the MATLAB 'varycolor' function
+-- by Daniel Helmick: http://j.mp/xowLV2
+colours n
+    | n<=0 = []
+    | n==1 = [clr 0 1 0]
+    | n==2 = [clr 0 1 0,clr 0 1 1]
+    | n==3 = [clr 0 1 0,clr 0 1 1,clr 0 0 1]
+    | n==4 = [clr 0 1 0,clr 0 1 1,clr 0 0 1,clr 1 0 1]
+    | n==5 = [clr 0 1 0,clr 0 1 1,clr 0 0 1,clr 1 0 1,clr 1 0 0]
+    | n==6 = [clr 0 1 0,clr 0 1 1,clr 0 0 1,clr 1 0 1,clr 1 0 0,clr 0 0 0]
+    | otherwise = sec 1 ++ sec 2 ++ sec 3 ++ sec 4 ++ sec 5
+    where
+      s = fromIntegral(n `div` 5)
+      e = fromIntegral(n `mod` 5)
+      f x y
+          | x<=y = 1.0
+          | otherwise = 0.0
+      g x = [1..(s+(f x e))]
+      sec x
+          | x==1 = [clr 0 1 ((m-1)/(s+(f x e)-1)) | m<-g x]
+          | x==2 = [clr 0 ((s+(f x e)-m)/(s+(f x e))) 1 | m<-[1..(s+(f x e))]]
+          | x==3 = [clr (m/(s+(f x e))) 0 1 | m<-[1..(s+(f x e))]]
+          | x==4 = [clr 1 0 ((s+(f x e)-m)/(s+(f x e))) | m<-[1..(s+(f x e))]]
+          | x==5 = [clr ((s+(f x e)-m)/(s+(f x e))) 0 0 | m<-[1..(s+(f x e))]]
+          | otherwise = undefined
+
+clr :: Double -> Double -> Double -> AlphaColour Double
+clr r g b = opaque(sRGB r g b)
+
+
+{-- test data
+testT = [0.0,0.1..2500.0]::[Double]
+testD1 = [0,0.1..2500]::[Double]
+testD2 = [x*x|x<-[0,0.1..2500]]::[Double]
 
 testPlot1 = plot_lines_style ^= solidLine 1 (opaque $ sRGB 0.5 0.5 1)
             $ plot_lines_values ^= [zip testT testD1]
