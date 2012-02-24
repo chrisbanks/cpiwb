@@ -1,4 +1,4 @@
--- (C) Copyright Chris Banks 2011
+-- (C) Copyright Chris Banks 2011-2012
 
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
@@ -29,10 +29,11 @@ import CpiLib
 
 plot :: [Double] -> [(String,[Double])] -> IO ()
 -- Plots the time series in a GTK window
-plot ts dims = undefined
+plot ts dims = renderableToWindow (toRenderable (layout ts dims)) 640 480
 
 -- gets a plot layout with plots for each dimension
-layout ts dims = undefined
+layout ts dims = layout1_plots ^= plots ts (colours (length dims)) dims
+                 $ defaultLayout1
 
 plots :: [Double] -> [AlphaColour Double] -> [(String,[Double])] -> 
          [Either (Plot Double Double) b]
