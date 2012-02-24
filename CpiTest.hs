@@ -1,4 +1,4 @@
--- (C) Copyright Chris Banks 2011
+-- (C) Copyright Chris Banks 2011-2012
 
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
@@ -24,6 +24,7 @@ import CpiParser
 import CpiSemantics
 import CpiODE
 import CpiLogic
+import CpiPlot
 
 import Text.ParserCombinators.Parsec
 import System.IO
@@ -251,3 +252,16 @@ tF4 = Gtee inhib tF3
 
 -- test nested guarantee (re-solves for every time-point):
 tF5 = Nec (Gtee inhib tF3)
+
+
+--------------------------
+-- Graph plotting tests:
+--------------------------
+
+tPlot = plot ts dims
+    where
+      ts = [0.0,0.05..60.0] -- ::[Double]
+      {-dims = [("Times 2",map (*2) ts),
+              ("Times 3",map (*3) ts)
+             ]-}
+      dims = [("Sin x + " ++ show x, map sin (map (+x) ts)) | x<-[0..5]]
