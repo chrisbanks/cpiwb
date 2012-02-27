@@ -24,16 +24,22 @@ import Data.Colour.SRGB
 import Data.Colour
 import Data.Accessor
 import qualified Control.Exception as X
+import qualified Numeric.LinearAlgebra as LA
+
 import CpiLib
 
+plotTimeSeries ts soln ss
+    = plot 
+      (LA.toList ts) 
+      (zip (map pretty ss) (map LA.toList (LA.toColumns soln)))
 
 plot :: [Double] -> [(String,[Double])] -> IO ()
 -- Plots the time series in a GTK window
 plot ts dims = renderableToWindow (toRenderable (layout ts dims)) 640 480
 
 -- gets a plot layout with plots for each dimension
-layout ts dims = layout1_plots ^= plots ts (colours (length dims)) dims
-                 $ defaultLayout1
+layout ts dims = layout1_plots ^= plots ts (colours (length dims)) dims $
+                 defaultLayout1
 
 plots :: [Double] -> [AlphaColour Double] -> [(String,[Double])] -> 
          [Either (Plot Double Double) b]
