@@ -28,6 +28,8 @@ import qualified Numeric.LinearAlgebra as LA
 
 import CpiLib
 
+plotTimeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species] -> IO ()
+-- Takes data from the ODE solver and plots them
 plotTimeSeries ts soln ss
     = plot 
       (LA.toList ts) 

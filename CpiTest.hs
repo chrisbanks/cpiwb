@@ -265,3 +265,15 @@ tPlot = plot ts dims
               ("Times 3",map (*3) ts)
              ]-}
       dims = [("Sin x + " ++ show x, map sin (map (+x) ts)) | x<-[0..5]]
+
+tPlotTimeSeries = do env <- tEnv "models/testEnzyme"
+                     let pi = tProc env "Pi"
+                     let mts = processMTS env pi
+                     let pi' = wholeProc env pi mts
+                     let dpdt = dPdt' env pi'
+                     let odes = xdot env dpdt
+                     let inits = initials env pi' dpdt
+                     let ts = timePoints 250 (0,25)
+                     let soln = solveODE odes inits ts
+                     let ss = speciesIn env dpdt
+                     plotTimeSeries ts soln ss
