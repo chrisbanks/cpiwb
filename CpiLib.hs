@@ -341,6 +341,10 @@ compose (Process p1 a1) (Process p2 a2)
                 = (s,c) : incSpec s' c' ss
         incSpec s' c' [] = [(s',c')]
 
+speciesInProc :: Process -> [Species]
+-- List of species in a process
+speciesInProc (Process scs _) = [s | (s,c)<-scs]
+
 ------------------
 -- Normal form
 ------------------
