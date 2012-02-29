@@ -35,12 +35,30 @@ plotTimeSeries ts soln ss
       (LA.toList ts) 
       (zip (map pretty ss) (map LA.toList (LA.toColumns soln)))
 
+plotTimeSeriesToFile :: LA.Vector Double -> LA.Matrix Double -> [Species] -> String -> IO ()
+-- Plots the data to a PDF file
+plotTimeSeriesToFile = undefined {-TODO:-}
+
+plotTimeSeriesFiltered :: LA.Vector Double -> LA.Matrix Double -> [Species] -> [Species] 
+                       -> IO ()
+-- Only plots selected species
+plotTimeSeriesFiltered ts soln ss ss'
+    = plot
+      (LA.toList ts)
+      (filter (\(s,_)-> s `elem` (map specName ss')) 
+       (zip (map specName ss) (map LA.toList (LA.toColumns soln))))
+
 plot :: [Double] -> [(String,[Double])] -> IO ()
 -- Plots the time series in a GTK window
 plot ts dims = renderableToWindow (toRenderable (layout ts dims)) 640 480
 
+plotToFile :: [Double] -> [(String,[Double])] -> IO ()
+-- Plots teh time series to a file
+plotToFile = undefined {-TODO:-}
+
 -- gets a plot layout with plots for each dimension
 layout ts dims = layout1_plots ^= plots ts (colours (length dims)) dims $
+                 -- layout1_legend ^= Nothing $ {-remove to add legend-}
                  defaultLayout1
 
 plots :: [Double] -> [AlphaColour Double] -> [(String,[Double])] -> 
