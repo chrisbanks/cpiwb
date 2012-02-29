@@ -1,4 +1,4 @@
--- (C) Copyright Chris Banks 2011
+-- (C) Copyright Chris Banks 2011-2012
 
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
@@ -19,6 +19,7 @@ import CpiLib
 import CpiParser
 import CpiSemantics
 import CpiODE
+import CpiPlot
 
 import System.Console.Haskeline
 import Control.Monad.State
@@ -190,7 +191,9 @@ plotCmd x = do env <- getEnv;
                                  let inits = initials env proc' dpdt
                                  let ts = timePoints res (start,end)
                                  let solns = solveODE odes inits ts
-                                 lift$lift$plotODE solns ts
+                                 let ss = speciesIn env dpdt
+                                 let ss' = speciesInProc proc
+                                 lift$lift$plotTimeSeriesFiltered ts solns ss ss'
                                  
 
 
