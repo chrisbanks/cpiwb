@@ -345,6 +345,14 @@ speciesInProc :: Process -> [Species]
 -- List of species in a process
 speciesInProc (Process scs _) = [s | (s,c)<-scs]
 
+-- A simplified string representation of a species
+specName :: Species -> String
+specName Nil = "0"
+specName (Def n _) = n
+specName (Par ss) = concat(L.intersperse "|" (map specName ss))
+specName (Sum ps) = concat(L.intersperse "+" (map (specName . snd) ps))
+specName (New _ s) = "(new)" ++ specName s
+
 ------------------
 -- Normal form
 ------------------
