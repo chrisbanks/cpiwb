@@ -46,9 +46,9 @@ species ErkPP(erk,erkp,erkpb,erkpp)
 	= {x-x'@1.0}
 	  erkpp(x;y).(x'.ErkPP(erk,erkp,erkpb,erkpp) + y.ErkP(erk,erkp,erkpb,erkpp));
 
-species MPK3(mpk3)
+species MKP3(mkp3)
 	= {m-m'@1.0}
-	  mkp3(m;y).(m'.MPK3(mpk3) + y.MPK3(mpk3));
+	  mkp3(m;y).(m'.MKP3(mkp3) + y.MKP3(mkp3));
 
 
 process MAPK =    [2.0]Ras(ras)
@@ -62,7 +62,7 @@ process MAPK =    [2.0]Ras(ras)
 		  	   || [10.0]Erk(erk,erkp,erkpb,erkpp)
 		  	   || [0.01]ErkP(erk,erkp,erkpb,erkpp)
 		  	   || [0.01]ErkPP(erk,erkp,erkpb,erkpp)
-		  	   || [2.0]MPK3(mpk3)
+		  	   || [2.0]MKP3(mkp3)
 		  	   : {ras-raf @1.0,
 			   	  pp2a1-rafpb @1.0,
 			 	  rafp-mek @1.0,
