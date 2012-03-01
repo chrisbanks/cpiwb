@@ -28,42 +28,56 @@ import qualified Numeric.LinearAlgebra as LA
 
 import CpiLib
 
-plotTimeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species] -> IO ()
 -- Takes data from the ODE solver and plots them
+plotTimeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species] -> IO ()
 plotTimeSeries ts soln ss
     = plot 
       (LA.toList ts) 
       (zip (map pretty ss) (map LA.toList (LA.toColumns soln)))
 
-plotTimeSeriesToFile :: LA.Vector Double -> LA.Matrix Double -> [Species] -> String -> IO ()
 -- Plots the data to a PDF file
-plotTimeSeriesToFile = undefined {-TODO:-}
+plotTimeSeriesToFile :: LA.Vector Double -> LA.Matrix Double -> [Species] -> String -> IO ()
+plotTimeSeriesToFile ts soln ss file 
+    = plotToFile
+      (LA.toList ts) 
+      (zip (map pretty ss) (map LA.toList (LA.toColumns soln)))
+      file
 
+-- Only plots selected species
 plotTimeSeriesFiltered :: LA.Vector Double -> LA.Matrix Double -> [Species] -> [Species] 
                        -> IO ()
--- Only plots selected species
 plotTimeSeriesFiltered ts soln ss ss'
     = plot
       (LA.toList ts)
-      (filter (\(s,_)-> s `elem` (map pretty ss')) 
-       (zip (map pretty ss) (map LA.toList (LA.toColumns soln))))
+      (filter (\(s,_)-> s `elem` (map specName ss')) 
+       (zip (map specName ss) (map LA.toList (LA.toColumns soln))))
 
-plot :: [Double] -> [(String,[Double])] -> IO ()
+-- Only plots selected species to a PDF file
+plotTimeSeriesToFileFiltered :: LA.Vector Double -> LA.Matrix Double -> [Species] -> [Species] 
+                             -> String -> IO ()
+plotTimeSeriesToFileFiltered ts soln ss ss' file 
+    = plotToFile
+      (LA.toList ts) 
+      (filter (\(s,_)-> s `elem` (map specName ss'))
+       (zip (map pretty ss) (map LA.toList (LA.toColumns soln))))
+      file
+
 -- Plots the time series in a GTK window
+plot :: [Double] -> [(String,[Double])] -> IO ()
 plot ts dims = renderableToWindow (toRenderable (layout ts dims)) 640 480
 
-plotToFile :: [Double] -> [(String,[Double])] -> IO ()
--- Plots teh time series to a file
-plotToFile = undefined {-TODO:-}
+-- Plots the time series to a file
+plotToFile :: [Double] -> [(String,[Double])] -> String -> IO ()
+plotToFile ts dims file = renderableToPDFFile (toRenderable (layout ts dims)) 842 595 file
 
 -- gets a plot layout with plots for each dimension
 layout ts dims = layout1_plots ^= plots ts (colours (length dims)) dims $
                  -- layout1_legend ^= Nothing $ {-remove to add legend-}
                  defaultLayout1
 
+-- gets the plots for each dimension
 plots :: [Double] -> [AlphaColour Double] -> [(String,[Double])] -> 
          [Either (Plot Double Double) b]
--- gets the plots for each dimension
 plots _ _ [] = []
 plots ts (colour:cs) ((lbl,pts):dims) 
     = (Left $ toPlot $
@@ -75,10 +89,10 @@ plots ts (colour:cs) ((lbl,pts):dims)
 plots _ [] _ = X.throw $ CpiException 
                "CpiPlot.plots: Run out of colours!"
 
-colours :: Int -> [AlphaColour Double]
 -- gives n visually distinct colours
 -- algorithm taken from the MATLAB 'varycolor' function
 -- by Daniel Helmick: http://j.mp/xowLV2
+colours :: Int -> [AlphaColour Double]
 colours n
     | n<=0 = []
     | n==1 = [clr 0 1 0]
