@@ -92,7 +92,7 @@ plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 prettyODE env map = pp (Map.toList map)
     where
       pp [] = []
-      pp ((x,y):z) = pretty(nice x) ++ " ===> " ++ pretty y ++ "\n" ++ pp z
+      pp ((x,y):z) = "d[" ++ pretty(nice x) ++ "]/dt ===> " ++ pretty y ++ "\n" ++ pp z
       nice x = maybe x id (revLookupDef env x)
 
 ---------------------------------------
