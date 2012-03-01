@@ -45,8 +45,8 @@ plotTimeSeriesFiltered :: LA.Vector Double -> LA.Matrix Double -> [Species] -> [
 plotTimeSeriesFiltered ts soln ss ss'
     = plot
       (LA.toList ts)
-      (filter (\(s,_)-> s `elem` (map specName ss')) 
-       (zip (map specName ss) (map LA.toList (LA.toColumns soln))))
+      (filter (\(s,_)-> s `elem` (map pretty ss')) 
+       (zip (map pretty ss) (map LA.toList (LA.toColumns soln))))
 
 plot :: [Double] -> [(String,[Double])] -> IO ()
 -- Plots the time series in a GTK window
