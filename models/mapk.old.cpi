@@ -1,0 +1,76 @@
+species Ras(ras) 
+	= {r-r'@1.0} 
+	  ras(r;y).(r'.Ras(ras) + y.Ras(ras)) + tau<1.0>.0;
+
+species Raf(raf,rafp,rafpb)
+	= {x-x'@1.0} 
+	  raf(x;y).(x'.Raf(raf,rafp,rafpb) + y.RafP(raf,rafp,rafpb));
+
+species RafP(raf,rafp,rafpb)
+	= {x-x'@1.0, z-z'@1.0} 
+	  rafp(x;y).(x'.RafP(raf,rafp,rafpb) + y.RafP(raf,rafp,rafpb))
+	  + rafpb(z;y).(z'.RafP(raf,rafp,rafpb) + y.Raf(raf,rafp,rafpb));
+
+species Mek(mek,mekp,mekpb,mekpp,mekppb)
+	= {x-x'@1.0} 
+	  mek(x;y).(x'.Mek(mek,mekp,mekpb,mekpp,mekppb) + y.MekP(mek,mekp,mekpb,mekpp,mekppb));
+
+species MekP(mek,mekp,mekpb,mekpp,mekppb)
+	= {x-x'@1.0, z-z'@1.0}
+	  mekp(x;y).(x'.MekP(mek,mekp,mekpb,mekpp,mekppb) + y.MekPP(mek,mekp,mekpb,mekpp,mekppb))
+	  + mekpb(z;y).(z'.MekP(mek,mekp,mekpb,mekpp,mekppb) + y.Mek(mek,mekp,mekpb,mekpp,mekppb));
+
+species MekPP(mek,mekp,mekpb,mekpp,mekppb)
+	= {x-x'@1.0, z-z'@1.0}
+	  mekpp(x;y).(x'.MekPP(mek,mekp,mekpb,mekpp,mekppb) + y.MekPP(mek,mekp,mekpb,mekpp,mekppb))
+	  + mekppb(z;y).(z'.MekPP(mek,mekp,mekpb,mekpp,mekppb) + y.MekP(mek,mekp,mekpb,mekpp,mekppb));
+
+species PP2A1(pp2a1)
+	= {p-p'@1.0}
+	  pp2a1(p;y).(p'.PP2A1(pp2a1) + y.PP2A1(pp2a1));
+
+species PP2A2(pp2a2)
+	= {p-p'@1.0}
+	  pp2a2(p;y).(p'.PP2A2(pp2a2) + y.PP2A2(pp2a2));
+
+species Erk(erk,erkp,erkpb,erkpp)
+	= {x-x'@1.0}
+	  erk(x;y).(x'.Erk(erk,erkp,erkpb,erkpp) + y.ErkP(erk,erkp,erkpb,erkpp));
+
+species ErkP(erk,erkp,erkpb,erkpp)
+	= {x-x'@1.0, z-z'@1.0}
+	  erkp(x;y).(x'.ErkP(erk,erkp,erkpb,erkpp) + y.ErkPP(erk,erkp,erkpb,erkpp))
+	  + erkpb(z;y).(z'.ErkP(erk,erkp,erkpb,erkpp) + y.Erk(erk,erkp,erkpb,erkpp));
+
+species ErkPP(erk,erkp,erkpb,erkpp)
+	= {x-x'@1.0}
+	  erkpp(x;y).(x'.ErkPP(erk,erkp,erkpb,erkpp) + y.ErkP(erk,erkp,erkpb,erkpp));
+
+species MKP3(mkp3)
+	= {m-m'@1.0}
+	  mkp3(m;y).(m'.MKP3(mkp3) + y.MKP3(mkp3));
+
+
+process MAPK =    [2.0]Ras(ras)
+		  	   || [10.0]Raf(raf,rafp,rafpb)
+		  	   || [0.01]RafP(raf,rafp,rafpb)
+		  	   || [10.0]Mek(mek,mekp,mekpb,mekpp,mekppb)
+		  	   || [0.01]MekP(mek,mekp,mekpb,mekpp,mekppb)
+		  	   || [0.01]MekPP(mek,mekp,mekpb,mekpp,mekppb)
+		  	   || [2.0]PP2A1(pp2a1)
+			   || [2.0]PP2A2(pp2a2)
+		  	   || [10.0]Erk(erk,erkp,erkpb,erkpp)
+		  	   || [0.01]ErkP(erk,erkp,erkpb,erkpp)
+		  	   || [0.01]ErkPP(erk,erkp,erkpb,erkpp)
+		  	   || [2.0]MKP3(mkp3)
+		  	   : {ras-raf @1.0,
+			   	  pp2a1-rafpb @1.0,
+			 	  rafp-mek @1.0,
+			 	  rafp-mekp @1.0,
+			 	  pp2a2-mekpb @1.0,
+			 	  pp2a2-mekppb @1.0,
+			 	  mekpp-erk @1.0,
+			 	  mekpp-erkp @1.0,
+			 	  erkpb-mkp3 @1.0,
+			 	  erkpp-mkp3 @1.0
+				 };
