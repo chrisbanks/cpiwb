@@ -1,0 +1,68 @@
+species Ras(ras) 
+		= {x-u@1.0, x-r@1.0} ras<u,r>.x.Ras(ras)
+		+ tau<1.0>.0
+;
+species Raf(raf,raf',raf'e1,raf'e2) 
+		= raf(u,r).(u.Raf(raf,raf',raf'e1,raf'e2) + r.Raf'(raf,raf',raf'e1,raf'e2))
+;
+species Raf'(raf,raf',raf'e1,raf'e2) 
+		= raf'(u,r).(u.Raf'(raf,raf',raf'e1,raf'e2) + r.Raf(raf,raf',raf'e1,raf'e2))
+		+ {u-x@1.0, r-x@1.0} raf'e1<u,r>.x.Raf'(raf,raf',raf'e1,raf'e2)
+		+ {u-x@1.0, r-x@1.0} raf'e2<u,r>.x.Raf'(raf,raf',raf'e1,raf'e2)
+;
+species PP2A1(pp2a1) 
+		= {u-x@1.0, r-x@1.0} pp2a1<u,r>.x.PP2A1(pp2a1)
+;
+species MEK(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+		= mek(u,r).(u.MEK(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+		  		    + r.MEK'(mek,mek',mek'2,mek'',mek''e1,mek''e2))
+;
+species MEK'(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+		= mek'(u,r).(u.MEK'(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+				     + r.MEK''(mek,mek',mek'2,mek'',mek''e1,mek''e2))
+		+ mek'2(u,r).(u.MEK'(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+                      + r.MEK(mek,mek',mek'2,mek'',mek''e1,mek''e2))
+;
+species MEK''(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+		= mek''(u,r).(u.MEK''(mek,mek',mek'2,mek'',mek''e1,mek''e2) 
+                      + r.MEK'(mek,mek',mek'2,mek'',mek''e1,mek''e2))
+		+ {u-x@1.0, r-x@1.0} mek''e1<u,r>.x.MEK''(mek,mek',mek'2,mek'',mek''e1,mek''e2)
+		+ {u-x@1.0, r-x@1.0} mek''e2<u,r>.x.MEK''(mek,mek',mek'2,mek'',mek''e1,mek''e2)
+;
+species PP2A2(pp2a2e1,pp2a2e2)
+		= {u-x@1.0, r-x@1.0} pp2a2e1<u,r>.x.PP2A2(pp2a2e1,pp2a2e2)
+		+ {u-x@1.0, r-x@1.0} pp2a2e2<u,r>.x.PP2A2(pp2a2e1,pp2a2e2)
+;
+species ERK() 
+		= erk(u,r).(u.ERK() + r.ERK'())
+;
+species ERK'() 
+		= erk'(u,r).(u.ERK'() + r.ERK''())
+		+ erk'2(u,r).(u.ERK'() + r.ERK())
+;
+species ERK''() 
+		= erk''(u,r).(u.ERK''() + r.ERK'())
+;
+species MKP3(mkp3e1,mkp3e2) 
+		= {u-x@1.0, r-x@1.0} mkp3e1.x.MKP3(mkp3e1,mkp3e2)
+		+ {u-x@1.0, r-x@1.0} mkp3e2.x.MKP3(mkp3e1,mkp3e2)
+;
+
+process MAPK 
+	    =  [2.0] Ras()
+		|| [10.0] Raf() || [0] Raf'()
+		|| [10.0] MEK() || [0] MEK'() || [0] MEK''() 
+		|| [10.0] ERK() || [0] ERK'() || [0] ERK''()
+		|| [2.0]  PP2A1() || [2.0]  PP2A2()
+		|| [2.0]  MKP3()
+		: {ras   - raf     @1.0, 
+		   raf'  - pp2a1   @1.0, 
+		   mek   - raf'e1  @1.0, 
+		   mek'  - raf'e2  @1.0,
+		   mek'2 - pp2a2e1 @1.0,
+		   mek'' - pp2a2e2 @1.0,
+		   erk   - mek''e1 @1.0,
+		   erk'  - mek''e2 @1.0,
+		   erk'2 - mkp3e1  @1.0,
+		   erk'' - mkp3e2  @1.0};
+			   
