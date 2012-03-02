@@ -60,7 +60,6 @@ xdot env p = xdot'
           where
             convert (Var s') = xs!!(maybe (err s') id (lookup s' vmap))
             convert (Plus e e') = (convert e) + (convert e')
-            {-convert (Scale d e) = d * (convert e)-}
             convert (Times e e') = (convert e) * (convert e')
             convert (Num d) = d
             err s' = X.throw $ CpiException 
@@ -259,3 +258,23 @@ diff x (Plus a b)
     = Plus (diff x a) (diff x b)
 diff x (Times a b)
     = Plus (Times (diff x a) b) (Times a (diff x b))
+
+-- Simple simplification of an expression
+simp :: Expr -> Expr
+simp x
+    | x==x' = x'
+    | otherwise = simp x'
+    where
+      x' = simp' x
+      simp' (Num n) = Num n
+      simp' (Var s) = Var s
+      simp' (Plus (Num 0.0) b) = b
+      simp' (Plus a (Num 0.0)) = a
+      simp' (Plus (Num a) (Num b)) = Num (a+b)
+      simp' (Plus a b) = Plus (simp a) (simp b)
+      simp' (Times (Num 0.0) b) = Num 0.0
+      simp' (Times a (Num 0.0)) = Num 0.0
+      simp' (Times (Num 1.0) b) = b
+      simp' (Times a (Num 1.0)) = a
+      simp' (Times (Num a) (Num b)) = Num (a*b)
+      simp' (Times a b) = Times (simp a) (simp b)
