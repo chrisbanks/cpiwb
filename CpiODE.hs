@@ -60,8 +60,9 @@ xdot env p = xdot'
           where
             convert (Var s') = xs!!(maybe (err s') id (lookup s' vmap))
             convert (Plus e e') = (convert e) + (convert e')
-            convert (Scale d e) = d * (convert e)
+            {-convert (Scale d e) = d * (convert e)-}
             convert (Times e e') = (convert e) * (convert e')
+            convert (Num d) = d
             err s' = X.throw $ CpiException 
                      ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
       -- the xdot function we need to return
@@ -132,8 +133,8 @@ timeSeries v m ss
 -- We map to an expression, rather than a real value:
 data Expr = Var Species
           | Plus Expr Expr
-          | Scale Double Expr
           | Times Expr Expr
+          | Num Double
             deriving (Show,Eq,Ord)
 
 instance Pretty Expr where
@@ -146,11 +147,7 @@ instance Pretty Expr where
     pretty (Times x (Plus y z)) 
         = pretty x ++ " * (" ++ pretty (Plus y z) ++ ")"
     pretty (Times x y) = pretty x ++ " * " ++ pretty y
-    pretty (Scale k (Plus x y)) 
-        = (show k) ++ " * (" ++ pretty (Plus x y) ++ ")"
-    pretty (Scale k x) = (show k) ++ " * " ++ pretty x
-    -- show (Const k) = k
-    -- TODO: Used Marek's print fun for now, needs sorting out?
+    pretty (Num k) = show k
 
 -- Symbolic process space P and potential space D:
 type P' = Map Species Expr 
@@ -180,9 +177,9 @@ dplus' x y = Map.unionWith (Plus) x y
 
 -- Scalar multiplication in P and D:
 ptimes' :: P' -> Double -> P'
-ptimes' p v = Map.map (Scale v) p
+ptimes' p v = Map.map (Times (Num v)) p
 dtimes' :: D' -> Double -> D'
-dtimes' d v = Map.map (Scale v) d
+dtimes' d v = Map.map (Times (Num v)) d
 
 -- Vector subtraction in P and D:
 pminus' :: P' -> P' -> P'
@@ -218,7 +215,7 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
       -- above: x,y are (Spec,Name,Conc),Concentration);
       -- a is Rate; p is Species result of pseudoapplication
       expr' ((s,n,c),e) ((s',n',c'),e') 
-          = Scale (s2d (maybe "0.0" id (aff net (n,n')))) (Times e e')
+          = Times (Num (s2d (maybe "0.0" id (aff net (n,n'))))) (Times e e')
 
 -- The symbolic immediate behaviour (the set of ODEs):
 {- FIXME: this requires the process with all species (inc. generated primes)
@@ -230,15 +227,15 @@ dPdt' :: Env -> Process -> P'
 dPdt' _ (Process [] _) = p0'
 dPdt' env p@(Process [(s,c)] net)
     = foldr pplus' p0' (map f taus)
-      `pplus'` Map.map (\x->(Scale 0.5 x)) 
+      `pplus'` Map.map (\x->(Times (Num 0.5) x))
              (tensor' env net (partial' env p) (partial' env p))
       where
         taus = [x|x<-openMTS(trans env (MTS []) s), tau x]
         tau (TransT _ _ _) = True
         tau _ = False
         f (TransT src r dst)
-            = pVec' env dst (Scale k (Var s)) `pplus'` 
-              pVec' env s (Scale (-1*k) (Var s))
+            = pVec' env dst (Times (Num k) (Var s)) `pplus'`
+              pVec' env s (Times (Num(-1*k)) (Var s))
                   where k = s2d $ rate r
                         rate (TTau r) = r
         f _ = X.throw $ CpiException ("Bug: CpiODE.dPdt'.f passed something other than a TransT")
