@@ -38,14 +38,11 @@ import CpiSemantics
 xdot :: Env -> P' -> (Double -> [Double] -> [Double])
 xdot env p = xdot'
     where
-      -- replace species with their Defs (for human reading):
-      key2Def :: Env -> [(Species,Expr)] -> [(Species,Expr)]
-      key2Def env ((k,v):ks) 
-          = (maybe k id (revLookupDef env k),v) : (key2Def env ks)
-      key2Def _ [] = []
-      p' :: [(Species,Expr)]
-      p' = key2Def env (Map.toList p)
-      -- map species to vars:
+      -- the xdot function we need to return
+      xdot' t xs = toODE p' vmap xs
+      -- simplify the P'
+      p' = Map.toList (simpP' env p)
+      -- map species to indexed vars:
       defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
       defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
       defs2vars [] _ = []
@@ -64,8 +61,14 @@ xdot env p = xdot'
             convert (Num d) = d
             err s' = X.throw $ CpiException 
                      ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
-      -- the xdot function we need to return
-      xdot' t xs = toODE p' vmap xs
+
+-- Get the Jacobian in hmatrix form
+jac :: Env -> P' -> (Double -> LA.Vector Double -> LA.Matrix Double)
+jac env p = jac'
+    where
+      jac' t xs = undefined
+{-TODO: Jacobian in hmatrix format-}
+      
 
 -- get the initial concentrations of the primes in process space:
 initials :: Env -> Process -> P' -> [Double]
@@ -260,21 +263,29 @@ diff x (Times a b)
     = Plus (Times (diff x a) b) (Times a (diff x b))
 
 -- Simple simplification of an expression
-simp :: Expr -> Expr
-simp x
+simp :: Env -> Expr -> Expr
+simp env x
     | x==x' = x'
-    | otherwise = simp x'
+    | otherwise = simp env x'
     where
       x' = simp' x
       simp' (Num n) = Num n
-      simp' (Var s) = Var s
-      simp' (Plus (Num 0.0) b) = b
-      simp' (Plus a (Num 0.0)) = a
+      simp' (Var s) = Var (simpS env s)
+      simp' (Plus (Num 0.0) b) = simp env b
+      simp' (Plus a (Num 0.0)) = simp env a
       simp' (Plus (Num a) (Num b)) = Num (a+b)
-      simp' (Plus a b) = Plus (simp a) (simp b)
+      simp' (Plus a b) = Plus (simp env a) (simp env b)
       simp' (Times (Num 0.0) b) = Num 0.0
       simp' (Times a (Num 0.0)) = Num 0.0
-      simp' (Times (Num 1.0) b) = b
-      simp' (Times a (Num 1.0)) = a
+      simp' (Times (Num 1.0) b) = simp env b
+      simp' (Times a (Num 1.0)) = simp env a
       simp' (Times (Num a) (Num b)) = Num (a*b)
-      simp' (Times a b) = Times (simp a) (simp b)
+      simp' (Times a b) = Times (simp env a) (simp env b)
+
+-- Simplify dP/dt
+simpP' :: Env -> P' -> P'
+simpP' env p = Map.mapKeys (simpS env) (Map.map (simp env) p)
+
+-- Simplify species
+simpS :: Env -> Species -> Species
+simpS env s = maybe s id (revLookupDef env s)
