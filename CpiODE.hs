@@ -1,4 +1,4 @@
--- (C) Copyright Chris Banks 2011
+-- (C) Copyright Chris Banks 2011-2012
 
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
@@ -246,3 +246,16 @@ dPdt' env (Process (p:ps) net)
         partT = partial' env procT
         procH = Process [p] net
         procT = Process ps net
+
+-- Symbolic differentiation of an Expr
+diff :: Species -> Expr -> Expr
+diff _ (Num _) = Num 0.0
+diff x (Var s)
+    | s==x
+        = Num 1.0
+    | otherwise
+        = Num 0.0
+diff x (Plus a b)
+    = Plus (diff x a) (diff x b)
+diff x (Times a b)
+    = Plus (Times (diff x a) b) (Times a (diff x b))
