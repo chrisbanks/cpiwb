@@ -62,13 +62,41 @@ xdot env p = xdot'
             err s' = X.throw $ CpiException 
                      ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
 
+{- FIXME: xdot and jac share a lot of inlined code. Refactor!-}
+
 -- Get the Jacobian in hmatrix form
 jac :: Env -> P' -> (Double -> LA.Vector Double -> LA.Matrix Double)
 jac env p = jac'
     where
-      jac' t xs = undefined
-{-TODO: Jacobian in hmatrix format-}
-      
+      jac' t xs = toJac p' vmap (LA.toList xs)
+      -- simplify the P'
+      p' = Map.toList (simpP' env p)
+      -- map species to indexed vars:
+      defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
+      defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
+      defs2vars [] _ = []
+      defs2vars _ [] = X.throw $ CpiException "CpiODE.xdot: run out of vars!"
+      xvars :: [Int]
+      xvars = [0..]
+      vmap :: [(Species,Int)]
+      vmap = defs2vars p' xvars
+      -- get the jacobian matrix:
+      toJac p vmap xs = (len><len) (map convert (map snd (cp (unzip p'))))
+          where
+            len = length p'
+            cp (x,y) = [(a,b)|a<-x,b<-y]
+            convert (Var s') = xs!!(maybe (err s') id (lookup s' vmap))
+            convert (Plus e e') = (convert e) + (convert e')
+            convert (Times e e') = (convert e) * (convert e')
+            convert (Num d) = d
+            err s' = X.throw $ CpiException 
+                     ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
+
+-- Bringing in some infix funs from Numeric.LinearAlgebra:
+-- Matrix constructor:
+x><y = x LA.>< y
+-- Vector accessor:
+x@>y = x LA.@> y
 
 -- get the initial concentrations of the primes in process space:
 initials :: Env -> Process -> P' -> [Double]
@@ -83,11 +111,28 @@ timePoints :: Int -> (Double,Double) -> LA.Vector Double
 timePoints r (o,l) = LA.linspace r (o,l)
 
 -- solve the ODEs with hmatrix
-solveODE :: (Double -> [Double] -> [Double]) -> [Double] -> LA.Vector Double ->
-            LA.Matrix Double
+solveODE :: (Double -> [Double] -> [Double]) 
+         -> [Double] 
+         -> LA.Vector Double 
+         -> LA.Matrix Double
 solveODE x init ts = GSL.odeSolve x init ts
 
+-- solve ODEs using Jacobian with hmatrix
+solveODE' :: (Double -> [Double] -> [Double]) 
+          -> (Double -> LA.Vector Double -> LA.Matrix Double)
+          -> [Double] 
+          -> LA.Vector Double 
+          -> LA.Matrix Double
+solveODE' odes jac inits ts
+    = GSL.odeSolveV GSL.RKf45 hi epsAbs epsRel (l2v odes) (Just jac) (LA.fromList inits) ts
+      where 
+        hi = (ts@>1 - ts@>0)/100
+        epsAbs = 1.49012e-08
+        epsRel = 1.49012e-08
+        l2v f = \t -> LA.fromList . f t . LA.toList
+
 -- plot the time series with GNUPlot
+-- NOTE: deprecated by the CpiPlot module.
 plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
 plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
