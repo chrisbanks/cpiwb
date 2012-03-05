@@ -100,11 +100,10 @@ x@>y = x LA.@> y
 
 -- get the initial concentrations of the primes in process space:
 initials :: Env -> Process -> P' -> [Double]
-initials env proc p' = initials' (Map.toList p')
+initials env proc p' = initials' (Map.toList (simpP' env p'))
     where
       initials' [] = []
-      initials' ((s,_):ss) = (initconc proc (def' s)):(initials' ss)
-      def' s = maybe s id (revLookupDef env s)
+      initials' ((s,_):ss) = (initconc proc s):(initials' ss)
 
 -- Get the time points
 timePoints :: Int -> (Double,Double) -> LA.Vector Double
