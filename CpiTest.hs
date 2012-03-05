@@ -283,29 +283,50 @@ tPlotTimeSeries = do env <- tEnv "models/testEnzyme"
 -- Testing solver with Jacobain:
 ---------------------------------
 
-tPlotMAPKwithJac = do env <- tEnv "models/mapk.cpi"
-                      let pi = tProc env "MAPK"
-                          mts = processMTS env pi
-                          pi' = wholeProc env pi mts
-                          dpdt = dPdt' env pi'
-                          odes = xdot env dpdt
-                          jacob = jac env dpdt
-                          inits = initials env pi' dpdt
-                          ts = timePoints 800 (0,80)
-                          soln = solveODE' odes jacob inits ts
-                          ss = speciesIn env dpdt
-                          ss' = speciesInProc pi
-                      plotTimeSeriesFiltered ts soln ss ss'
+tSolveMAPKwithJac = do env <- tEnv "models/mapk.cpi"
+                       let pi = tProc env "MAPK"
+                           mts = processMTS env pi
+                           pi' = wholeProc env pi mts
+                           dpdt = dPdt' env pi'
+                           odes = xdot env dpdt
+                           jacob = jac env dpdt
+                           inits = initials env pi' dpdt
+                           ts = timePoints 800 (0,80)
+                           !soln = solveODE' odes jacob inits ts
+                       return soln
 
-tPlotMAPKwithoutJac = do env <- tEnv "models/mapk.cpi"
-                         let pi = tProc env "MAPK"
-                             mts = processMTS env pi
-                             pi' = wholeProc env pi mts
-                             dpdt = dPdt' env pi'
-                             odes = xdot env dpdt
-                             inits = initials env pi' dpdt
-                             ts = timePoints 800 (0,80)
-                             soln = solveODE odes inits ts
-                             ss = speciesIn env dpdt
-                             ss' = speciesInProc pi
-                         plotTimeSeriesFiltered ts soln ss ss'
+tSolveMAPKwithoutJac = do env <- tEnv "models/mapk.cpi"
+                          let pi = tProc env "MAPK"
+                              mts = processMTS env pi
+                              pi' = wholeProc env pi mts
+                              dpdt = dPdt' env pi'
+                              odes = xdot env dpdt
+                              inits = initials env pi' dpdt
+                              ts = timePoints 800 (0,80)
+                              !soln = solveODE odes inits ts
+                          return soln
+
+tPlotEnzwithJac = do env <- tEnv "models/testEnzyme.cpi"
+                     let pi = tProc env "Pi"
+                         mts = processMTS env pi
+                         pi' = wholeProc env pi mts
+                         dpdt = dPdt' env pi'
+                         odes = xdot env dpdt
+                         jacob = jac env dpdt
+                         inits = initials env pi' dpdt
+                         ts = timePoints 250 (0,25)
+                         soln = solveODE' odes jacob inits ts
+                         ss = speciesIn env dpdt
+                     plotTimeSeries ts soln ss
+                            
+tPlotEnzwithoutJac = do env <- tEnv "models/testEnzyme.cpi"
+                        let pi = tProc env "Pi"
+                            mts = processMTS env pi
+                            pi' = wholeProc env pi mts
+                            dpdt = dPdt' env pi'
+                            odes = xdot env dpdt
+                            inits = initials env pi' dpdt
+                            ts = timePoints 250 (0,25)
+                            soln = solveODE odes inits ts
+                            ss = speciesIn env dpdt
+                        plotTimeSeries ts soln ss
