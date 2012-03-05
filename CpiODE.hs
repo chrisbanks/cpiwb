@@ -81,10 +81,11 @@ jac env p = jac'
       vmap :: [(Species,Int)]
       vmap = defs2vars p' xvars
       -- get the jacobian matrix:
-      toJac p vmap xs = (len><len) (map convert (map snd (cp (unzip p'))))
+      toJac p vmap xs = (len><len) (map convert (map (simp env) (map diff' (cp (unzip p')))))
           where
             len = length p'
-            cp (x,y) = [(a,b)|a<-x,b<-y]
+            cp (x,y) = [(a,b)|b<-y,a<-x]
+            diff' (x,e) = diff x e
             convert (Var s') = xs!!(maybe (err s') id (lookup s' vmap))
             convert (Plus e e') = (convert e) + (convert e')
             convert (Times e e') = (convert e) * (convert e')
@@ -123,11 +124,11 @@ solveODE' :: (Double -> [Double] -> [Double])
           -> LA.Vector Double 
           -> LA.Matrix Double
 solveODE' odes jac inits ts
-    = GSL.odeSolveV GSL.RKf45 hi epsAbs epsRel (l2v odes) (Just jac) (LA.fromList inits) ts
+    = GSL.odeSolveV GSL.BSimp hi epsAbs epsRel (l2v odes) (Just jac) (LA.fromList inits) ts
       where 
         hi = (ts@>1 - ts@>0)/100
-        epsAbs = 1.49012e-08
-        epsRel = 1.49012e-08
+        epsAbs = 1e-08
+        epsRel = 1e-08
         l2v f = \t -> LA.fromList . f t . LA.toList
 
 -- plot the time series with GNUPlot
