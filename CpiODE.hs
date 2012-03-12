@@ -137,7 +137,7 @@ plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
 plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
 -- pretty print a Map of ODEs:
-prettyODE env map = pp (Map.toList map)
+prettyODE env map = pp (Map.toList (simpP' env map))
     where
       pp [] = []
       pp ((x,y):z) = "d[" ++ pretty(nice x) ++ "]/dt ===> " ++ pretty y ++ "\n" ++ pp z
@@ -324,6 +324,8 @@ simp env x
       simp' (Times a (Num 0.0)) = Num 0.0
       simp' (Times (Num 1.0) b) = simp env b
       simp' (Times a (Num 1.0)) = simp env a
+      simp' (Times (Num (-1.0)) (Num b)) = Num (-b)
+      simp' (Times (Num a) (Num (-1.0))) = Num (-a)
       simp' (Times (Num a) (Num b)) = Num (a*b)
       simp' (Times a b) = Times (simp env a) (simp env b)
 
