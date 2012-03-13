@@ -155,7 +155,9 @@ type TimeSeries = [(Double, Map Species Double)]
 
 -- List of species in a process space (reduced to Defs if possible):
 speciesIn :: Env -> P' -> [Species]
-speciesIn env p = map (\s->maybe s id (revLookupDef env s)) (map fst (Map.toList p))
+speciesIn env p = map 
+                  (\s->maybe s id (revLookupDef env s)) 
+                  (map fst (Map.toList (simpP' env p)))
 
 -- Get the raw time series:
 timeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species]-> TimeSeries
@@ -165,7 +167,8 @@ timeSeries v m ss
         timeSeries' [] _ _ = []
         timeSeries' _ [] _ = []
         timeSeries' _ _ [] = []
-        timeSeries' (t:ts) (cs:css) ss = (t, Map.fromList (zip ss cs)) : timeSeries' ts css ss
+        timeSeries' (t:ts) (cs:css) ss 
+            = (t, Map.fromList (zip ss cs)) : timeSeries' ts css ss
 
 
 
