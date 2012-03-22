@@ -265,7 +265,9 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
       -- above: x,y are (Spec,Name,Conc),Concentration);
       -- a is Rate; p is Species result of pseudoapplication
       expr' ((s,n,c),e) ((s',n',c'),e') 
-          = Times (Num (s2d (maybe "0.0" id (aff net (n,n'))))) (Times e e')
+          = maybe (Num 0.0)
+            (\x-> (Times (Num (s2d x)) (Times e e')))
+            (aff net (n,n'))
 
 -- The symbolic immediate behaviour (the set of ODEs):
 {- FIXME: this requires the process with all species (inc. generated primes)
