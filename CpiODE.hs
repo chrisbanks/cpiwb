@@ -246,9 +246,6 @@ partial' env mts proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
       pots x = potentials (MTS (lookupTrans mts x))
       triple (TransSC s n c) = (s,n,c)
       triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
-      only x y
-          | nf x == nf (transSrc y) = True
-          | otherwise = False
 
 tensor' :: Env -> AffNet -> D' -> D' -> P'
 tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
