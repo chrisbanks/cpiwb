@@ -258,10 +258,11 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
                      pVec' env (tri1(fst(x))) (expr' x y) `pminus'`
                      pVec' env (tri1(fst(y))) (expr' x y)
       ds = [(x,y,p)
-            |x<-Map.toList ds1, y<-Map.toList ds2,
-             p<-[maybe Nil id (pseudoapp (tri3(fst(x))) (tri3(fst(y))))],
-                p/=Nil
-           ]
+            | x<-Map.toList ds1, 
+              y<-Map.toList ds2,
+              p<-[maybe Nil id (pseudoapp (tri3(fst(x))) (tri3(fst(y))))],
+              p/=Nil,
+              aff net (tri2(fst(x)),tri2(fst(y))) /= Nothing]
       -- above: x,y are (Spec,Name,Conc),Concentration);
       -- a is Rate; p is Species result of pseudoapplication
       expr' ((s,n,c),e) ((s',n',c'),e') 
