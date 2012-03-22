@@ -77,7 +77,7 @@ tSpec x = case (parse pSpecies "" x) of
 -------------------------------
 
 -- Test transition system for enzyme example:
-tTrans = do file <- readFile "testEnzyme.cpi"
+{-tTrans = do file <- readFile "testEnzyme.cpi"
             let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
             putStrLn $ concat $ map (\x->(pretty x)++"\n") defns
             -- transitions of the species individually:
@@ -99,6 +99,7 @@ tTrans = do file <- readFile "testEnzyme.cpi"
             let fixedmts = fixMTS defns finalmts
             putStrLn "Closed MTS:\n"
             putStrLn $ pretty fixedmts
+-}
 
 -- Some constants for playing with the Enzyme example:
 tEnzDefs = do file <- readFile "testEnzyme.cpi"
@@ -144,17 +145,18 @@ tTensor = do env <- tEnzDefs
              print $ tensor env net (partial env e) (partial env s)
 
 -- Test tensor':
-tTensor' = do env <- tEnzDefs
+{-tTensor' = do env <- tEnzDefs
               let net = AffNet [Aff (("e","s"),"1.0")]
               let e = Process [(Def "E" ["e"],"0.1")] net
               let s = Process [(Def "S" ["s"],"1.0")] net
               putStrLn $ prettyODE env $ tensor' env net (partial' env e) (partial' env s)
+-}
 
 -- Test symbolic dPdt:
-tdPdt = do env <- tEnzDefs
+{-tdPdt = do env <- tEnzDefs
            let pi = tEnzPi'
            putStrLn $ prettyODE env $ dPdt' env pi
-
+-}
 
 ------------------
 -- Test constants:
@@ -210,18 +212,19 @@ ts = LA.linspace 250 (0,25)
 sol = GSL.odeSolve txdot [0.4,2.3,0,0] ts
 tODE = Plot.mplot (ts : LA.toColumns sol)
 
-tXdot = do env <- tEnzDefs
+{-tXdot = do env <- tEnzDefs
            let pi = tEnzPi'
            let x = xdot env (dPdt' env pi)
            -- return $ x ts [1.0,0,0.5,0]
            let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
            Plot.mplot (ts : LA.toColumns sol')
+-}
 
 tSeries = do env <- tEnv "testEnzyme.cpi"
              let pi = tProc env "Pi"
              let mts = processMTS env pi
              let pi' = wholeProc env pi mts
-             let dpdt = dPdt' env pi'
+             let dpdt = dPdt' env mts pi'
              let odes = xdot env dpdt
              let inits = initials env pi' dpdt
              let ts = timePoints 250 (0,25)
@@ -270,7 +273,7 @@ tPlotTimeSeries = do env <- tEnv "models/testEnzyme"
                      let pi = tProc env "Pi"
                      let mts = processMTS env pi
                      let pi' = wholeProc env pi mts
-                     let dpdt = dPdt' env pi'
+                     let dpdt = dPdt' env mts pi'
                      let odes = xdot env dpdt
                      let inits = initials env pi' dpdt
                      let ts = timePoints 250 (0,25)
@@ -287,7 +290,7 @@ tSolveMAPKwithJac = do env <- tEnv "models/mapk.cpi"
                        let pi = tProc env "MAPK"
                            mts = processMTS env pi
                            pi' = wholeProc env pi mts
-                           dpdt = dPdt' env pi'
+                           dpdt = dPdt' env mts pi'
                            odes = xdot env dpdt
                            jacob = jac env dpdt
                            inits = initials env pi' dpdt
@@ -299,7 +302,7 @@ tSolveMAPKwithoutJac = do env <- tEnv "models/mapk.cpi"
                           let pi = tProc env "MAPK"
                               mts = processMTS env pi
                               pi' = wholeProc env pi mts
-                              dpdt = dPdt' env pi'
+                              dpdt = dPdt' env mts pi'
                               odes = xdot env dpdt
                               inits = initials env pi' dpdt
                               ts = timePoints 800 (0,80)
@@ -310,7 +313,7 @@ tPlotEnzwithJac = do env <- tEnv "models/testEnzyme.cpi"
                      let pi = tProc env "Pi"
                          mts = processMTS env pi
                          pi' = wholeProc env pi mts
-                         dpdt = dPdt' env pi'
+                         dpdt = dPdt' env mts pi'
                          odes = xdot env dpdt
                          jacob = jac env dpdt
                          inits = initials env pi' dpdt
@@ -323,7 +326,7 @@ tPlotEnzwithoutJac = do env <- tEnv "models/testEnzyme.cpi"
                         let pi = tProc env "Pi"
                             mts = processMTS env pi
                             pi' = wholeProc env pi mts
-                            dpdt = dPdt' env pi'
+                            dpdt = dPdt' env mts pi'
                             odes = xdot env dpdt
                             inits = initials env pi' dpdt
                             ts = timePoints 250 (0,25)

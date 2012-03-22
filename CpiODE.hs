@@ -237,14 +237,13 @@ pminus' x y = x `pplus'` (y `ptimes'` (-1))
 dminus' :: D' -> D' -> D'
 dminus' x y = x `dplus'` (y `dtimes'` (-1))
 
-partial' :: Env -> Process -> D'
-partial' _ (Process [] _) = d0'
-partial' env proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
+partial' :: Env -> MTS -> Process -> D'
+partial' _ _ (Process [] _) = d0'
+partial' env mts proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
     where
       partial'' (s,_) = foldr dplus' d0' 
                         (map (\tr->dVec' (triple tr) (Var s)) (pots s))
-      pots x = potentials (trans env (MTS []) x)
-      -- mts = processMTS env proc
+      pots x = potentials (MTS (lookupTrans mts x))
       triple (TransSC s n c) = (s,n,c)
       triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
       only x y
@@ -276,14 +275,14 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
           from this. and avoids recalculating the MTS.
    Can apply this principle for partial too. We also then need a function to
    get the initial concentratiosn from the process. -}
-dPdt' :: Env -> Process -> P'
-dPdt' _ (Process [] _) = p0'
-dPdt' env p@(Process [(s,c)] net)
+dPdt' :: Env -> MTS -> Process -> P'
+dPdt' _ _ (Process [] _) = p0'
+dPdt' env mts p@(Process [(s,c)] net)
     = foldr pplus' p0' (map f taus)
       `pplus'` Map.map (\x->(Times (Num 0.5) x))
-             (tensor' env net (partial' env p) (partial' env p))
+             (tensor' env net (partial' env mts p) (partial' env mts p))
       where
-        taus = [x|x<-openMTS(trans env (MTS []) s), tau x]
+        taus = [x|x<-lookupTrans mts s, tau x]
         tau (TransT _ _ _) = True
         tau _ = False
         f (TransT src r dst)
@@ -292,13 +291,15 @@ dPdt' env p@(Process [(s,c)] net)
                   where k = s2d $ rate r
                         rate (TTau r) = r
         f _ = X.throw $ CpiException ("Bug: CpiODE.dPdt'.f passed something other than a TransT")
-dPdt' env (Process (p:ps) net)
-    = (tensor' env net partH partT) `pplus'` (dPdt' env procH)  `pplus'` (dPdt' env procT) 
-      where
-        partH = partial' env procH
-        partT = partial' env procT
-        procH = Process [p] net
-        procT = Process ps net
+dPdt' env mts (Process (p:ps) net)
+    = (tensor' env net partH partT) 
+      `pplus'` (dPdt' env mts procH)  
+      `pplus'` (dPdt' env mts procT) 
+          where
+            partH = partial' env mts procH
+            partT = partial' env mts procT
+            procH = Process [p] net
+            procT = Process ps net
 
 -- Symbolic differentiation of an Expr
 diff :: Species -> Expr -> Expr

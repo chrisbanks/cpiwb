@@ -105,10 +105,10 @@ solve env ((b,e),r) p = timeSeries ts soln ss
       ss = speciesIn env dpdt
       odes = xdot env dpdt
       inits = initials env p' dpdt
-      dpdt = dPdt' env p'
+      dpdt = dPdt' env mts p'
       p' = wholeProc env p mts
       mts = processMTS env p
-
+-- FIXME: CpiLogic shouldn't depend on all this stuff, it should be passed in. Refactor!
 
 
 -------------------------

@@ -170,7 +170,7 @@ odesCmd x = do env <- getEnv
                               ++"\" is not in the Environment."
                  Just proc -> do let mts = processMTS env proc
                                  let proc' = wholeProc env proc mts
-                                 let dpdt = dPdt' env proc'
+                                 let dpdt = dPdt' env mts proc'
                                  say $ prettyODE env dpdt
                                  -- TODO: replace prettyMap with something
                                  --   that prints the ODEs nicely.
@@ -189,7 +189,7 @@ plotCmd x = do env <- getEnv;
                               ++"\" is not in the Environment."
                  Just proc -> do let mts = processMTS env proc
                                  let proc' = wholeProc env proc mts
-                                 let dpdt = dPdt' env proc'
+                                 let dpdt = dPdt' env mts proc'
                                  let odes = xdot env dpdt
                                  let inits = initials env proc' dpdt
                                  let ts = timePoints res (start,end)
@@ -213,7 +213,7 @@ plotFileCmd x = do env <- getEnv;
                                   ++"\" is not in the Environment."
                      Just proc -> do let mts = processMTS env proc
                                      let proc' = wholeProc env proc mts
-                                     let dpdt = dPdt' env proc'
+                                     let dpdt = dPdt' env mts proc'
                                      let odes = xdot env dpdt
                                      let inits = initials env proc' dpdt
                                      let ts = timePoints res (start,end)
