@@ -267,11 +267,6 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
             (aff net (n,n'))
 
 -- The symbolic immediate behaviour (the set of ODEs):
-{- FIXME: this requires the process with all species (inc. generated primes)
-          change this so we take the pre-calculated MTS and get our primes
-          from this. and avoids recalculating the MTS.
-   Can apply this principle for partial too. We also then need a function to
-   get the initial concentratiosn from the process. -}
 dPdt' :: Env -> MTS -> Process -> P'
 dPdt' _ _ (Process [] _) = p0'
 dPdt' env mts p@(Process [(s,c)] net)
