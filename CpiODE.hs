@@ -237,6 +237,7 @@ pminus' x y = x `pplus'` (y `ptimes'` (-1))
 dminus' :: D' -> D' -> D'
 dminus' x y = x `dplus'` (y `dtimes'` (-1))
 
+-- The interaction potential
 partial' :: Env -> MTS -> Process -> D'
 partial' _ _ (Process [] _) = d0'
 partial' env mts proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
@@ -247,6 +248,7 @@ partial' env mts proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
       triple (TransSC s n c) = (s,n,c)
       triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
 
+-- The interaction tensor
 tensor' :: Env -> AffNet -> D' -> D' -> P'
 tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
     where
