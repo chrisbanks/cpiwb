@@ -168,7 +168,7 @@ processMTS :: Env -> Process -> MTS
 processMTS defs (Process ss net) = finalmts 
     where 
       initmts = transs defs (MTS []) (map fst ss)
-      compxs = appls initmts
+      compxs = appls net initmts
       intermts = transs defs initmts compxs
       finalmts = fixMTS defs intermts
 
@@ -355,22 +355,21 @@ concRenaming n c = renaming' (renames n) c
       renames x = [x++p | p <- iterate (++"'") "'"]
 
 -- get the resultants (complexes) of pseudoapplications in an MTS
-appls :: MTS -> [Species]
-appls (MTS []) = []
-appls (MTS (tr:trs)) = appls' $ concs (tr:trs)
-    where concs :: [Trans] -> [Concretion]
+appls :: AffNet -> MTS -> [Species]
+appls net (MTS []) = []
+appls net (MTS (tr:trs)) = appls' $ concs (tr:trs)
+    where concs :: [Trans] -> [(Concretion,Name)]
           concs [] = []
           concs ((TransSC s n c):trs)
-              = c:(concs trs)
+              = (c,n):(concs trs)
           concs (_:trs)
               = concs trs
-          appls' :: [Concretion] -> [Species]
-          appls' [] = []
-          appls' (c:cs) = (appls'' c cs)++(appls' cs)
-          appls'' :: Concretion -> [Concretion] -> [Species]
-          appls'' x [] = []
-          appls'' x (c:cs) 
-              = maybe (appls'' x cs) (\y->(y:(appls'' x cs))) (pseudoapp x c)
+          appls' :: [(Concretion,Name)] -> [Species]
+          appls' cns = [maybe Nil id (pseudoapp c c') 
+                        | (c,n) <- cns, 
+                          (c',n') <- cns, 
+                          aff net (n,n') /= Nothing ]
+
 
 -- List the distinct prime species in an MTS:
 allPrimes :: Env -> MTS -> [Species]
