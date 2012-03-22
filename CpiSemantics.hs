@@ -165,12 +165,13 @@ instance Nf Concretion where
 
 -- Get the Multi-Transition System for a Process:
 processMTS :: Env -> Process -> MTS
-processMTS defs (Process ss net) = finalmts 
+processMTS defs (Process ss net) = intermts -- finalmts 
     where 
       initmts = transs defs (MTS []) (map fst ss)
       compxs = appls net initmts
       intermts = transs defs initmts compxs
       finalmts = fixMTS defs intermts
+-- TODO: do we need to use fixMTS, but altered only to recurse over new primes? or is this fine as it is? At the moment fixMTS will generate zero affinity concretions, throwing the ODE solver off.
 
 -- Given an initial MTS calculate the complete transition graph:
 -- NOTE: will not terminate for infinite state models
