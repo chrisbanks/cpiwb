@@ -7,6 +7,7 @@ process Pi = [10]S(s) || [1]E(e) || [0]P() : {s-e@1.0};
 
 process In = [2]I(i) : {e-i@2.0};
 
-process PiIn = [10]S(s) || [1]E(e) || [2]I(i) || [0]P() : {s-e@1.0, e-i@2.0};
+process PiIn = [10]S(s) || [1]E(e) || [2]I(i) || [0]P() 
+	     : {s-e@1.0, e-i@2.0};
 
 
