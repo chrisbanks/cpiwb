@@ -1,0 +1,279 @@
+-- The species:
+
+-- First, KaiA and KaiB. They can be bound and receive a name.
+-- When triggered on it, they return to their original unbound state.
+
+species A(a)
+	= a(x).x.A(a);
+
+species B(b)
+	= b(x).x.B(b);
+
+
+-- Now, the 7 active forms of KaiC. All of them (ex. boundary
+-- conditions) can either flip to the inactive side, autonomously 
+-- phosphorylate to the next form in the active chain, or bind KaiA.
+-- When bound to KaiA, they can either go to the next form or unbind.
+
+species C0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {act-r@1.0, act-u@10}
+	  tau<1e-5>.CC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<2.5e-2>.C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + a0<act>.(u.C0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) + r.C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6));
+
+species C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {act-r@1.0, act-u@30}
+	  tau<1e-5>.CC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<2.5e-2>.C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.C0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + a1<act>.(u.C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) + r.C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6));
+
+species C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {act-r@1.0, act-u@90}
+	  tau<1e-4>.CC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<2.5e-2>.C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + a2<act>.(u.C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) + r.C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6));
+
+species C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {act-r@1.0, act-u@270}
+	  tau<1e-3>.CC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<2.5e-2>.C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + a3<act>.(u.C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) + r.C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6));
+
+species C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {act-r@1.0, act-u@810}
+	  tau<1e-2>.CC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<2.5e-2>.C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + a4<act>.(u.C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) + r.C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6));
+
+species C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {act-r@1.0, act-u@2430}
+	  tau<0.1>.CC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<2.5e-2>.C6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + a5<act>.(u.C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) + r.C6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6));
+
+species C6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= tau<10>.CC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6);
+
+
+-- The inactive forms. Each comes in 3 variants: just KaiC (CCi),
+-- KaiC with two KaiB bound (BCCi) and KaiC with two KaiBs and 
+-- two KaiAs (ABCCi). At each of these stages autonomous 
+-- (de-)phosphorylation is possible.
+
+species CC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<2.5e-2>.CC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b0<x>.bb0<af>.BCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+species CC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<2.5e-2>.CC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.CC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b1<x>.bb1<af>.BCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+species CC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<2.5e-2>.CC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.CC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b2<x>.bb2<af>.BCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+species CC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<2.5e-2>.CC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.CC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b3<x>.bb3<af>.BCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+species CC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<2.5e-2>.CC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.CC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b4<x>.bb4<af>.BCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+species CC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<2.5e-2>.CC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<0.4>.CC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b5<x>.bb5<af>.BCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+species CC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	= {x-y@1000, x-z@100, af-bf@1e20}
+	  tau<0.4>.CC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + tau<100>.C6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + b6<x>.bb6<af>.BCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,z,y,bf);
+
+
+species BCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<2.5e-2>.BCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa0<xs>.aaa0<xf>.ABCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+species BCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<2.5e-2>.BCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + tau<0.4>.BCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa1<xs>.aaa1<xf>.ABCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+species BCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<2.5e-2>.BCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + tau<0.4>.BCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa2<xs>.aaa2<xf>.ABCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+species BCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<2.5e-2>.BCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + tau<0.4>.BCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa3<xs>.aaa3<xf>.ABCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+species BCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<2.5e-2>.BCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + tau<0.4>.BCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa4<xs>.aaa4<xf>.ABCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+species BCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<2.5e-2>.BCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + tau<0.4>.BCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa5<xs>.aaa5<xf>.ABCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+species BCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	= {xs-ys@100, xf-yf@1e20}
+	  tau<0.4>.BCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf)
+	  + f.vf.CC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6)
+	  + aa6<xs>.aaa6<xf>.ABCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ys,yf);
+
+
+species ABCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<2.5e-2>.ABCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+species ABCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<2.5e-2>.ABCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + tau<0.4>.ABCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+species ABCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<2.5e-2>.ABCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + tau<0.4>.ABCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+species ABCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<2.5e-2>.ABCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + tau<0.4>.ABCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+species ABCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<2.5e-2>.ABCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + tau<0.4>.ABCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+species ABCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<2.5e-2>.ABCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + tau<0.4>.ABCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+species ABCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	= tau<0.4>.ABCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,ff)
+	  + ss.ff.BCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf);
+
+
+-- The process:
+
+process Kai = 	[0.56] A(a) ||
+		[1.78] B(b) ||
+		[0.58] C0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] C1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] C2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] C3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] C4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] C5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] C6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] CC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6) ||
+		[0.0] BCC0(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] BCC1(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] BCC2(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] BCC3(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] BCC4(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] BCC5(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] BCC6(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf) ||
+		[0.0] ABCC0 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) ||
+		[0.0] ABCC1 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) ||
+		[0.0] ABCC2 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) ||
+		[0.0] ABCC3 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) ||
+		[0.0] ABCC4 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) ||
+		[0.0] ABCC5 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) ||
+		[0.0] ABCC6 (a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6,s,f,vf,ss,vf) 
+
+-- network
+-- Binding sites of KaiA and KaiB
+-- site: a, b; 
+-- Different binding sites for KaiA (active forms)
+-- site: a0, a1, a2, a3, a4, a5; 
+-- Sites for the double binding of KaiB to the inactive forms
+-- site: b0, b1, b2, b3, b4, b5, b6,
+--       bb0, bb1, bb2, bb3, bb4, bb5, bb6; 
+-- Sites for the double binding of KaiA to KaiB-KaiB-KaiC complexes
+-- site: aa0, aa1, aa2, aa3, aa4, aa5, aa6,
+--       aaa0, aaa1, aaa2, aaa3, aaa4, aaa5, aaa6;  
+
+		:{
+		a - a0 @ 1.72e5,
+		a - a1 @ 1.72e5,
+		a - a2 @ 1.72e5,
+		a - a3 @ 1.72e5,
+		a - a4 @ 1.72e5,
+		a - a5 @ 1.72e5,
+		a - aa0 @ 2.97e12,
+		a - aa1 @ 2.97e12,
+		a - aa2 @ 2.97e12,
+		a - aa3 @ 2.97e12,
+		a - aa4 @ 2.97e12,
+		a - aa5 @ 2.97e12,
+		a - aa6 @ 2.97e12,
+		a - aaa0 @ 1e20,
+		a - aaa1 @ 1e20,
+		a - aaa2 @ 1e20,
+		a - aaa3 @ 1e20,
+		a - aaa4 @ 1e20,
+		a - aaa5 @ 1e20,
+		a - aaa6 @ 1e20,
+		b - b0 @ 2.97e6,
+		b - b1 @ 2.97e6,
+		b - b2 @ 2.97e6,
+		b - b3 @ 2.97e6,
+		b - b4 @ 2.97e6,
+		b - b5 @ 2.97e6,
+		b - b6 @ 2.97e6,
+		b - bb0 @ 1e20,
+		b - bb1 @ 1e20,
+		b - bb2 @ 1e20,
+		b - bb3 @ 1e20,
+		b - bb4 @ 1e20,
+		b - bb5 @ 1e20,
+		b - bb6 @ 1e20
+		};

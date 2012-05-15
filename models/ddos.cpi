@@ -1,0 +1,22 @@
+species Client(req,hres)
+	= tau<0.1>.SendingClient(req,hres);
+
+species SendingClient(req,hres)
+	= req.WaitingClient(req,hres);
+
+species WaitingClient(req,hres)
+	= hres.Client(req,hres);
+
+species Server(hreq,res)
+	= hreq.BusyServer(hreq,res);
+
+species BusyServer(hreq,res)
+	= res.Server(hreq,res);
+
+
+process Pi = 	[100] Client(req,hres) ||
+		[110] Server(hreq,res)
+		:{
+		req - hreq @ 10,
+		res - hres @ 100
+		};
