@@ -237,9 +237,9 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
 -- Model checker tests:
 -------------------------
 
-tModelCheck p f = do env <- tEnv "models/testGT.cpi"
-                     let pi = tProc env p
-                     return $ modelCheck env pi ((0,25),250) f
+tModelCheck src p f = do env <- tEnv src
+                         let pi = tProc env p
+                         return $ modelCheck env pi ((0,25),250) f
 -- F(S<0.1)
 tF1 = Pos (ValLT (Conc (Def "S" ["s"])) (R 0.1))
 
