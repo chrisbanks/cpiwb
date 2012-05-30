@@ -195,6 +195,22 @@ tcC2 = ConcPar tcC1 [tcQ,tcP]
 tcNestPar = Par [tcQ, tcP,Par [tcXx,Par [tcSs,Nil]]]
 
 
+-----------------------------------
+-- Tests for new fixmts
+-----------------------------------
+
+tNPs = do env <- tEnv "models/ddos.cpi"
+          let pi = tProc env "Pi"
+              net' (Process _ net) = net
+              net = net' pi
+              ss' (Process ss _) = ss
+              ss = ss' pi
+              initmts = transs env (MTS []) (map fst ss)
+          return $ newPrimes env initmts
+
+tFixmts = do env <- tEnv "models/ddos.cpi"
+             let pi = tProc env "Pi"
+             return $ processMTS env pi                 
 
 -----------------------------------
 -- ODE solver tests
@@ -295,7 +311,7 @@ tSolveMAPKwithJac = do env <- tEnv "models/mapk.cpi"
                            jacob = jac env dpdt
                            inits = initials env pi' dpdt
                            ts = timePoints 800 (0,80)
-                           !soln = solveODE' odes jacob inits ts
+                           soln = solveODE' odes jacob inits ts
                        return soln
 
 tSolveMAPKwithoutJac = do env <- tEnv "models/mapk.cpi"
@@ -306,7 +322,7 @@ tSolveMAPKwithoutJac = do env <- tEnv "models/mapk.cpi"
                               odes = xdot env dpdt
                               inits = initials env pi' dpdt
                               ts = timePoints 800 (0,80)
-                              !soln = solveODE odes inits ts
+                              soln = solveODE odes inits ts
                           return soln
 
 tPlotEnzwithJac = do env <- tEnv "models/testEnzyme.cpi"

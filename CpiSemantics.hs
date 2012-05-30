@@ -165,32 +165,42 @@ instance Nf Concretion where
 
 -- Get the Multi-Transition System for a Process:
 processMTS :: Env -> Process -> MTS
-processMTS defs (Process ss net) = intermts -- finalmts 
-    where 
-      initmts = transs defs (MTS []) (map fst ss)
-      compxs = appls net initmts
-      intermts = transs defs initmts compxs
-      finalmts = fixMTS defs intermts
--- TODO: do we need to use fixMTS, but altered only to recurse over new primes? or is this fine as it is? At the moment fixMTS will generate zero affinity concretions, throwing the ODE solver off.
+processMTS env (Process scs net) = buildMTS env net (MTS []) (map fst scs)
 
--- Given an initial MTS calculate the complete transition graph:
--- NOTE: will not terminate for infinite state models
-fixMTS :: Env -> MTS -> MTS
-fixMTS env mts = calc (openMTS mts) mts 
-    where calc (tr:trs) mts'
-              | (TransSC _ _ _) <- tr
-                  = calc trs mts'
-              | (TransT _ _ s) <- tr
-                  = calc trs (trans env mts' s)
-              | (TransTA _ _ s) <- tr
-                  = calc trs (trans env mts' s)
-              | otherwise
-                  = calc trs mts'
-          calc [] mts'
-              | (mtsCard mts) == (mtsCard mts')
-                  = mts' --bottom out at fixpoint
-              | otherwise
-                  = fixMTS env mts' --otherwise recurse over new transitions
+buildMTS :: Env -> AffNet -> MTS -> [Species] -> MTS
+buildMTS env net mts ss = ifnotnil
+                          (newAppls env net precompx)
+                          (buildMTS env net precompx)
+                          precompx
+    where
+      precompx = derivMTS env (transs env mts ss) 
+
+-- Given initial species transtions, calculate all transition derivatives:
+derivMTS :: Env -> MTS -> MTS
+derivMTS env mts = ifnotnil (newPrimes env mts) (\x->(derivMTS env (transs env mts x))) mts
+
+-- Find any pseudoapplications in an MTS and calculate their transitions:
+complexMTS :: Env -> AffNet -> MTS -> MTS
+complexMTS env net mts = derivMTS env (transs env mts (appls net mts))
+
+-- Takes an MTS and returns the all prime species on the RHS of a transition 
+-- which don't appear on the LHS of some transition.
+newPrimes :: Env -> MTS -> [Species]
+newPrimes env mts = newPrimes' (openMTS mts)
+    where
+      newPrimes' trs = [s | s<-(L.nub (concatMap (primes env) (mapMaybe transDest trs))),
+                            not(inMTS mts s),
+                            revLookupDef env s == Nothing]
+
+-- Find any pseudoapplications in an MTS whose resultant species is a new prime
+newAppls :: Env -> AffNet -> MTS -> [Species]
+newAppls env net mts = newAppls' net (openMTS mts)
+    where
+      newAppls' net trs = [s | s<-(L.nub(appls net mts)), not(inMTS mts s)]
+
+-- Is the species in the MTS?
+inMTS :: MTS -> Species -> Bool
+inMTS mts s = lookupTrans mts s /= []
 
 -- Cardinality of an MTS:
 mtsCard :: MTS -> Int
@@ -311,6 +321,14 @@ transSrc :: Trans -> Species
 transSrc (TransSC s _ _) = s
 transSrc (TransT s _ _) = s
 transSrc (TransTA s _ _) = s
+
+-- The destination species of a transition
+--  is Nothing if RHS is a concretion
+transDest :: Trans -> Maybe Species
+transDest (TransSC _ _ _) = Nothing
+transDest (TransT _ _ s) = Just s
+transDest (TransTA _ _ s) = Just s
+
 
 -- Pseudo-application of concretions:
 pseudoapp :: Concretion -> Concretion -> Maybe Species
