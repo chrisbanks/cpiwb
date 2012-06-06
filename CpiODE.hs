@@ -62,7 +62,13 @@ xdot env p = xdot'
             err s' = X.throw $ CpiException 
                      ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
 
-{- FIXME: xdot and jac share a lot of inlined code. Refactor!-}
+{- FIXME: xdot and jac share a lot of inlined code. Refactor!
+          vmap etc. can be replaced with 'speciesVars' (see below).
+-}
+
+-- Map species to labels:
+speciesVars :: Env -> [a] -> P' -> Map Species a
+speciesVars env vs p' = Map.fromList $ zip (Map.keys p') vs
 
 -- Get the Jacobian in hmatrix form
 jac :: Env -> P' -> (Double -> LA.Vector Double -> LA.Matrix Double)
@@ -150,7 +156,6 @@ prettyODE env map = pp (Map.toList (simpP' env map))
       pp [] = []
       pp ((x,y):z) = "d[" ++ pretty(nice x) ++ "]/dt ===> " ++ pretty y ++ "\n" ++ pp z
       nice x = maybe x id (revLookupDef env x)
-
 
 
 ---------------------------------------
