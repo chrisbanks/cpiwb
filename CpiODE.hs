@@ -123,12 +123,20 @@ solveODE' :: (Double -> [Double] -> [Double])
           -> [Double] 
           -> LA.Vector Double 
           -> LA.Matrix Double
-solveODE' odes jac inits ts
-    = GSL.odeSolveV GSL.BSimp hi epsAbs epsRel (l2v odes) (Just jac) (LA.fromList inits) ts
+solveODE' odes jacob inits ts
+   = GSL.odeSolveV (GSL.MSBDF jacob) hi epsAbs epsRel (l2v odes) (LA.fromList inits) ts
       where 
         hi = (ts@>1 - ts@>0)/100
-        epsAbs = 1e-08
-        epsRel = 1e-08
+        epsAbs = 1e-06
+        epsRel = 1e-06
+        l2v f = \t -> LA.fromList . f t . LA.toList
+
+solveODE'' odes inits ts
+    = GSL.odeSolveV GSL.MSAdams hi epsAbs epsRel (l2v odes) (LA.fromList inits) ts
+      where 
+        hi = (ts@>1 - ts@>0)/100
+        epsAbs = 1e-06
+        epsRel = 1e-06
         l2v f = \t -> LA.fromList . f t . LA.toList
 
 -- plot the time series with GNUPlot
@@ -142,6 +150,8 @@ prettyODE env map = pp (Map.toList (simpP' env map))
       pp [] = []
       pp ((x,y):z) = "d[" ++ pretty(nice x) ++ "]/dt ===> " ++ pretty y ++ "\n" ++ pp z
       nice x = maybe x id (revLookupDef env x)
+
+
 
 ---------------------------------------
 -- Time series output of ODE solutions:
