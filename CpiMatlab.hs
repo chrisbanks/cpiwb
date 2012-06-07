@@ -23,6 +23,11 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Maybe
 
+import qualified Numeric.LinearAlgebra as LA
+
+import System.IO.Unsafe
+import qualified System.Process as OS
+
 import CpiLib
 import CpiSemantics
 import CpiODE
@@ -82,3 +87,12 @@ matlabJac env p' = L.concat $ L.intersperse ";\n" $
       sp' = simpP' env p'
       len = Map.size p'
       rhss = ["jac("++ show x ++ "," ++ show y ++ ")" | x<-[1..len], y<-[1..len]]
+
+---------------------------------------
+-- Using Octave to execute the scripts
+---------------------------------------
+
+solveODEoctave :: Env -> Process -> P' -> (Int,(Double,Double)) -> IO (LA.Matrix Double)
+solveODEoctave env p p' ts@(n,(t0,tn)) 
+    = do raw <- OS.readProcess "octave" ["-q"] (matlabODE env p p' ts)
+         return $ (n><(Map.size p')) $ map s2d $ words raw

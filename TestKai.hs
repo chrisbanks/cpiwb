@@ -26,6 +26,7 @@ import CpiODE
 import CpiLogic
 import CpiPlot
 import CpiTest(tEnv,tProc)
+import CpiMatlab
 
 import Text.ParserCombinators.Parsec
 import System.IO
