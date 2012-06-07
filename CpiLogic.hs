@@ -18,7 +18,7 @@
 module CpiLogic where
 
 import CpiLib 
-import CpiODE (timeSeries,timePoints,solveODE,xdot,dPdt',speciesIn,initials)
+import CpiODE (timeSeries,timePoints,solveODE,xdot,dPdt',speciesIn,initials,Solver)
 import CpiSemantics
 
 import Data.Map (Map)
@@ -62,11 +62,10 @@ data Val = R Double   -- Real
 
 -- A trace is a time series from the ODE solver:
 type Trace = [(Double, Map Species Double)]
-type LinSpace = ((Double,Double),Int)
 
 -- The model checking function
-modelCheck :: Env -> Process -> LinSpace -> Formula -> Bool
-modelCheck env p tps f = modelCheck' (solve env tps p) f
+modelCheck :: Env -> Solver -> Process -> (Int,(Double,Double)) -> Formula -> Bool
+modelCheck env solver p tps f = modelCheck' (solve env solver tps p) f
     where
       modelCheck' [] _ = False
       modelCheck' _ T = True
@@ -82,7 +81,7 @@ modelCheck env p tps f = modelCheck' (solve env tps p) f
                                        (modelCheck' (t:ts) x && modelCheck' ts (Until x y))
       modelCheck' ts (Pos x) = modelCheck' ts (Until T x)
       modelCheck' ts (Nec x) = modelCheck' ts (Neg (Pos (Neg x)))
-      modelCheck' ts (Gtee p' x) = modelCheck' (solve env tps (compose p' p)) x
+      modelCheck' ts (Gtee p' x) = modelCheck' (solve env solver tps (compose p' p)) x
 
 
 -- Get a value from the trace:
@@ -97,10 +96,10 @@ getVal ts (Quot x y) = getVal ts x / getVal ts y
 getVal [] _ = 0.0
 
 -- Take a process and get a trace from the solver:
-solve :: Env -> LinSpace -> Process -> Trace
-solve env ((b,e),r) p = timeSeries ts soln ss
+{-solve :: Env -> (Int,(Double,Double)) -> Process -> Trace
+solve env (r,(t0,tn)) p = timeSeries ts soln ss
     where
-      ts = timePoints r (b,e)
+      ts = timePoints r (t0,tn)
       soln = solveODE odes inits ts
       ss = speciesIn env dpdt
       odes = xdot env dpdt
@@ -109,6 +108,16 @@ solve env ((b,e),r) p = timeSeries ts soln ss
       p' = wholeProc env p mts
       mts = processMTS env p
 -- FIXME: CpiLogic shouldn't depend on all this stuff, it should be passed in. Refactor!
+-}
+solve :: Env -> Solver -> (Int,(Double,Double)) -> Process -> Trace
+solve env solver (r,(t0,tn)) p = timeSeries ts soln ss
+    where
+      ts = timePoints r (t0,tn)
+      mts = processMTS env p
+      p' = wholeProc env p mts
+      dpdt = dPdt' env mts p'
+      soln = solver env p dpdt (r,(t0,tn))
+      ss = speciesIn env dpdt
 
 
 -------------------------

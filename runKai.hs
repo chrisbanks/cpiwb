@@ -25,16 +25,24 @@ import System.TimeIt
 tps = (720,(0,72))
 ts = timePoints (fst tps) (snd tps)
 
+-- species:
+findSpec str = maybe Nil id (lookupSpecName K.env str)
+
+cc6 = findSpec "CC6"
+
 -- formulae:
-f1 = undefined
+f1 = Pos (ValGT (Conc cc6) (R 0.0)) -- F([CC6]>0)
 
 main = do
-  putStrLn "Solving KaiABC model..."
-  soln <- timeIt $ solveODEoctave K.env K.kai K.dpdt tps
+  {-putStrLn "Solving KaiABC model..."
+  let soln = solveODEoctave K.env K.kai K.dpdt tps
   putStrLn ("...done: " ++ show (LA.cols soln) ++ " species.")
   let ss = speciesIn K.env K.dpdt
       ss' = speciesInProc K.kai
   putStrLn "Plotting..."
-  plotTimeSeriesFiltered ts soln ss ss'
-  putStrLn "...done."
+  plotTimeSeriesFiltered ts soln ss ss'-}
+  putStrLn ("Checking: " ++ pretty f1)
+  let rf1 =  modelCheck K.env solveODEoctave K.kai tps f1
+  putStrLn ("...done: " ++ show rf1)
+  
   

@@ -92,7 +92,7 @@ matlabJac env p' = L.concat $ L.intersperse ";\n" $
 -- Using Octave to execute the scripts
 ---------------------------------------
 
-solveODEoctave :: Env -> Process -> P' -> (Int,(Double,Double)) -> IO (LA.Matrix Double)
+solveODEoctave :: Env -> Process -> P' -> (Int,(Double,Double)) -> LA.Matrix Double
 solveODEoctave env p p' ts@(n,(t0,tn)) 
-    = do raw <- OS.readProcess "octave" ["-q"] (matlabODE env p p' ts)
-         return $ (n><(Map.size p')) $ map s2d $ words raw
+    = let raw = unsafePerformIO $ OS.readProcess "octave" ["-q"] (matlabODE env p p' ts)
+      in (n><(Map.size p')) $ map s2d $ words raw

@@ -116,6 +116,12 @@ initials env proc p' = initials' (Map.toList (simpP' env p'))
 timePoints :: Int -> (Double,Double) -> LA.Vector Double
 timePoints r (o,l) = LA.linspace r (o,l)
 
+type Solver = Env -> Process -> P' -> (Int,(Double,Double)) -> LA.Matrix Double
+
+-- FIXME: All solvers should be of this type ^
+--        Need to refactor the following to conform.
+--        (So we can pass different solvers around).
+
 -- solve the ODEs with hmatrix
 solveODE :: (Double -> [Double] -> [Double]) 
          -> [Double] 

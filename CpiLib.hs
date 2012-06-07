@@ -324,6 +324,14 @@ lookupProcName ((ProcessDef name proc):env) str
     | (str == name) = Just proc
     | (otherwise)   = lookupProcName env str
 
+-- Species lookup by name:
+lookupSpecName :: Env -> String -> Maybe Species
+lookupSpecName [] _ = Nothing
+lookupSpecName ((ProcessDef _ _):env) str = lookupSpecName env str
+lookupSpecName ((SpeciesDef name ns _):env) str
+    | (str == name) = Just (Def name ns)
+    | (otherwise)   = lookupSpecName env str
+
 -- Process composition (p1,p2) -> p1||p2:
 compose :: Process -> Process -> Process
 compose (Process p1 a1) (Process p2 a2)
