@@ -39,6 +39,7 @@ data Formula = T                      -- True
              | ValNEq Val Val         -- x /= y
              | Conj Formula Formula   -- a AND b
              | Disj Formula Formula   -- a OR b
+             | Impl Formula Formula   -- a IMPLIES b
              | Neg Formula            -- NOT a
              | Until Formula Formula  -- a U b
              | Nec Formula           -- G a
@@ -90,6 +91,7 @@ modelCheck env solver trace p tps f
       modelCheck' ts (ValNEq x y) = (getVal ts x) /= (getVal ts y)
       modelCheck' ts (Conj x y) = modelCheck' ts x && modelCheck' ts y
       modelCheck' ts (Disj x y) = modelCheck' ts x || modelCheck' ts y
+      modelCheck' ts (Impl x y) = not(modelCheck' ts x) || modelCheck' ts y
       modelCheck' ts (Neg x) = not $ modelCheck' ts x
       modelCheck' (t:ts) (Until x y) = modelCheck' (t:ts) y ||
                                        (modelCheck' (t:ts) x && modelCheck' ts (Until x y))
@@ -149,6 +151,7 @@ instance Pretty Formula where
     pretty (ValNEq x y) = pretty x ++ "/=" ++ pretty y
     pretty z@(Conj x y) = parens x z ++ " && " ++ parens y z
     pretty z@(Disj x y) = parens x z ++ " || " ++ parens y z
+    pretty z@(Impl x y) = parens x z ++ " ==> " ++ parens y z
     pretty z@(Until x y) = parens x z ++ " U " ++ parens y z
     pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
     pretty z@(Neg x) = "¬" ++ parens x z
@@ -175,6 +178,7 @@ parens x c
       prio (Until _ _) = 40
       prio (Conj _ _) = 50
       prio (Disj _ _) = 50
+      prio (Impl _ _) = 55
       prio (Gtee _ _) = 60
 
 instance Pretty Val where
