@@ -185,7 +185,8 @@ main = do
   let gin = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (ginhib)
   timeIt $ putStrLn ("...done: " ++ show gin)
 
-  -- Introducing some Inhib at any time kills the osc.?
+  {-- Introducing some Inhib at any time kills the osc.?
+    -- Takes way too long to check right now....
   putStrLn ("Checking: G(¬([0.5]Inhib |> OscB(3))): ")
   let ginG = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (ginhibG)
-  timeIt $ putStrLn ("...done: " ++ show ginG)
+  timeIt $ putStrLn ("...done: " ++ show ginG)-}
