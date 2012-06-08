@@ -1,7 +1,7 @@
 import CpiLib
 import CpiParser
 import CpiSemantics
-import CpiODE
+import CpiODE(timePoints,speciesIn,timeSeries)
 import CpiLogic
 import CpiPlot
 import CpiTest(tEnv,tProc)
@@ -25,24 +25,138 @@ import System.TimeIt
 tps = (720,(0,72))
 ts = timePoints (fst tps) (snd tps)
 
+----------------
 -- species:
+----------------
+
 findSpec str = maybe Nil id (lookupSpecName K.env str)
 
+cc0 = findSpec "CC0"
+cc1 = findSpec "CC1"
+cc2 = findSpec "CC2"
+cc3 = findSpec "CC3"
+cc4 = findSpec "CC4"
+cc5 = findSpec "CC5"
 cc6 = findSpec "CC6"
 
+c0 = findSpec "C0"
+c1 = findSpec "C1"
+c2 = findSpec "C2"
+c3 = findSpec "C3"
+c4 = findSpec "C4"
+c5 = findSpec "C5"
+c6 = findSpec "C6"
+
+kaib = findSpec "B"
+kaia = findSpec "A"
+
+----------------------
 -- formulae:
-f1 = Pos (ValGT (Conc cc6) (R 0.0)) -- F([CC6]>0)
+----------------------
+
+-- F(([C6]+[CC6])>0)
+-- Eventually we get some fully phosphorylated KaiC hexamers:
+fullPhos = Pos (ValGT (Plus (Conc c6) (Conc cc6)) (R 0.0))
+
+-- Phosphorylation level:
+--     (([C0]+[CC0])*0)+...+(([C6]+[CC6])*6)
+--     -------------------------------------
+--        ([C0]+[CC0])+...+([C6]+[CC6])    
+phosL = Quot  
+        (Plus (Times (Plus (Conc c0) (Conc cc0)) (R 0)) 
+         (Plus (Times (Plus (Conc c1) (Conc cc1)) (R 1)) 
+          (Plus (Times (Plus (Conc c2) (Conc cc2)) (R 2)) 
+           (Plus (Times (Plus (Conc c3) (Conc cc3)) (R 3)) 
+            (Plus (Times (Plus (Conc c4) (Conc cc4)) (R 4)) 
+             (Plus (Times (Plus (Conc c5) (Conc cc5)) (R 5)) 
+              (Times (Plus (Conc c6) (Conc cc6)) (R 6))))))))
+        (Plus (Plus (Conc c0) (Conc cc0)) 
+         (Plus (Plus (Conc c1) (Conc cc1))
+          (Plus (Plus (Conc c2) (Conc cc2))
+           (Plus (Plus (Conc c3) (Conc cc3))
+            (Plus (Plus (Conc c4) (Conc cc4))
+             (Plus (Plus (Conc c5) (Conc cc5))
+              (Plus (Conc c6) (Conc cc6))))))))
+
+-- F(phosL >= x)
+-- Phosphorylation level reaches x (in {0..6}).
+reaches x = Pos (ValGE phosL (R x))
+
+-- F(G(phosL >= x)) 
+-- Phos. level reaches x and remains >=x indefinitely
+remains x = Pos (Nec (ValGE phosL (R x)))
+
+{-- Oscillation around phos level x?
+-- G(((phosL==x)==>F(phosL/=x))AND((phosL/=x)==>F(phosL==k)))
+osc x = Nec (Conj (Impl (ValEq phosL (R x)) (Pos (ValNEq phosL (R x)))) 
+                      (Impl (ValNEq phosL (R x)) (Pos (ValEq phosL (R x)))))
+-}
+
+-- Oscillation around phos level x
+-- F(¬(G(phosL < x)OR(G(phosL > y))))
+oscB x = Pos (Neg (Disj (Nec (ValLT phosL (R x))) (Nec (ValGT phosL (R x)))))
+
+-- Oscillation of a species concentration around conc x:
+-- (formula as for oscB)
+oscS spec x = Pos (Neg (Disj (Nec (ValLT (Conc spec) (R x))) (Nec (ValGT (Conc spec) (R x)))))
+
+-- [0.56]A |> oscB(3)
+-- Introducing some A gives oscillation?
+gtee1 = Gtee pA (oscB 3)
+    where
+      pA = Process [(kaia,"0.56")] (AffNet [])
+
+--------------
+-- computation
+--------------
 
 main = do
-  {-putStrLn "Solving KaiABC model..."
+  -- get time series: 
+  putStrLn "Solving KaiABC model..."
   let soln = solveODEoctave K.env K.kai K.dpdt tps
-  putStrLn ("...done: " ++ show (LA.cols soln) ++ " species.")
+  timeIt $ putStrLn ("...done: " ++ show (LA.cols soln) ++ " species.")
   let ss = speciesIn K.env K.dpdt
       ss' = speciesInProc K.kai
+      trace = timeSeries ts soln ss
+  
+  {-- plot time series
   putStrLn "Plotting..."
   plotTimeSeriesFiltered ts soln ss ss'-}
-  putStrLn ("Checking: " ++ pretty f1)
-  let rf1 =  modelCheck K.env solveODEoctave K.kai tps f1
-  putStrLn ("...done: " ++ show rf1)
-  
-  
+
+  -- We get some fully phos KaiC?
+  putStrLn ("Checking :" ++ pretty fullPhos)
+  let fp = modelCheck K.env solveODEoctave (Just trace) K.kai tps (fullPhos)
+  timeIt $ putStrLn ("...done: " ++ show fp)
+
+  -- Phosphorylation level:
+  putStrLn ("Checking: F(phosL>=6)")
+  let r6 =  modelCheck K.env solveODEoctave (Just trace) K.kai tps (reaches 6)
+  timeIt $ putStrLn ("...done: " ++ show r6)
+  putStrLn ("Checking: F(phosL>=5)")
+  let r5 =  modelCheck K.env solveODEoctave (Just trace) K.kai tps (reaches 5)
+  timeIt $ putStrLn ("...done: " ++ show r5)
+
+  -- Phos level reaches and remains above x
+  putStrLn ("Checking: F(G(PhosL>=5))")
+  let rem5 =  modelCheck K.env solveODEoctave (Just trace) K.kai tps (remains 5)
+  timeIt $ putStrLn ("...done: " ++ show rem5)
+
+  {-- Phos level oscillates around 3:
+  putStrLn ("Checking: Osc(3): ") -- ++ pretty (osc 3)) {- not pretty! -}
+  let osc3 = modelCheck K.env solveODEoctave (Just trace) K.kai tps (osc 3)
+  timeIt $ putStrLn ("...done: " ++ show osc3)-}
+
+  -- Phos level oscillates between around 3:
+  putStrLn ("Checking: OscB(3): ")
+  let oscB3 = modelCheck K.env solveODEoctave (Just trace) K.kai tps (oscB 3)
+  timeIt $ putStrLn ("...done: " ++ show oscB3)
+
+  -- Conc of KaiB oscillates around 1M
+  putStrLn ("Checking: OscS([B],1): ")
+  let oscSB = modelCheck K.env solveODEoctave (Just trace) K.kai tps (oscS kaib 1)
+  timeIt $ putStrLn ("...done: " ++ show oscSB)
+
+  {-- Introducing some KaiA causes oscillation?
+  putStrLn ("Checking: [0.56]A |> OscB(3): ")
+  let gt1 = modelCheck K.env solveODEoctave (Just trace) K.kai tps (gtee1)
+  timeIt $ putStrLn ("...done: " ++ show gt1)-}
