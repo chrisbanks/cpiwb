@@ -64,8 +64,18 @@ data Val = R Double   -- Real
 type Trace = [(Double, Map Species Double)]
 
 -- The model checking function
-modelCheck :: Env -> Solver -> Process -> (Int,(Double,Double)) -> Formula -> Bool
-modelCheck env solver p tps f = modelCheck' (solve env solver tps p) f
+modelCheck :: Env                   -- Environment
+           -> Solver                -- ODE solver function
+           -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+           -> Process               -- Process to execute
+           -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+           -> Formula               -- Formula to check
+           -> Bool
+modelCheck env solver trace p tps f 
+    | (trace == Nothing)
+        = modelCheck' (solve env solver tps p) f
+    | otherwise
+        = modelCheck' ((\(Just x)->x) trace) f
     where
       modelCheck' [] _ = False
       modelCheck' _ T = True
