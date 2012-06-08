@@ -110,12 +110,15 @@ gtee1 = Gtee pA (oscB 3)
 -- Introducing Inhib kills osc.
 --  Inib binds KaiB
 ginhib = Neg (Gtee pIn (oscB 3))
-    where
-      pIn = Process [(Def "Inhib" ["in"],"0.5")] (AffNet [Aff (("in","a"),"2e5")])
+pIn = Process [(Def "Inhib" ["in"],"0.5")] (AffNet [Aff (("in","a"),"2e5")])
 -- Inhib(in) = {x-u@5.0} in<x>.u.Inhib(in)
 inhib = SpeciesDef "Inhib" ["in"] 
         (New (AffNet [Aff (("x","u"),"5.0")]) 
          (Sum [(Comm "in" ["x"] [],Sum [(Comm "u" [] [],Def "Inhib" ["in"])])]))
+
+-- G(¬([0.5]Inhib(in):{a-in@2e5} |> oscB(3)))
+-- nested gtee: Whenever we introduce Inhib it kills the osc.?
+ginhibG = Nec (Neg (Gtee pIn (oscB 3)))
 
 --------------
 -- computation
@@ -178,6 +181,11 @@ main = do
   timeIt $ putStrLn ("...done: " ++ show gt1)-}
 
   -- Introducing some Inhib kills the osc.?
-  putStrLn ("Checking: [0.5]Inhib |> OscB(3): ")
+  putStrLn ("Checking: ¬([0.5]Inhib |> OscB(3)): ")
   let gin = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (ginhib)
   timeIt $ putStrLn ("...done: " ++ show gin)
+
+  -- Introducing some Inhib at any time kills the osc.?
+  putStrLn ("Checking: G(¬([0.5]Inhib |> OscB(3))): ")
+  let ginG = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (ginhibG)
+  timeIt $ putStrLn ("...done: " ++ show ginG)
