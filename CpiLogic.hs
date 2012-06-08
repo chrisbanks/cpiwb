@@ -35,6 +35,8 @@ data Formula = T                      -- True
              | ValGE Val Val          -- x >= y
              | ValLT Val Val          -- x < y
              | ValLE Val Val          -- x <= y
+             | ValEq Val Val          -- x == y
+             | ValNEq Val Val         -- x /= y
              | Conj Formula Formula   -- a AND b
              | Disj Formula Formula   -- a OR b
              | Neg Formula            -- NOT a
@@ -84,6 +86,8 @@ modelCheck env solver trace p tps f
       modelCheck' ts (ValLT x y) = (getVal ts x) < (getVal ts y)
       modelCheck' ts (ValGE x y) = (getVal ts x) >= (getVal ts y)
       modelCheck' ts (ValLE x y) = (getVal ts x) <= (getVal ts y)
+      modelCheck' ts (ValEq x y) = (getVal ts x) == (getVal ts y)
+      modelCheck' ts (ValNEq x y) = (getVal ts x) /= (getVal ts y)
       modelCheck' ts (Conj x y) = modelCheck' ts x && modelCheck' ts y
       modelCheck' ts (Disj x y) = modelCheck' ts x || modelCheck' ts y
       modelCheck' ts (Neg x) = not $ modelCheck' ts x
@@ -141,6 +145,8 @@ instance Pretty Formula where
     pretty (ValGE x y) = pretty x ++ ">=" ++ pretty y
     pretty (ValLT x y) = pretty x ++ "<" ++ pretty y
     pretty (ValLE x y) = pretty x ++ "<=" ++ pretty y
+    pretty (ValEq x y) = pretty x ++ "==" ++ pretty y
+    pretty (ValNEq x y) = pretty x ++ "/=" ++ pretty y
     pretty z@(Conj x y) = parens x z ++ " && " ++ parens y z
     pretty z@(Disj x y) = parens x z ++ " || " ++ parens y z
     pretty z@(Until x y) = parens x z ++ " U " ++ parens y z
@@ -162,6 +168,8 @@ parens x c
       prio (ValGE _ _) = 30
       prio (ValLT _ _) = 30
       prio (ValLE _ _) = 30
+      prio (ValEq _ _) = 30
+      prio (ValNEq _ _) = 30
       prio (Nec _) = 10
       prio (Pos _) = 10
       prio (Until _ _) = 40
