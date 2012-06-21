@@ -57,6 +57,19 @@ soln = solveODE odes ivs ts
 soln' = solveODE' odes jacob ivs ts
 soln'' = solveODE'' odes ivs ts
 
+envI = unsafePerformIO $ tEnv "models/kaiABC.2.Inhib.cpi"
+kaiI = tProc envI "Kai"
+mtsI = processMTS envI kaiI
+kai'I = wholeProc envI kaiI mtsI
+dpdtI = dPdt' envI mtsI kai'I
+odesI = xdot envI dpdtI
+jacobI = jac envI dpdtI
+ivsI = initials envI kai'I dpdtI
+tsI = timePoints 720 (0,72)
+solnI = solveODE odesI ivsI tsI
+soln'I = solveODE' odesI jacobI ivsI tsI
+soln''I = solveODE'' odesI ivsI tsI
+
 psize (Process scs net) = length scs
 tsize (MTS ts) = length ts
 dsize p = Map.size p
@@ -68,3 +81,4 @@ outs = putStrLn . prettys
 outD = putStrLn . prettyODE env
 
 listPrimes (MTS trs) = L.nub $ map transSrc trs
+
