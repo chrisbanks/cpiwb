@@ -112,19 +112,6 @@ getVal ts (Quot x y) = getVal ts x / getVal ts y
 getVal [] _ = 0.0
 
 -- Take a process and get a trace from the solver:
-{-solve :: Env -> (Int,(Double,Double)) -> Process -> Trace
-solve env (r,(t0,tn)) p = timeSeries ts soln ss
-    where
-      ts = timePoints r (t0,tn)
-      soln = solveODE odes inits ts
-      ss = speciesIn env dpdt
-      odes = xdot env dpdt
-      inits = initials env p' dpdt
-      dpdt = dPdt' env mts p'
-      p' = wholeProc env p mts
-      mts = processMTS env p
--- FIXME: CpiLogic shouldn't depend on all this stuff, it should be passed in. Refactor!
--}
 solve :: Env -> Solver -> (Int,(Double,Double)) -> Process -> Trace
 solve env solver (r,(t0,tn)) p = timeSeries ts soln ss
     where
