@@ -41,10 +41,10 @@ data Formula = T                      -- True
              | Disj Formula Formula   -- a OR b
              | Impl Formula Formula   -- a IMPLIES b
              | Neg Formula            -- NOT a
-             | Until Formula Formula  -- a U b
-             | Nec Formula           -- G a
-             | Pos Formula           -- F a
-             | Gtee Process Formula   -- Pi |> a
+             | Until (Double,Double) Formula Formula -- a U[t0,tn] b
+             | Nec (Double,Double) Formula           -- G[t0,tn] a
+             | Pos (Double,Double) Formula           -- F[t0,tn] a
+             | Gtee Process Formula   -- Q |> a
                deriving Show
 
 data Val = R Double   -- Real
@@ -66,7 +66,7 @@ data Val = R Double   -- Real
 -- A trace is a time series from the ODE solver:
 type Trace = [(Double, Map Species Double)]
 
--- The model checking function
+-- The recursive model checking function
 modelCheck :: Env                   -- Environment
            -> Solver                -- ODE solver function
            -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
@@ -93,11 +93,41 @@ modelCheck env solver trace p tps f
       modelCheck' ts (Disj x y) = modelCheck' ts x || modelCheck' ts y
       modelCheck' ts (Impl x y) = not(modelCheck' ts x) || modelCheck' ts y
       modelCheck' ts (Neg x) = not $ modelCheck' ts x
-      modelCheck' (t:ts) (Until x y) = modelCheck' (t:ts) y ||
-                                       (modelCheck' (t:ts) x && modelCheck' ts (Until x y))
-      modelCheck' ts (Pos x) = modelCheck' ts (Until T x)
-      modelCheck' ts (Nec x) = modelCheck' ts (Neg (Pos (Neg x)))
+      modelCheck' (t:ts) (Until (t0,tn) x y) 
+          | (fst t) < t0
+              = modelCheck' ts (Until (t0,tn) x y)
+          | otherwise
+              = ((fst t) <= tn) && (modelCheck' (t:ts) y ||
+                                    (modelCheck' (t:ts) x && 
+                                     modelCheck' ts (Until (t0,tn) x y)))
+      modelCheck' ts (Pos (t0,tn) x) 
+          = modelCheck' ts (Until (t0,tn) T x)
+      modelCheck' ts (Nec (t0,tn) x) 
+          = modelCheck' ts (Neg (Pos (t0,tn) (Neg x)))
       modelCheck' ts (Gtee p' x) = modelCheck' (solve env solver tps (compose p' p)) x
+
+-- The dynamic programming model checking function
+modelCheckDP :: Env                   -- Environment
+             -> Solver                -- ODE solver function
+             -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+             -> Process               -- Process to execute
+             -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+             -> Formula               -- Formula to check
+             -> Bool
+modelCheckDP env solver trace p tps f 
+    = undefined
+
+-- The hybrid model checking function
+modelCheckH :: Env                   -- Environment
+            -> Solver                -- ODE solver function
+            -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+            -> Process               -- Process to execute
+            -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+            -> Formula               -- Formula to check
+            -> Bool
+modelCheckH env solver trace p tps f 
+    = undefined
+
 
 
 -- Get a value from the trace:
@@ -139,12 +169,29 @@ instance Pretty Formula where
     pretty z@(Conj x y) = parens x z ++ " && " ++ parens y z
     pretty z@(Disj x y) = parens x z ++ " || " ++ parens y z
     pretty z@(Impl x y) = parens x z ++ " ==> " ++ parens y z
-    pretty z@(Until x y) = parens x z ++ " U " ++ parens y z
+    pretty z@(Until (t0,tn) x y)
+        | (t0 == 0) && (tn == infty)
+            = parens x z ++ " U " ++ parens y z
+        | (t0 == 0)
+            = parens x z ++ " U[" ++ show tn ++ "]" ++ parens y z
+        | otherwise 
+            = parens x z ++ " U[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens y z
     pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
     pretty z@(Neg x) = "¬" ++ parens x z
-    pretty z@(Nec x) = "G" ++ parens x z
-    pretty z@(Pos x) = "F" ++ parens x z
-
+    pretty z@(Nec (t0,tn) x) 
+        | (t0 == 0) && (tn == infty)
+            = "G" ++ parens x z
+        | (t0 == 0)
+            = "G[" ++ show tn ++ "]" ++ parens x z
+        | otherwise
+            = "G[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens x z
+    pretty z@(Pos (t0,tn) x) 
+        | (t0 == 0) && (tn == infty)
+            = "F" ++ parens x z
+        | (t0 == 0)
+            = "F[" ++ show tn ++ "]" ++ parens x z
+        | otherwise
+            = "F[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens x z
 parens x c
     | ((prio x)<=(prio c))
         = pretty x
@@ -160,9 +207,9 @@ parens x c
       prio (ValLE _ _) = 30
       prio (ValEq _ _) = 30
       prio (ValNEq _ _) = 30
-      prio (Nec _) = 10
-      prio (Pos _) = 10
-      prio (Until _ _) = 40
+      prio (Nec _ _) = 10
+      prio (Pos _ _) = 10
+      prio (Until _ _ _) = 40
       prio (Conj _ _) = 50
       prio (Disj _ _) = 50
       prio (Impl _ _) = 55
