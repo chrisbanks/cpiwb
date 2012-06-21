@@ -123,11 +123,10 @@ type Solver = Env -> Process -> P' -> (Int,(Double,Double)) -> LA.Matrix Double
 --        (So we can pass different solvers around).
 
 -- solve the ODEs with hmatrix
-solveODE :: (Double -> [Double] -> [Double]) 
-         -> [Double] 
-         -> LA.Vector Double 
-         -> LA.Matrix Double
-solveODE x init ts = GSL.odeSolve x init ts
+-- using RKf45 explicit solver (general purpose, non-stiff)
+solveODE :: Env -> Process -> P' -> (Int,(Double,Double)) -> LA.Matrix Double
+solveODE env p dpdt (ts,(t0,tn))
+    = GSL.odeSolve (xdot env dpdt) (initials env p dpdt) (timePoints ts (t0,tn))
 
 -- solve ODEs using Jacobian with hmatrix
 solveODE' :: (Double -> [Double] -> [Double]) 
@@ -142,7 +141,6 @@ solveODE' odes jacob inits ts
         epsAbs = 1e-06
         epsRel = 1e-06
         l2v f = \t -> LA.fromList . f t . LA.toList
-
 solveODE'' odes inits ts
     = GSL.odeSolveV GSL.MSAdams hi epsAbs epsRel (l2v odes) (LA.fromList inits) ts
       where 
