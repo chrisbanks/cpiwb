@@ -39,6 +39,7 @@ type InNames = [Name]
 type Rate = String
 type Conc = String
 type PrefixSpecies = (Prefix,Species)
+infty = 1/0
 
 data Prefix = Comm Name OutNames InNames
             | Tau Rate
