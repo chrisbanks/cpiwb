@@ -193,7 +193,7 @@ plotCmd x = do env <- getEnv;
                                  let odes = xdot env dpdt
                                  let inits = initials env proc' dpdt
                                  let ts = timePoints res (start,end)
-                                 let solns = solveODE odes inits ts
+                                 let solns = solveODE env proc' dpdt (res,(start,end))
                                  let ss = speciesIn env dpdt
                                  let ss' = speciesInProc proc
                                  lift$lift$plotTimeSeriesFiltered ts solns ss ss'
@@ -217,7 +217,7 @@ plotFileCmd x = do env <- getEnv;
                                      let odes = xdot env dpdt
                                      let inits = initials env proc' dpdt
                                      let ts = timePoints res (start,end)
-                                     let solns = solveODE odes inits ts
+                                     let solns = solveODE env proc' dpdt (res,(start,end))
                                      let ss = speciesIn env dpdt
                                      let ss' = speciesInProc proc
                                      lift$lift$plotTimeSeriesToFileFiltered ts solns ss ss' file
