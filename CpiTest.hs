@@ -244,7 +244,7 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
              let odes = xdot env dpdt
              let inits = initials env pi' dpdt
              let ts = timePoints 250 (0,25)
-             let soln = solveODE odes inits ts
+             let soln = solveODE env pi' dpdt (250,(0,25))
              let ss = speciesIn env dpdt
              return $ timeSeries ts soln ss
 
@@ -253,24 +253,24 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
 -- Model checker tests:
 -------------------------
 
-{-tModelCheck src p f = do env <- tEnv src
+tModelCheck src p f = do env <- tEnv src
                          let pi = tProc env p
-                         return $ modelCheck env pi ((0,25),250) f-}
+                         return $ modelCheck env solveODE Nothing pi (250,(0,25)) f
 -- F(S<0.1)
-tF1 = Pos (ValLT (Conc (Def "S" ["s"])) (R 0.1))
+tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
 
 -- test gaurantee (introduce an inhibitor)
 inhib = Process [(Def "I" ["i"],"2.0")] (AffNet [Aff (("e","i"),"2.0")])
 tF2 = Gtee inhib tF1
 
 -- G(E>0.001) enzyme never runs out
-tF3 = Nec (ValGT (Conc (Def "E" ["e"])) (R 0.001))
+tF3 = Nec (0,infty) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
 
 -- still true with inhibitor:
 tF4 = Gtee inhib tF3
 
 -- test nested guarantee (re-solves for every time-point):
-tF5 = Nec (Gtee inhib tF3)
+tF5 = Nec (0,infty) (Gtee inhib tF3)
 
 
 --------------------------
@@ -293,7 +293,7 @@ tPlotTimeSeries = do env <- tEnv "models/testEnzyme"
                      let odes = xdot env dpdt
                      let inits = initials env pi' dpdt
                      let ts = timePoints 250 (0,25)
-                     let soln = solveODE odes inits ts
+                     let soln = solveODE env pi' dpdt (250,(0,25))
                      let ss = speciesIn env dpdt
                      plotTimeSeries ts soln ss
 
@@ -302,7 +302,7 @@ tPlotTimeSeries = do env <- tEnv "models/testEnzyme"
 -- Testing solver with Jacobain:
 ---------------------------------
 
-tSolveMAPKwithJac = do env <- tEnv "models/mapk.cpi"
+{-tSolveMAPKwithJac = do env <- tEnv "models/mapk.cpi"
                        let pi = tProc env "MAPK"
                            mts = processMTS env pi
                            pi' = wholeProc env pi mts
@@ -346,6 +346,7 @@ tPlotEnzwithoutJac = do env <- tEnv "models/testEnzyme.cpi"
                             odes = xdot env dpdt
                             inits = initials env pi' dpdt
                             ts = timePoints 250 (0,25)
-                            soln = solveODE odes inits ts
+                            soln = solveODE env pi' dpdt (250,(0,25)) ts
                             ss = speciesIn env dpdt
                         plotTimeSeries ts soln ss
+-}
