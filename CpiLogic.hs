@@ -18,7 +18,7 @@
 module CpiLogic where
 
 import CpiLib 
-import CpiODE (timeSeries,timePoints,solveODE,xdot,dPdt',speciesIn,initials,Solver)
+import CpiODE (timeSeries,timePoints,dPdt',speciesIn,Solver)
 import CpiSemantics
 
 import Data.Map (Map)
@@ -45,7 +45,7 @@ data Formula = T                      -- True
              | Nec (Double,Double) Formula           -- G[t0,tn] a
              | Pos (Double,Double) Formula           -- F[t0,tn] a
              | Gtee Process Formula   -- Q |> a
-               deriving Show
+               deriving (Show, Eq)
 
 data Val = R Double   -- Real
          | Conc Species  -- Concentration of Species
@@ -54,7 +54,7 @@ data Val = R Double   -- Real
          | Minus Val Val -- x-y
          | Times Val Val -- x*y
          | Quot Val Val  -- x/y
-           deriving Show
+           deriving (Show, Eq)
 
 
 -------------------------
@@ -115,17 +115,103 @@ modelCheckDP :: Env                   -- Environment
              -> Formula               -- Formula to check
              -> Bool
 modelCheckDP env solver trace p tps f 
-    = undefined
+    | (trace == Nothing)
+        = modelCheckDP' (reverse(solve env solver tps p)) (fPostOrd f') f'
+    | otherwise
+        = modelCheckDP' (reverse((\(Just x)->x) trace)) (fPostOrd f') f'
+    where
+      f' = rewriteU f
+      modelCheckDP' ts sfs f = infst f (reverse(satTs ts sfs []))
+      infst f [] = False
+      infst f ((_,fs):_) = elem f fs
+      satTs [] _ pts = pts
+      satTs (t:ts) fs pts = satTs ts fs ((t,(satSubs t [] pts fs)):pts)
+      satSubs _ tls _ [] = tls
+      satSubs t tls pts ((F):fs) = satSubs t tls pts fs
+      satSubs t tls pts ((T):fs) = satSubs t (T:tls) pts fs
+      satSubs t tls pts (v@(ValGT x y):fs)
+          | (getVal [t] x) > (getVal [t] y)
+              = satSubs t (v:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (v@(ValGE x y):fs)
+          | (getVal [t] x) >= (getVal [t] y)
+              = satSubs t (v:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (v@(ValLT x y):fs)
+          | (getVal [t] x) < (getVal [t] y)
+              = satSubs t (v:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (v@(ValLE x y):fs)
+          | (getVal [t] x) <= (getVal [t] y)
+              = satSubs t (v:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (v@(ValEq x y):fs)
+          | (getVal [t] x) == (getVal [t] y)
+              = satSubs t (v:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (v@(ValNEq x y):fs)
+          | (getVal [t] x) /= (getVal [t] y)
+              = satSubs t (v:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (f@(Conj a b):fs)
+          | (a `elem` tls) && (b `elem` tls)
+              = satSubs t (f:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (f@(Disj a b):fs)
+          | (a `elem` tls) || (b `elem` tls)
+              = satSubs t (f:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (f@(Impl a b):fs)
+          | not(a `elem` tls) || (b `elem` tls)
+              = satSubs t (f:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls pts (f@(Neg a):fs)
+          | not(a `elem` tls)
+              = satSubs t (f:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs t tls (pt:pts) (f@(Until (t0,tn) a b):fs)
+          | ((fst t)<=tn) && (b `elem` tls)
+              = satSubs t (f:tls) (pt:pts) fs
+          | ((fst t)<=tn) && (a `elem` tls) && (b `elem` (snd pt))
+              = satSubs t (f:tls) (pt:pts) fs
+          | ((fst t)<t0) && (f `elem` (snd pt))
+              = satSubs t (f:tls) (pt:pts) fs
+          | otherwise
+              = satSubs t tls (pt:pts) fs
+      satSubs t tls [] (f@(Until (t0,tn) a b):fs)
+          | ((fst t)<=tn) && (b `elem` tls)
+              = satSubs t (f:tls) [] fs
+          | otherwise
+              = satSubs t tls [] fs
+      satSubs t tls pts (f@(Gtee q a):fs)
+          | (modelCheckDP env solver Nothing (compose p q) tps a)
+              = satSubs t (f:tls) pts fs
+          | otherwise
+              = satSubs t tls pts fs
+      satSubs _ _ _ ((Nec _ _):_)
+          = X.throw $ CpiException "DP model checker only checks Until (not F or G)"
+      satSubs _ _ _ ((Pos _ _):_)
+          = X.throw $ CpiException "DP model checker only checks Until (not F or G)"
 
 -- The hybrid model checking function
-modelCheckH :: Env                   -- Environment
-            -> Solver                -- ODE solver function
-            -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
-            -> Process               -- Process to execute
-            -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
-            -> Formula               -- Formula to check
-            -> Bool
-modelCheckH env solver trace p tps f 
+modelCheckHy :: Env                   -- Environment
+             -> Solver                -- ODE solver function
+             -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+             -> Process               -- Process to execute
+             -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+             -> Formula               -- Formula to check
+             -> Bool
+modelCheckHy env solver trace p tps f 
     = undefined
 
 
@@ -151,6 +237,29 @@ solve env solver (r,(t0,tn)) p = timeSeries ts soln ss
       dpdt = dPdt' env mts p'
       soln = solver env p dpdt (r,(t0,tn))
       ss = speciesIn env dpdt
+
+-- the post-order flattening of a formula
+fPostOrd :: Formula -> [Formula]
+fPostOrd f@(Conj a b) = (fPostOrd a)++(fPostOrd b)++[f]
+fPostOrd f@(Disj a b) = (fPostOrd a)++(fPostOrd b)++[f]
+fPostOrd f@(Impl a b) = (fPostOrd a)++(fPostOrd b)++[f]
+fPostOrd f@(Neg a) = (fPostOrd a)++[f]
+fPostOrd f@(Until _ a b) = (fPostOrd a)++(fPostOrd b)++[f]
+fPostOrd f@(Nec _ a) = (fPostOrd a)++[f]
+fPostOrd f@(Pos _ a) = (fPostOrd a)++[f]
+fPostOrd x = [x]
+
+-- rewrite a temporal formula in terms of Until (i.e. rewrite F and G)
+rewriteU :: Formula -> Formula
+rewriteU (Nec i f) = Neg (Until i T (Neg (rewriteU f)))
+rewriteU (Pos i f) = Until i T (rewriteU f)
+rewriteU (Neg f) = Neg (rewriteU f)
+rewriteU (Gtee p f) = Gtee p (rewriteU f)
+rewriteU (Until i f1 f2) = Until i (rewriteU f1) (rewriteU f2)
+rewriteU (Impl f1 f2) = Impl (rewriteU f1) (rewriteU f2)
+rewriteU (Disj f1 f2) = Disj (rewriteU f1) (rewriteU f2)
+rewriteU (Conj f1 f2) = Conj (rewriteU f1) (rewriteU f2)
+rewriteU x = x
 
 
 -------------------------

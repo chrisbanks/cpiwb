@@ -256,12 +256,17 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
 tModelCheck src p f = do env <- tEnv src
                          let pi = tProc env p
                          return $ modelCheck env solveODE Nothing pi (250,(0,25)) f
+
+tModelCheckDP src p f = do env <- tEnv src
+                           let pi = tProc env p
+                           return $ modelCheckDP env solveODE Nothing pi (250,(0,25)) f
+
 -- F(S<0.1)
 tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
 
 -- test gaurantee (introduce an inhibitor)
 inhib = Process [(Def "I" ["i"],"2.0")] (AffNet [Aff (("e","i"),"2.0")])
-tF2 = Gtee inhib tF1
+tF2 = Gtee inhib (Neg tF1)
 
 -- G(E>0.001) enzyme never runs out
 tF3 = Nec (0,infty) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
