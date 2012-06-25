@@ -104,7 +104,7 @@ modelCheck env solver trace p tps f
           = modelCheck' ts (Until (t0,tn) T x)
       modelCheck' ts (Nec (t0,tn) x) 
           = modelCheck' ts (Neg (Pos (t0,tn) (Neg x)))
-      modelCheck' ts (Gtee p' x) = modelCheck' (solve env solver tps (compose p' p)) x
+      modelCheck' ts (Gtee p' x) = modelCheck' (solve env solver tps (compose p' (constructP p ts))) x
 
 -- The dynamic programming model checking function
 modelCheckDP :: Env                   -- Environment
@@ -151,6 +151,14 @@ solve env solver (r,(t0,tn)) p = timeSeries ts soln ss
       dpdt = dPdt' env mts p'
       soln = solver env p dpdt (r,(t0,tn))
       ss = speciesIn env dpdt
+
+-- Construct a process from the initial time-point of a trace:
+constructP :: Process -> Trace -> Process
+constructP (Process scs net) ((_,map):_) = Process (cons' scs map) net 
+    where
+      cons' [] _ = []
+      cons' ((s,_):ss) map = (s,(maybe "0.0" d2s (Map.lookup s map))) : (cons' ss map)
+constructP _ [] = Process [] (AffNet [])
 
 
 -------------------------
