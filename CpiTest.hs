@@ -260,7 +260,9 @@ tModelCheck src p f = do env <- tEnv src
 tModelCheckDP src p f = do env <- tEnv src
                            let pi = tProc env p
                            return $ modelCheckDP env solveODE Nothing pi (250,(0,25)) f
-
+--
+-- Some contrived formulae for benchmarking:
+--
 -- F(S<0.1)
 tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
 
@@ -270,12 +272,21 @@ tF2 = Gtee inhib (Neg tF1)
 
 -- G(E>0.001) enzyme never runs out
 tF3 = Nec (0,infty) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
+tFn3 = Neg tF3
 
 -- still true with inhibitor:
 tF4 = Gtee inhib tF3
 
 -- test nested guarantee (re-solves for every time-point):
 tF5 = Nec (0,infty) (Gtee inhib tF3)
+
+-- test nested TL
+-- G(F(S<0.1))
+tF6 = Nec (0,infty) tF1
+-- G(F(G(E>0.001)))
+tF7 = Nec (0,infty) $ Pos (0,infty) tF3
+-- G(F(G(Inhib|>(E>0.001))))
+tF8 = Nec (0,infty) $ Pos (0,infty) tF4
 
 
 --------------------------
