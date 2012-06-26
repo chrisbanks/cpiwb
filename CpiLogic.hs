@@ -25,6 +25,8 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Control.Exception as X
 
+import qualified Debug.Trace as DBG
+
 -------------------------
 -- Data Structures:
 -------------------------
@@ -121,7 +123,7 @@ modelCheckDP env solver trace p tps f
         = modelCheckDP' (reverse((\(Just x)->x) trace)) (fPostOrd f') f'
     where
       f' = rewriteU f
-      modelCheckDP' ts sfs f = infst f (reverse(satTs ts sfs []))
+      modelCheckDP' ts sfs f = infst f (satTs ts sfs [])
       infst f [] = False
       infst f ((_,fs):_) = elem f fs
       satTs [] _ pts = pts
@@ -182,7 +184,7 @@ modelCheckDP env solver trace p tps f
       satSubs t tls (pt:pts) (f@(Until (t0,tn) a b):fs)
           | ((fst t)<=tn) && (b `elem` tls)
               = satSubs t (f:tls) (pt:pts) fs
-          | ((fst t)<=tn) && (a `elem` tls) && (b `elem` (snd pt))
+          | ((fst t)<=tn) && (a `elem` tls) && (f `elem` (snd pt))
               = satSubs t (f:tls) (pt:pts) fs
           | ((fst t)<t0) && (f `elem` (snd pt))
               = satSubs t (f:tls) (pt:pts) fs
@@ -194,7 +196,7 @@ modelCheckDP env solver trace p tps f
           | otherwise
               = satSubs t tls [] fs
       satSubs t tls pts (f@(Gtee q a):fs)
-          | (modelCheckDP env solver Nothing (compose p q) tps a)
+          | (modelCheckDP env solver Nothing (compose (constructP p [t]) q) tps a)
               = satSubs t (f:tls) pts fs
           | otherwise
               = satSubs t tls pts fs
