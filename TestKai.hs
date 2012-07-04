@@ -53,7 +53,7 @@ odes = xdot env dpdt
 jacob = jac env dpdt
 ivs = initials env kai' dpdt
 ts = timePoints 720 (0,72)
-soln = solveODE odes ivs ts
+soln = solveODE env kai' dpdt (720,(0,72))
 soln' = solveODE' odes jacob ivs ts
 soln'' = solveODE'' odes ivs ts
 
@@ -66,7 +66,7 @@ odesI = xdot envI dpdtI
 jacobI = jac envI dpdtI
 ivsI = initials envI kai'I dpdtI
 tsI = timePoints 720 (0,72)
-solnI = solveODE odesI ivsI tsI
+solnI = solveODE envI kai'I dpdtI (720,(0,72))
 soln'I = solveODE' odesI jacobI ivsI tsI
 soln''I = solveODE'' odesI ivsI tsI
 

@@ -56,7 +56,7 @@ kaia = findSpec "A"
 
 -- F(([C6]+[CC6])>0)
 -- Eventually we get some fully phosphorylated KaiC hexamers:
-fullPhos = Pos (ValGT (Plus (Conc c6) (Conc cc6)) (R 0.0))
+fullPhos = Pos (0,infty) (ValGT (Plus (Conc c6) (Conc cc6)) (R 0.0))
 
 -- Phosphorylation level:
 --     (([C0]+[CC0])*0)+...+(([C6]+[CC6])*6)
@@ -80,11 +80,11 @@ phosL = Quot
 
 -- F(phosL >= x)
 -- Phosphorylation level reaches x (in {0..6}).
-reaches x = Pos (ValGE phosL (R x))
+reaches x = Pos (0,infty) (ValGE phosL (R x))
 
 -- F(G(phosL >= x)) 
 -- Phos. level reaches x and remains >=x indefinitely
-remains x = Pos (Nec (ValGE phosL (R x)))
+remains x = Pos (0,infty) (Nec (0,infty) (ValGE phosL (R x)))
 
 {-- Oscillation around phos level x?
 -- G(((phosL==x)==>F(phosL/=x))AND((phosL/=x)==>F(phosL==k)))
@@ -94,11 +94,11 @@ osc x = Nec (Conj (Impl (ValEq phosL (R x)) (Pos (ValNEq phosL (R x))))
 
 -- Oscillation around phos level x
 -- F(¬(G(phosL < x)OR(G(phosL > y))))
-oscB x = Pos (Neg (Disj (Nec (ValLT phosL (R x))) (Nec (ValGT phosL (R x)))))
+oscB x = Pos (0,infty) (Neg (Disj (Nec (0,infty) (ValLT phosL (R x))) (Nec (0,infty) (ValGT phosL (R x)))))
 
 -- Oscillation of a species concentration around conc x:
 -- (formula as for oscB)
-oscS spec x = Pos (Neg (Disj (Nec (ValLT (Conc spec) (R x))) (Nec (ValGT (Conc spec) (R x)))))
+oscS spec x = Pos (0,infty) (Neg (Disj (Nec (0,infty) (ValLT (Conc spec) (R x))) (Nec (0,infty) (ValGT (Conc spec) (R x)))))
 
 -- [0.56]A |> oscB(3)
 -- Introducing some A gives oscillation?
@@ -118,7 +118,7 @@ inhib = SpeciesDef "Inhib" ["in"]
 
 -- G(¬([0.5]Inhib(in):{a-in@2e5} |> oscB(3)))
 -- nested gtee: Whenever we introduce Inhib it kills the osc.?
-ginhibG = Nec (Neg (Gtee pIn (oscB 3)))
+ginhibG = Nec (0,infty) (Neg (Gtee pIn (oscB 3)))
 
 --------------
 -- computation
