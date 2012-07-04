@@ -120,6 +120,15 @@ inhib = SpeciesDef "Inhib" ["in"]
 -- nested gtee: Whenever we introduce Inhib it kills the osc.?
 ginhibG = Nec (0,infty) (Neg (Gtee pIn (oscB 3)))
 
+
+-- New time-bounded Osc formula: (Oscillates between x and y (amplitude >= y-x) for at least t with period <= p.
+oscT x y t p = Nec (0,t) (Conj (Pos (0,(t+p)) (ValLT phosL (R x))) (Pos (0,(t+p)) (ValGT phosL (R y))))
+
+-- Introducing x Inhib kills the oscillation (using time bounded formula)?
+gInhibOscT x = Gtee (pIn' x) (oscT 2 4 48 24)
+
+pIn' x = Process [(Def "Inhib" ["in"],(d2s x))] (AffNet [Aff (("in","a"),"2e5")])
+
 --------------
 -- computation
 --------------
@@ -133,10 +142,30 @@ main = do
       ss' = speciesInProc K.kai
       trace = timeSeries ts soln ss
   
-  {-- plot time series
+  {-  -- plot time series
   putStrLn "Plotting..."
-  plotTimeSeriesFiltered ts soln ss ss'-}
+  plotTimeSeriesToFileFiltered ts soln ss ss' "KaiABC-plot.pdf"
+  -}
+           
+  -- We oscillate to begin with?
+  putStrLn ("Checking: OscT(2,4,48,24): ")
+  let oscBasic = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (oscT 2 4 48 24)
+  timeIt $ putStrLn ("...done: " ++ show oscBasic)
 
+  -- Introducing varying concs of Inhib kills the osc?
+  putStrLn ("Checking: [0.2]Inhib |> OscT(2,4,48,24): ")
+  let oscInhib2 = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (gInhibOscT 0.2)
+  timeIt $ putStrLn ("...done: " ++ show oscInhib2)
+  putStrLn ("Checking: [0.3]Inhib |> OscT(2,4,48,24): ")
+  let oscInhib2 = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (gInhibOscT 0.3)
+  timeIt $ putStrLn ("...done: " ++ show oscInhib2)
+  putStrLn ("Checking: [0.4]Inhib |> OscT(2,4,48,24): ")
+  let oscInhib2 = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (gInhibOscT 0.4)
+  timeIt $ putStrLn ("...done: " ++ show oscInhib2)
+  
+
+
+{-
   -- We get some fully phos KaiC?
   putStrLn ("Checking :" ++ pretty fullPhos)
   let fp = modelCheck K.env solveODEoctave (Just trace) K.kai tps (fullPhos)
@@ -190,3 +219,5 @@ main = do
   putStrLn ("Checking: G(¬([0.5]Inhib |> OscB(3))): ")
   let ginG = modelCheck (inhib : K.env) solveODEoctave (Just trace) K.kai tps (ginhibG)
   timeIt $ putStrLn ("...done: " ++ show ginG)-}
+
+-}
