@@ -24,7 +24,7 @@ import CpiParser
 import CpiSemantics
 import CpiODE
 import CpiLogic
-import CpiPlot
+--import CpiPlot
 
 import Text.ParserCombinators.Parsec
 import System.IO
@@ -260,8 +260,14 @@ tModelCheck src p f = do env <- tEnv src
 tModelCheckDP src p f = do env <- tEnv src
                            let pi = tProc env p
                            return $ modelCheckDP env solveODE Nothing pi (250,(0,25)) f
+
+tModelCheckHy src p f = do env <- tEnv src
+                           let pi = tProc env p
+                           return $ modelCheckHy env solveODE Nothing pi (250,(0,25)) f
+
 --
 -- Some contrived formulae for benchmarking:
+-- (Use on the testGT.cpi model)
 --
 -- F(S<0.1)
 tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
@@ -288,11 +294,17 @@ tF7 = Nec (0,infty) $ Pos (0,infty) tF3
 -- G(F(G(Inhib|>(E>0.001))))
 tF8 = Nec (0,infty) $ Pos (0,infty) tF4
 
+-- should be faster in Hy than in DP:
+tF9 = Pos (0,infty) (ValGT (Conc (Def "P" [])) (R 0.5))
+
+tF10 = Nec (0,infty) tF9
+
 
 --------------------------
 -- Graph plotting tests:
 --------------------------
 
+{-
 tPlot = plot ts dims
     where
       ts = [0.0,0.05..60.0] -- ::[Double]
@@ -312,7 +324,7 @@ tPlotTimeSeries = do env <- tEnv "models/testEnzyme"
                      let soln = solveODE env pi' dpdt (250,(0,25))
                      let ss = speciesIn env dpdt
                      plotTimeSeries ts soln ss
-
+-}
 
 ---------------------------------
 -- Testing solver with Jacobain:
