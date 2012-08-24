@@ -47,7 +47,7 @@ data Formula = T                      -- True
              | Nec (Double,Double) Formula           -- G[t0,tn] a
              | Pos (Double,Double) Formula           -- F[t0,tn] a
              | Gtee Process Formula   -- Q |> a
-               deriving (Show, Eq)
+               deriving (Show, Eq, Ord)
 
 data Val = R Double   -- Real
          | Conc Species  -- Concentration of Species
@@ -56,7 +56,7 @@ data Val = R Double   -- Real
          | Minus Val Val -- x-y
          | Times Val Val -- x*y
          | Quot Val Val  -- x/y
-           deriving (Show, Eq)
+           deriving (Show, Eq, Ord)
 
 
 -------------------------
@@ -66,7 +66,8 @@ data Val = R Double   -- Real
 -- This is an implementation of the trace-based model checker for LTL(R)+Guarantee
 
 -- A trace is a time series from the ODE solver:
-type Trace = [(Double, Map Species Double)]
+type State = (Double, Map Species Double)
+type Trace = [State]
 
 -- The recursive model checking function
 modelCheck :: Env                   -- Environment
@@ -213,10 +214,58 @@ modelCheckHy :: Env                   -- Environment
              -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
              -> Formula               -- Formula to check
              -> Bool
-modelCheckHy env solver trace p tps f 
-    = undefined
-
-
+modelCheckHy env solver trace p tps f
+    | trace == Nothing
+        = maybe err id $ Map.lookup f' $ 
+          hyEval (reverse (fPostOrd f')) (solve env solver tps p)
+    | otherwise
+        = maybe err id $ Map.lookup f' $ 
+          hyEval (reverse (fPostOrd f')) ((\(Just x)->x) trace)
+    where
+      f' = rewriteU f
+      err = X.throw $ CpiException "CpiLogic.modelCheckHy: Formula not in map."
+      hyEval :: [Formula] -> Trace -> Map Formula Bool
+      hyEval _ [] = Map.empty
+      hyEval fs (t:ts) = eval fs t (hyEval fs ts)
+          where
+            eval :: [Formula] -> State -> Map Formula Bool -> Map Formula Bool
+            eval [] _ _ = Map.empty
+            eval (f:fs) t next = Map.insert f (eval' f) subs
+                where
+                  subs = eval fs t next
+                  eval' T = True
+                  eval' F = False
+                  eval' (ValGT x y) = (getVal [t] x) > (getVal [t] y)
+                  eval' (ValLT x y) = (getVal [t] x) < (getVal [t] y)
+                  eval' (ValGE x y) = (getVal [t] x) >= (getVal [t] y)
+                  eval' (ValLE x y) = (getVal [t] x) <= (getVal [t] y)
+                  eval' (ValEq x y) = (getVal [t] x) == (getVal [t] y)
+                  eval' (ValNEq x y) = (getVal [t] x) /= (getVal [t] y)
+                  eval' (Conj x y) = maybe False id (Map.lookup x subs)
+                                     && maybe False id (Map.lookup y subs)
+                  eval' (Disj x y) = maybe False id (Map.lookup x subs)
+                                     || maybe False id (Map.lookup y subs)
+                  eval' (Impl x y) = not (maybe False id (Map.lookup x subs))
+                                     || maybe False id (Map.lookup y subs)
+                  eval' (Neg x) = not (maybe False id (Map.lookup x subs))
+                  eval' u@(Until (t0,tn) x y)
+                      | (fst t) < t0
+                          = maybe False id (Map.lookup u next)
+                      | (fst t) <= tn
+                          = maybe False id (Map.lookup y subs)
+                            || (maybe False id (Map.lookup x subs)
+                                && maybe False id (Map.lookup u next))
+                      | otherwise
+                          = False
+                  eval' (Gtee q x)
+                      = modelCheckHy env solver Nothing (compose q (constructP p [t])) tps x
+                  eval' (Pos tn x) 
+                      = X.throw $ 
+                        CpiException "Hybrid model checker only checks Until (not F or G)"
+                  eval' (Nec tn x)
+                      = X.throw $ 
+                        CpiException "Hybrid model checker only checks Until (not F or G)"
+                  
 
 -- Get a value from the trace:
 getVal :: Trace -> Val -> Double
