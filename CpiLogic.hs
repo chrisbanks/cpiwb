@@ -265,6 +265,67 @@ modelCheckHy env solver trace p tps f
                   eval' (Nec tn x)
                       = X.throw $ 
                         CpiException "Hybrid model checker only checks Until (not F or G)"
+
+-- The lazy circular hybrid model checking function
+modelCheckHy2 :: Env                   -- Environment
+              -> Solver                -- ODE solver function
+              -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+              -> Process               -- Process to execute
+              -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+              -> Formula               -- Formula to check
+              -> Bool
+modelCheckHy2 env solver trace p tps f
+    | trace == Nothing
+        = maybe err id $ Map.lookup f' $ 
+          hyEval (fPostOrd f') (solve env solver tps p)
+    | otherwise
+        = maybe err id $ Map.lookup f' $ 
+          hyEval (fPostOrd f') ((\(Just x)->x) trace)
+    where
+      f' = rewriteU f
+      err = X.throw $ CpiException "CpiLogic.modelCheckHy: Formula not in map."
+      hyEval :: [Formula] -> Trace -> Map Formula Bool
+      hyEval _ [] = Map.empty
+      hyEval fs (t:ts) = eval fs t (hyEval fs ts)
+          where
+            eval :: [Formula] -> State -> Map Formula Bool -> Map Formula Bool
+            eval fs t next = now
+                where
+                  now = eval'' fs
+                  eval'' (f:fs) = Map.insert f (eval' f) (eval'' fs)
+                  eval'' [] = Map.empty
+                  eval' T = True
+                  eval' F = False
+                  eval' (ValGT x y) = (getVal [t] x) > (getVal [t] y)
+                  eval' (ValLT x y) = (getVal [t] x) < (getVal [t] y)
+                  eval' (ValGE x y) = (getVal [t] x) >= (getVal [t] y)
+                  eval' (ValLE x y) = (getVal [t] x) <= (getVal [t] y)
+                  eval' (ValEq x y) = (getVal [t] x) == (getVal [t] y)
+                  eval' (ValNEq x y) = (getVal [t] x) /= (getVal [t] y)
+                  eval' (Conj x y) = maybe False id (Map.lookup x now)
+                                     && maybe False id (Map.lookup y now)
+                  eval' (Disj x y) = maybe False id (Map.lookup x now)
+                                     || maybe False id (Map.lookup y now)
+                  eval' (Impl x y) = not (maybe False id (Map.lookup x now))
+                                     || maybe False id (Map.lookup y now)
+                  eval' (Neg x) = not (maybe False id (Map.lookup x now))
+                  eval' u@(Until (t0,tn) x y)
+                      | (fst t) < t0
+                          = maybe False id (Map.lookup u next)
+                      | (fst t) <= tn
+                          = maybe False id (Map.lookup y now)
+                            || (maybe False id (Map.lookup x now)
+                                && maybe False id (Map.lookup u next))
+                      | otherwise
+                          = False
+                  eval' (Gtee q x)
+                      = modelCheckHy env solver Nothing (compose q (constructP p [t])) tps x
+                  eval' (Pos tn x) 
+                      = X.throw $ 
+                        CpiException "Hybrid model checker only checks Until (not F or G)"
+                  eval' (Nec tn x)
+                      = X.throw $ 
+                        CpiException "Hybrid model checker only checks Until (not F or G)"
                   
 
 -- Get a value from the trace:
