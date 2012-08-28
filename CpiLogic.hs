@@ -183,11 +183,11 @@ modelCheckDP env solver trace p tps f
           | otherwise
               = satSubs t tls pts fs
       satSubs t tls (pt:pts) (f@(Until (t0,tn) a b):fs)
+          | ((fst t)<t0) && (f `elem` (snd pt))
+              = satSubs t (f:tls) (pt:pts) fs
           | ((fst t)<=tn) && (b `elem` tls)
               = satSubs t (f:tls) (pt:pts) fs
           | ((fst t)<=tn) && (a `elem` tls) && (f `elem` (snd pt))
-              = satSubs t (f:tls) (pt:pts) fs
-          | ((fst t)<t0) && (f `elem` (snd pt))
               = satSubs t (f:tls) (pt:pts) fs
           | otherwise
               = satSubs t tls (pt:pts) fs
