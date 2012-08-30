@@ -440,7 +440,7 @@ parens x c
       prio (Pos _ _) = 10
       prio (Until _ _ _) = 40
       prio (Conj _ _) = 50
-      prio (Disj _ _) = 50
+      prio (Disj _ _) = 52
       prio (Impl _ _) = 55
       prio (Gtee _ _) = 60
 
