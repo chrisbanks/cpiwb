@@ -395,8 +395,8 @@ instance Pretty Formula where
     pretty (ValLE x y) = pretty x ++ "<=" ++ pretty y
     pretty (ValEq x y) = pretty x ++ "==" ++ pretty y
     pretty (ValNEq x y) = pretty x ++ "/=" ++ pretty y
-    pretty z@(Conj x y) = parens x z ++ " && " ++ parens y z
-    pretty z@(Disj x y) = parens x z ++ " || " ++ parens y z
+    pretty z@(Conj x y) = parens x z ++ " & " ++ parens y z
+    pretty z@(Disj x y) = parens x z ++ " | " ++ parens y z
     pretty z@(Impl x y) = parens x z ++ " ==> " ++ parens y z
     pretty z@(Until (t0,tn) x y)
         | (t0 == 0) && (tn == infty)
@@ -406,7 +406,7 @@ instance Pretty Formula where
         | otherwise 
             = parens x z ++ " U[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens y z
     pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
-    pretty z@(Neg x) = "¬" ++ parens x z
+    pretty z@(Neg x) = "!" ++ parens x z
     pretty z@(Nec (t0,tn) x) 
         | (t0 == 0) && (tn == infty)
             = "G" ++ parens x z
