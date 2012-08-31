@@ -19,10 +19,12 @@ module CpiParser where
 
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
+import Text.ParserCombinators.Parsec.Expr
 import qualified Text.ParserCombinators.Parsec.Token as P
 import qualified Control.Exception as X
 
 import CpiLib
+import qualified CpiLogic as LBC
 
 
 -----------------
@@ -38,11 +40,10 @@ cpiDef = emptyDef {
            reservedOpNames =
                ["=","|","+","||","-","@",".",":"] }
 
-parens = P.parens lexer
-braces = P.braces lexer
-squares = P.squares lexer
-brackets = P.brackets lexer
-angles = P.angles lexer
+parens = P.parens lexer     -- ()
+braces = P.braces lexer     -- {}
+brackets = P.brackets lexer -- []
+angles = P.angles lexer     -- <>
 symbol = P.symbol lexer
 comma = P.comma lexer
 semi = P.semi lexer
@@ -92,7 +93,7 @@ pProcess = do pcs <- sepBy pProcessComponent (rOp "||");
               return (Process pcs aff)
 
 pProcessComponent :: Parser (Species,Conc)
-pProcessComponent = do c <- squares(double);
+pProcessComponent = do c <- brackets(double);
                        s <- pSpecies;
                        return (s,(d2s c))
 
@@ -216,3 +217,103 @@ parseDefn x = parse pDefinition "" x
 
 parseFile :: String -> Either ParseError [Definition]
 parseFile x = parse pDefinitionLines "" x
+
+
+
+----------------------
+-- Logic Lexer:
+----------------------
+
+lexerF = P.makeTokenParser defLBC
+
+defLBC = emptyDef {
+           reservedNames = 
+               ["true","false"],
+           reservedOpNames =
+               ["+","-","*","/",
+                ">","<",">=","<=",
+                "&","|","==>","!","¬",
+                "F","G","U",
+                "|>"] }
+
+fparens = P.parens lexerF     -- ()
+fbrackets = P.brackets lexerF -- []
+fbraces = P.braces lexerF     -- {}
+fidentifier = P.identifier lexerF -- Species
+freserved = P.reserved lexerF
+fOp = P.reservedOp lexerF
+fdouble = try (P.float lexerF) 
+          <|> do i<- P.integer lexerF;
+                 return (fromInteger i)
+fws = P.whiteSpace lexerF
+fcomma = P.comma lexerF
+
+
+----------------------
+-- Logic Parser:
+----------------------
+
+pFormula = buildExpressionParser fOps pFAtom
+fOps = [[unop "!" LBC.Neg,
+         itl "F" LBC.Pos,
+         itl "G" LBC.Nec,
+         btl "F" LBC.Pos,
+         btl "G" LBC.Nec,
+         unop "F" (LBC.Pos (0,infty)),
+         unop "G" (LBC.Nec (0,infty))],
+        [iu "U" LBC.Until,
+         bu "U" LBC.Until,
+         biop "U" (LBC.Until (0,infty))],
+        [biop "&" LBC.Conj], 
+        [biop "|" LBC.Disj],
+        [biop "==>" LBC.Impl],
+        [gtee]]
+    where
+      biop s f = Infix (try (fOp s >> return f)) AssocLeft
+      unop s f = Prefix (try (fOp s >> return f))
+      btl s f = Prefix (try (pFbtl s f))
+      itl s f = Prefix (try (pFitl s f))
+      bu s f = Infix (try (pFbtl s f)) AssocLeft
+      iu s f = Infix (try (pFitl s f)) AssocLeft
+      gtee = Prefix (try pFGtee)
+
+pFbtl s f = do fOp s
+               t <- fbraces fdouble
+               return $ f (0,t)
+pFitl s f = do fOp s
+               i <- fbraces (do t1 <- fdouble
+                                fcomma
+                                t2 <- fdouble
+                                return (t1,t2))
+               return $ f i
+pFGtee = do s <- fidentifier 
+            fOp "|>"
+            return $ LBC.Gtee s
+
+pFAtom = try pFValBool <|> pFTrue <|> pFFalse <|> parens pFormula
+
+pFValBool = do v1 <- pFValExpr
+               op <- relation
+               v2 <- pFValExpr
+               return $ op v1 v2
+    where
+      relation = try (fOp ">=" >> return LBC.ValGE) <|>
+                 try (fOp "<=" >> return LBC.ValLE) <|>
+                 (fOp ">" >> return LBC.ValGT) <|>
+                 (fOp "<" >> return LBC.ValLT)
+
+pFValExpr = buildExpressionParser valOps pFVal
+valOps = [[op "*" LBC.Times, op "/" LBC.Quot],
+         [op "+" LBC.Plus, op "-" LBC.Minus]]          
+    where
+      op s f = Infix (fOp s >> return f) AssocLeft
+
+pFVal = parens pFValExpr <|> pFReal <|> pFConc
+
+pFReal = do r <- fdouble
+            return (LBC.R r)
+pFConc = do id <- brackets fidentifier
+            return (LBC.Conc (Def id []))
+
+pFTrue = freserved "true" >> return LBC.T
+pFFalse = freserved "false" >> return LBC.F
