@@ -253,22 +253,27 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
 -- Model checker tests:
 -------------------------
 
-tModelCheck src p f = do env <- tEnv src
-                         let pi = tProc env p
-                         return $ modelCheck env solveODE Nothing pi (250,(0,25)) f
+tModelCheck src p f trc = do env <- tEnv src
+                             let pi = tProc env p
+                             return $ modelCheck env solveODE trc pi mcts f
 
-tModelCheckDP src p f = do env <- tEnv src
-                           let pi = tProc env p
-                           return $ modelCheckDP env solveODE Nothing pi (250,(0,25)) f
+tModelCheckDP src p f trc = do env <- tEnv src
+                               let pi = tProc env p
+                               return $ modelCheckDP env solveODE trc pi mcts f
 
-tModelCheckHy src p f = do env <- tEnv src
-                           let pi = tProc env p
-                           return $ modelCheckHy env solveODE Nothing pi (250,(0,25)) f
+tModelCheckHy src p f trc = do env <- tEnv src
+                               let pi = tProc env p
+                               return $ modelCheckHy env solveODE trc pi mcts f
 
+tModelCheckHy2 src p f trc = do env <- tEnv src
+                                let pi = tProc env p
+                                return $ modelCheckHy2 env solveODE trc pi mcts f
+
+mcts = (1000,(0,100))
 --
 -- Some contrived formulae for benchmarking:
 -- (Use on the testGT.cpi model)
---
+{--
 -- F(S<0.1)
 tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
 
@@ -298,7 +303,7 @@ tF8 = Nec (0,infty) $ Pos (0,infty) tF4
 tF9 = Pos (0,infty) (ValGT (Conc (Def "P" [])) (R 0.5))
 
 tF10 = Nec (0,infty) tF9
-
+-}
 
 --------------------------
 -- Graph plotting tests:
