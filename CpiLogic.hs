@@ -46,7 +46,7 @@ data Formula = T                      -- True
              | Until (Double,Double) Formula Formula -- a U[t0,tn] b
              | Nec (Double,Double) Formula           -- G[t0,tn] a
              | Pos (Double,Double) Formula           -- F[t0,tn] a
-             | Gtee Process Formula   -- Q |> a
+             | Gtee String Formula   -- Q |> a
                deriving (Show, Eq, Ord)
 
 data Val = R Double   -- Real
@@ -107,7 +107,12 @@ modelCheck env solver trace p tps f
           = modelCheck' ts (Until (t0,tn) T x)
       modelCheck' ts (Nec (t0,tn) x) 
           = modelCheck' ts (Neg (Pos (t0,tn) (Neg x)))
-      modelCheck' ts (Gtee p' x) = modelCheck' (solve env solver tps (compose p' (constructP p ts))) x
+      modelCheck' ts (Gtee p' x) 
+          = modelCheck' (solve env solver tps (compose (constructP p ts) 
+                                               (maybe err id (lookupProcName env p'))
+                                              )) x
+            where
+              err = X.throw $ CpiException $ p' ++ " not a defined process."
 
 -- The dynamic programming model checking function
 modelCheckDP :: Env                   -- Environment
@@ -197,10 +202,14 @@ modelCheckDP env solver trace p tps f
           | otherwise
               = satSubs t tls [] fs
       satSubs t tls pts (f@(Gtee q a):fs)
-          | (modelCheckDP env solver Nothing (compose (constructP p [t]) q) tps a)
+          | (modelCheckDP env solver Nothing (compose (constructP p [t]) 
+                                              (maybe err id (lookupProcName env q))) 
+             tps a)
               = satSubs t (f:tls) pts fs
           | otherwise
               = satSubs t tls pts fs
+          where
+            err = X.throw $ CpiException $ q ++ " not a defined process."
       satSubs _ _ _ ((Nec _ _):_)
           = X.throw $ CpiException "DP model checker only checks Until (not F or G)"
       satSubs _ _ _ ((Pos _ _):_)
@@ -258,7 +267,10 @@ modelCheckHy env solver trace p tps f
                       | otherwise
                           = False
                   eval' (Gtee q x)
-                      = modelCheckHy env solver Nothing (compose q (constructP p [t])) tps x
+                      = modelCheckHy env solver Nothing 
+                        (compose (maybe err id (lookupProcName env q)) (constructP p [t])) tps x
+                            where
+                              err = X.throw $ CpiException $ q ++ " not a defined process."
                   eval' (Pos tn x) 
                       = X.throw $ 
                         CpiException "Hybrid model checker only checks Until (not F or G)"
@@ -319,7 +331,10 @@ modelCheckHy2 env solver trace p tps f
                       | otherwise
                           = False
                   eval' (Gtee q x)
-                      = modelCheckHy env solver Nothing (compose q (constructP p [t])) tps x
+                      = modelCheckHy env solver Nothing 
+                        (compose (maybe err id (lookupProcName env q)) (constructP p [t])) tps x
+                            where
+                              err = X.throw $ CpiException $ q ++ " not a defined process."
                   eval' (Pos tn x) 
                       = X.throw $ 
                         CpiException "Hybrid model checker only checks Until (not F or G)"
@@ -405,7 +420,7 @@ instance Pretty Formula where
             = parens x z ++ " U{" ++ show tn ++ "} " ++ parens y z
         | otherwise 
             = parens x z ++ " U{" ++ show t0 ++ "," ++ show tn ++ "} " ++ parens y z
-    pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
+    pretty z@(Gtee p y) = p ++ " |> " ++ parens y z
     pretty z@(Neg x) = "!" ++ parens x z
     pretty z@(Nec (t0,tn) x) 
         | (t0 == 0) && (tn == infty)
