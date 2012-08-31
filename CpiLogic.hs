@@ -402,25 +402,25 @@ instance Pretty Formula where
         | (t0 == 0) && (tn == infty)
             = parens x z ++ " U " ++ parens y z
         | (t0 == 0)
-            = parens x z ++ " U[" ++ show tn ++ "]" ++ parens y z
+            = parens x z ++ " U{" ++ show tn ++ "}" ++ parens y z
         | otherwise 
-            = parens x z ++ " U[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens y z
+            = parens x z ++ " U{" ++ show t0 ++ "," ++ show tn ++ "}" ++ parens y z
     pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
     pretty z@(Neg x) = "!" ++ parens x z
     pretty z@(Nec (t0,tn) x) 
         | (t0 == 0) && (tn == infty)
             = "G" ++ parens x z
         | (t0 == 0)
-            = "G[" ++ show tn ++ "]" ++ parens x z
+            = "G{" ++ show tn ++ "}" ++ parens x z
         | otherwise
-            = "G[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens x z
+            = "G{" ++ show t0 ++ "," ++ show tn ++ "}" ++ parens x z
     pretty z@(Pos (t0,tn) x) 
         | (t0 == 0) && (tn == infty)
             = "F" ++ parens x z
         | (t0 == 0)
-            = "F[" ++ show tn ++ "]" ++ parens x z
+            = "F{" ++ show tn ++ "}" ++ parens x z
         | otherwise
-            = "F[" ++ show t0 ++ "," ++ show tn ++ "]" ++ parens x z
+            = "F{" ++ show t0 ++ "," ++ show tn ++ "}" ++ parens x z
 parens x c
     | ((prio x)<=(prio c))
         = pretty x
