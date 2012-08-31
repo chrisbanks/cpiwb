@@ -402,9 +402,9 @@ instance Pretty Formula where
         | (t0 == 0) && (tn == infty)
             = parens x z ++ " U " ++ parens y z
         | (t0 == 0)
-            = parens x z ++ " U{" ++ show tn ++ "}" ++ parens y z
+            = parens x z ++ " U{" ++ show tn ++ "} " ++ parens y z
         | otherwise 
-            = parens x z ++ " U{" ++ show t0 ++ "," ++ show tn ++ "}" ++ parens y z
+            = parens x z ++ " U{" ++ show t0 ++ "," ++ show tn ++ "} " ++ parens y z
     pretty z@(Gtee pi y) = pretty pi ++ " |> " ++ parens y z
     pretty z@(Neg x) = "!" ++ parens x z
     pretty z@(Nec (t0,tn) x) 
