@@ -253,6 +253,9 @@ fcomma = P.comma lexerF
 -- Logic Parser:
 ----------------------
 
+parseFormula :: String -> Either ParseError LBC.Formula
+parseFormula x = parse pFormula "" x
+
 pFormula = buildExpressionParser fOps pFAtom
 fOps = [[unop "!" LBC.Neg,
          itl "F" LBC.Pos,
