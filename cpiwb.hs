@@ -20,6 +20,7 @@ import CpiParser
 import CpiSemantics
 import CpiODE
 import CpiPlot
+import CpiLogic
 
 import System.Console.Haskeline
 import Control.Monad.State
@@ -35,6 +36,7 @@ prompt = "CPiWB:> "
 -- Our environment will be a stack of the Haskeline,
 -- State transformer (of CPi Definitions), and IO monads:
 type Environment = InputT (StateT Env IO)
+type Formulae = [Formula]
 
 -- Main function:
 main :: IO ()
@@ -101,9 +103,9 @@ commands = [("help",
             ("plotfile",
              CmdRec {cmdFn = plotFileCmd,
                      cmdHelp = helpTextPlotFile}),
-            ("formula",
-             CmdRec {cmdFn = formulaCmd,
-                     cmdHelp = helpTextFormula})]
+            ("check",
+             CmdRec {cmdFn = checkCmd,
+                     cmdHelp = helpTextCheck})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -225,11 +227,22 @@ plotFileCmd x = do env <- getEnv;
                                      let ss' = speciesInProc proc
                                      lift$lift$plotTimeSeriesToFileFiltered ts solns ss ss' file
 
--- formula command:
-formulaCmd :: String -> Environment ()
-formulaCmd x = undefined
--- FIXME: define formula command
-                                 
+-- check command:
+checkCmd :: String -> Environment ()
+checkCmd x = do env <- getEnv
+                let args = words x
+                case lookupProcName env (args!!1) of
+                  Nothing -> say $ "Process \""++(args!!1)
+                             ++"\" is not in the Environment."
+                  Just p  -> case parseFormula (args!!2) of
+                               Left err -> say $ "Formula parse error:\n" 
+                                           ++ (show err)
+                               Right f  -> say $ show $ 
+                                           modelCheckHy2 env solveODE Nothing 
+                                           p (720,(0,72)) f 
+-- FIXME: time bound needs to be generated from the fomula!
+--        (see function in K.Larsen's paper)
+--        in the case of open interval we could prompt for a time to check over?
 
 
 ----------------------
@@ -249,7 +262,7 @@ helpTextTrans = ("trans <process>","Shows the transitions of a process.")
 helpTextOdes = ("odes <process>","Shoes the ODEs for a process.")
 helpTextPlot = ("plot <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points.")
 helpTextPlotFile = ("plotfile <process> <start> <end> <points> <file>","Plots the time series of a process for the given interval [start,end] with the given number of time points to a PDF")
-helpTextFormula = ("formula <definition>","Adds a formula to the enviromnent.")
+helpTextCheck = ("check <process> <formula>","Model checker -- checks the process satisfies the formula")
 
 ---------------------
 -- Utility functions:
