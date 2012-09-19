@@ -100,7 +100,10 @@ commands = [("help",
                      cmdHelp = helpTextPlot}),
             ("plotfile",
              CmdRec {cmdFn = plotFileCmd,
-                     cmdHelp = helpTextPlotFile})]
+                     cmdHelp = helpTextPlotFile}),
+            ("formula",
+             CmdRec {cmdFn = formulaCmd,
+                     cmdHelp = helpTextFormula})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -221,6 +224,11 @@ plotFileCmd x = do env <- getEnv;
                                      let ss = speciesIn env dpdt
                                      let ss' = speciesInProc proc
                                      lift$lift$plotTimeSeriesToFileFiltered ts solns ss ss' file
+
+-- formula command:
+formulaCmd :: String -> Environment ()
+formulaCmd x = undefined
+-- FIXME: define formula command
                                  
 
 
@@ -241,6 +249,7 @@ helpTextTrans = ("trans <process>","Shows the transitions of a process.")
 helpTextOdes = ("odes <process>","Shoes the ODEs for a process.")
 helpTextPlot = ("plot <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points.")
 helpTextPlotFile = ("plotfile <process> <start> <end> <points> <file>","Plots the time series of a process for the given interval [start,end] with the given number of time points to a PDF")
+helpTextFormula = ("formula <definition>","Adds a formula to the enviromnent.")
 
 ---------------------
 -- Utility functions:
