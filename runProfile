@@ -1,14 +1,16 @@
 #!/bin/bash
 set -e
 n=${1%.*}
-echo "Compiling profile: $n"
-ghc --make $n.hs -prof -fforce-recomp -rtsopts
+ts=${2%.*}
+echo "Compiling profile: $n $ts"
+ghc --make $n.hs -prof -fforce-recomp
 echo "Running profile..."
-time ./$n +RTS -pa
+time ./$n $ts +RTS -P -V0.001
 echo "...done."
 echo "Removing temp files..."
 rm ./$n
 rm ./*.hi
 rm ./*.o
 echo "...done."
-echo "Output in: ./$n.prof"
+mv ./$n.prof ./$n-$ts.prof
+echo "Output in: ./$n-$ts.prof"
