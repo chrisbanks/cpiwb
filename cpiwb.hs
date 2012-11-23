@@ -105,7 +105,10 @@ commands = [("help",
                      cmdHelp = helpTextPlotFile}),
             ("check",
              CmdRec {cmdFn = checkCmd,
-                     cmdHelp = helpTextCheck})]
+                     cmdHelp = helpTextCheck}),
+            ("plotall",
+             CmdRec {cmdFn = plotAllCmd,
+                     cmdHelp = helpTextPlotAll})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -227,6 +230,29 @@ plotFileCmd x = do env <- getEnv;
                                      let ss' = speciesInProc proc
                                      lift$lift$plotTimeSeriesToFileFiltered ts solns ss ss' file
 
+-- plotAll Command
+-- Plot all species (inc complexes)
+plotAllCmd :: String -> Environment ()
+plotAllCmd x = do env <- getEnv;
+                  let args = words x
+                  -- TODO: properly parse the command!
+                  --       and have some defaults?
+                  let res = read(args!!4)
+                  let start = read(args!!2)
+                  let end = read(args!!3)
+                  case lookupProcName env (args!!1) of
+                    Nothing   -> say $ "Process \""++(args!!1)
+                                 ++"\" is not in the Environment."
+                    Just proc -> do let mts = processMTS env proc
+                                    let proc' = wholeProc env proc mts
+                                    let dpdt = dPdt' env mts proc'
+                                    let odes = xdot env dpdt
+                                    let inits = initials env proc' dpdt
+                                    let ts = timePoints res (start,end)
+                                    let solns = solveODE env proc' dpdt (res,(start,end))
+                                    let ss = speciesIn env dpdt
+                                    lift$lift$plotTimeSeries ts solns ss
+
 -- check command:
 checkCmd :: String -> Environment ()
 checkCmd x = do env <- getEnv
@@ -263,6 +289,7 @@ helpTextOdes = ("odes <process>","Shoes the ODEs for a process.")
 helpTextPlot = ("plot <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points.")
 helpTextPlotFile = ("plotfile <process> <start> <end> <points> <file>","Plots the time series of a process for the given interval [start,end] with the given number of time points to a PDF")
 helpTextCheck = ("check <process> <formula>","Model checker -- checks the process satisfies the formula")
+helpTextPlotAll = ("plotall <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, including all species defined and generated complexes.")
 
 ---------------------
 -- Utility functions:
