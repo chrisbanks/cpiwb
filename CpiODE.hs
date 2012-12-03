@@ -25,7 +25,6 @@ import Data.Maybe
 
 import qualified Numeric.GSL as GSL
 import qualified Numeric.LinearAlgebra as LA
-import qualified Graphics.Plot as Plot
 
 import CpiLib
 import CpiSemantics
@@ -151,8 +150,8 @@ solveODE'' odes inits ts
 
 -- plot the time series with GNUPlot
 -- NOTE: deprecated by the CpiPlot module.
-plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
-plotODE x ts = Plot.mplot (ts : LA.toColumns x)
+--plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
+--plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
 -- pretty print a Map of ODEs:
 prettyODE env map = pp (Map.toList (simpP' env map))
