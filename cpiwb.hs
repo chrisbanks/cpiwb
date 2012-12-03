@@ -24,8 +24,7 @@ import CpiLogic
 import CpiMatlab
 
 import System.Console.Haskeline
-import System.Console.Haskeline.MonadException
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 import qualified Data.List as L
 
@@ -56,12 +55,6 @@ main = do putStrLn welcome;
 -- TODO: command autocomplete (see Haskeline docs).
 --       can we use the command map?
 
--- This instance should really be imported from
--- Haskeline.MonadException, but it isn't (bug?!), so here it is:
-instance MonadException m => MonadException (StateT s m) where
-    controlIO f = StateT $ \s -> controlIO $ \(RunIO run) -> let
-                                                             run' = RunIO (fmap (StateT . const) . run . flip runStateT s)
-                in fmap (flip runStateT s) $ f run'
 
 doCommand :: String -> Environment ()
 doCommand cmdln = let cmd = head $ words cmdln in
