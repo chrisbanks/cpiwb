@@ -1,0 +1,17 @@
+-- A and B
+species A(a) = {u-u'@1.1,d-d'@0.4} a<u',d'>.(u.A(a) + d.0) + tau<0.2>.0;
+species B(b) = b(u',d').(u'.B(b) + d'.0) + tau<0.3>.0;
+
+-- Producers
+species A0(a) = tau<0.2>.(A(a)|A0(a));
+species B0(b) = tau<0.3>.(B(b)|B0(b));
+
+-- Process
+process Pi = [1]A0(a) || [1]B0(b) || [1]A(a) || [1]B(b)
+		   	 : {a-b@1.2};
+
+
+
+
+
+
