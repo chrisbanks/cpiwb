@@ -288,11 +288,11 @@ checkCmd x = do env <- getEnv
                 case lookupProcName env (args!!1) of
                   Nothing -> say $ "Process \""++(args!!1)
                              ++"\" is not in the Environment."
-                  Just p  -> case parseFormula (args!!2) of
+                  Just p  -> case parseFormula (unwords(drop 2 args)) of
                                Left err -> say $ "Formula parse error:\n" 
                                            ++ (show err)
                                Right f  -> say $ show $ 
-                                           modelCheckHy2 env solveODE Nothing 
+                                           modelCheckHy env solveODE Nothing 
                                            p (720,(0,72)) f 
 -- FIXME: time bound needs to be generated from the fomula!
 --        (see function in K.Larsen's paper)
