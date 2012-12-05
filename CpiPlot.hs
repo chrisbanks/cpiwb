@@ -115,12 +115,10 @@ plotphase pts
 
 layout2phase dims 
     = layout1_plots ^= [plotphase $ zip (snd (dims!!0)) (snd (dims!!1))]
-      $ layout1_bottom_axis 
-          ^= (laxis_title ^= "["++fst (dims!!0)++"]"
-            $ defaultLayoutAxis)
-      $ layout1_left_axis
-          ^= (laxis_title ^= "["++fst (dims!!1)++"]"
-            $ defaultLayoutAxis)
+--      $ layout1_bottom_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
+      $ layout1_bottom_axis ^: laxis_title ^= "["++fst (dims!!0)++"]"
+--      $ layout1_left_axis ^: laxis_generate ^= autoScaledLogAxis defaultLogAxis
+      $ layout1_left_axis ^: laxis_title ^= "["++fst (dims!!1)++"]"
       $ defaultLayout1
 
 
