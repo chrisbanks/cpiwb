@@ -113,7 +113,10 @@ commands = [("help",
                      cmdHelp = helpTextPlotAll}),
             ("plotoctave",
              CmdRec {cmdFn = plotOctaveCmd,
-                     cmdHelp = helpTextPlotOctave})]
+                     cmdHelp = helpTextPlotOctave}),
+            ("phasePlot2",
+             CmdRec {cmdFn = phase2Cmd,
+                     cmdHelp = helpTextPhase2})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -210,6 +213,32 @@ plotCmd x = do env <- getEnv;
                                  let ss = speciesIn env dpdt
                                  let ss' = speciesInProc proc
                                  lift$lift$plotTimeSeriesFiltered ts solns ss ss'
+
+-- phase2 command
+phase2Cmd :: String -> Environment ()
+phase2Cmd x = do env <- getEnv;
+                 let args = words x
+                 let res = read(args!!6)
+                 let start = read(args!!4)
+                 let end = read(args!!5)
+                 let s1' = args!!2
+                 let s2' = args!!3
+                 case lookupProcName env (args!!1) of
+                   Nothing   -> say $ "Process \""++(args!!1)
+                                ++"\" is not in the Environment."
+                   Just proc -> do let mts = processMTS env proc
+                                   let proc' = wholeProc env proc mts
+                                   let dpdt = dPdt' env mts proc'
+                                   let odes = xdot env dpdt
+                                   let inits = initials env proc' dpdt
+                                   let ts = timePoints res (start,end)
+                                   let solns = solveODEoctave env proc' dpdt (res,(start,end))
+                                   let ss = speciesIn env dpdt
+                                   let ss' = (lookupSpecName env s1', lookupSpecName env s2')
+                                   case ss' of
+                                     (Just s1,Just s2) -> lift$lift$phasePlot2 ts solns ss (s1,s2)
+                                     otherwise -> say $ "Species "++s1'++" or "++s2'
+                                                  ++" is not in the Environment."
 
 -- plotFile Command
 plotFileCmd :: String -> Environment ()
@@ -319,6 +348,7 @@ helpTextPlotFile = ("plotfile <process> <start> <end> <points> <file>","Plots th
 helpTextCheck = ("check <process> <formula>","Model checker -- checks the process satisfies the formula")
 helpTextPlotAll = ("plotall <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, including all species defined and generated complexes.")
 helpTextPlotOctave = ("plotoctave <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, using GNU Octave to solve the ODEs.")
+helpTextPhase2 = ("phasePlot2 <process>  <species> <species> <start> <end> <points>","Plots the (2-dimensional) phase diagram for two species, for the given interval [start,end] with the given number of time points.")
 
 ---------------------
 -- Utility functions:

@@ -89,6 +89,43 @@ plots ts (colour:cs) ((lbl,pts):dims)
 plots _ [] _ = X.throw $ CpiException 
                "CpiPlot.plots: Run out of colours!"
 
+---------------
+-- Phase plots:
+---------------
+
+-- a plot of two dimensions:
+phasePlot2 :: LA.Vector Double 
+           -> LA.Matrix Double 
+           -> [Species] 
+           -> (Species,Species) 
+           -> IO ()
+phasePlot2 ts soln ss ss'
+    = plotPhase
+      (filter (\(s,_)-> (s == (specName (fst ss'))) || s == (specName (snd ss')))
+       (zip (map specName ss) (map LA.toList (LA.toColumns soln))))
+
+
+plotPhase dims = renderableToWindow (toRenderable (layout2phase dims)) 640 480
+
+plotphase pts 
+    = Left $ toPlot
+      $ plot_lines_values ^= [pts]
+      $ plot_lines_style ^= solidLine 1 (opaque blue) 
+      $ defaultPlotLines
+
+layout2phase dims 
+    = layout1_plots ^= [plotphase $ zip (snd (dims!!0)) (snd (dims!!1))]
+      $ layout1_bottom_axis 
+          ^= (laxis_title ^= "["++fst (dims!!0)++"]"
+            $ defaultLayoutAxis)
+      $ layout1_left_axis
+          ^= (laxis_title ^= "["++fst (dims!!1)++"]"
+            $ defaultLayoutAxis)
+      $ defaultLayout1
+
+
+-------------------
+
 -- gives n visually distinct colours
 -- algorithm taken from the MATLAB 'varycolor' function
 -- by Daniel Helmick: http://j.mp/xowLV2
