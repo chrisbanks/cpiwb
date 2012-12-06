@@ -3,7 +3,7 @@ set -e
 n=${1%.*}
 ts=${2%.*}
 echo "Compiling profile: $n $ts"
-ghc --make $n.hs -prof -fforce-recomp
+ghc --make $n.hs -prof -fforce-recomp -rtsopts
 echo "Running profile..."
 time ./$n $ts +RTS -P -V0.001
 echo "...done."
