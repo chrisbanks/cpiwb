@@ -24,8 +24,8 @@ import CpiSemantics
 import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Control.Exception as X
-
-import qualified Debug.Trace as DBG
+import qualified Control.Monad.Trans.State.Strict as S
+--import qualified Debug.Trace as DBG
 
 -------------------------
 -- Data Structures:
@@ -114,7 +114,8 @@ modelCheck env solver trace p tps f
             where
               err = X.throw $ CpiException $ p' ++ " not a defined process."
 
--- The dynamic programming model checking function
+
+-- DP model checker using explicit state
 modelCheckDP :: Env                   -- Environment
              -> Solver                -- ODE solver function
              -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
@@ -129,85 +130,90 @@ modelCheckDP env solver trace p tps f
         = modelCheckDP' (reverse((\(Just x)->x) trace)) (fPostOrd f') f'
     where
       f' = rewriteU f
-      modelCheckDP' ts sfs f = infst f (satTs ts sfs [])
-      infst f [] = False
-      infst f ((_,fs):_) = elem f fs
-      satTs [] _ pts = pts
-      satTs (t:ts) fs pts = satTs ts fs ((t,(satSubs t [] pts fs)):pts)
-      satSubs _ tls _ [] = tls
-      satSubs t tls pts ((F):fs) = satSubs t tls pts fs
-      satSubs t tls pts ((T):fs) = satSubs t (T:tls) pts fs
-      satSubs t tls pts (v@(ValGT x y):fs)
+      modelCheckDP' ts sfs f = f `elem` S.evalState (satTs ts sfs) []
+      satTs :: [State] -> [Formula]
+            -> S.State [Formula] [Formula]
+      satTs [] _ = S.get >>= return
+      satTs (t:ts) fs = do prev <- S.get
+                           S.put $ satSubs t [] prev fs
+                           satTs ts fs
+      satSubs :: State -> [Formula] -> [Formula] -> [Formula] 
+              -> [Formula]
+      -- TODO: erk! this needs cleaning up!
+      satSubs _ lbls _ [] = lbls
+      satSubs t lbls prev ((F):fs) = satSubs t lbls prev fs
+      satSubs t lbls prev ((T):fs) = satSubs t (T:lbls) prev fs
+      satSubs t lbls prev (v@(ValGT x y):fs)
           | (getVal [t] x) > (getVal [t] y)
-              = satSubs t (v:tls) pts fs
+              = satSubs t (v:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (v@(ValGE x y):fs)
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (v@(ValGE x y):fs)
           | (getVal [t] x) >= (getVal [t] y)
-              = satSubs t (v:tls) pts fs
+              = satSubs t (v:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (v@(ValLT x y):fs)
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (v@(ValLT x y):fs)
           | (getVal [t] x) < (getVal [t] y)
-              = satSubs t (v:tls) pts fs
+              = satSubs t (v:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (v@(ValLE x y):fs)
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (v@(ValLE x y):fs)
           | (getVal [t] x) <= (getVal [t] y)
-              = satSubs t (v:tls) pts fs
+              = satSubs t (v:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (v@(ValEq x y):fs)
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (v@(ValEq x y):fs)
           | (getVal [t] x) == (getVal [t] y)
-              = satSubs t (v:tls) pts fs
+              = satSubs t (v:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (v@(ValNEq x y):fs)
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (v@(ValNEq x y):fs)
           | (getVal [t] x) /= (getVal [t] y)
-              = satSubs t (v:tls) pts fs
+              = satSubs t (v:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (f@(Conj a b):fs)
-          | (a `elem` tls) && (b `elem` tls)
-              = satSubs t (f:tls) pts fs
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (f@(Conj a b):fs)
+          | (a `elem` lbls) && (b `elem` lbls)
+              = satSubs t (f:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (f@(Disj a b):fs)
-          | (a `elem` tls) || (b `elem` tls)
-              = satSubs t (f:tls) pts fs
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (f@(Disj a b):fs)
+          | (a `elem` lbls) || (b `elem` lbls)
+              = satSubs t (f:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (f@(Impl a b):fs)
-          | not(a `elem` tls) || (b `elem` tls)
-              = satSubs t (f:tls) pts fs
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (f@(Impl a b):fs)
+          | not(a `elem` lbls) || (b `elem` lbls)
+              = satSubs t (f:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls pts (f@(Neg a):fs)
-          | not(a `elem` tls)
-              = satSubs t (f:tls) pts fs
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (f@(Neg a):fs)
+          | not(a `elem` lbls)
+              = satSubs t (f:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
-      satSubs t tls (pt:pts) (f@(Until (t0,tn) a b):fs)
-          | ((fst t)<t0) && (f `elem` (snd pt))
-              = satSubs t (f:tls) (pt:pts) fs
-          | ((fst t)<=tn) && (b `elem` tls)
-              = satSubs t (f:tls) (pt:pts) fs
-          | ((fst t)<=tn) && (a `elem` tls) && (f `elem` (snd pt))
-              = satSubs t (f:tls) (pt:pts) fs
+              = satSubs t lbls prev fs
+      satSubs t lbls [] (f@(Until (t0,tn) a b):fs)
+          | ((fst t)<=tn) && (b `elem` lbls)
+              = satSubs t (f:lbls) [] fs
           | otherwise
-              = satSubs t tls (pt:pts) fs
-      satSubs t tls [] (f@(Until (t0,tn) a b):fs)
-          | ((fst t)<=tn) && (b `elem` tls)
-              = satSubs t (f:tls) [] fs
+              = satSubs t lbls [] fs
+      satSubs t lbls prev (f@(Until (t0,tn) a b):fs)
+          | ((fst t)<t0) && (f `elem` prev)
+              = satSubs t (f:lbls) prev fs
+          | ((fst t)<=tn) && (b `elem` lbls)
+              = satSubs t (f:lbls) prev fs
+          | ((fst t)<=tn) && (a `elem` lbls) && (f `elem` prev)
+              = satSubs t (f:lbls) prev fs
           | otherwise
-              = satSubs t tls [] fs
-      satSubs t tls pts (f@(Gtee q a):fs)
+              = satSubs t lbls prev fs
+      satSubs t lbls prev (f@(Gtee q a):fs)
           | (modelCheckDP env solver Nothing (compose (constructP p [t]) 
                                               (maybe err id (lookupProcName env q))) 
              tps a)
-              = satSubs t (f:tls) pts fs
+              = satSubs t (f:lbls) prev fs
           | otherwise
-              = satSubs t tls pts fs
+              = satSubs t lbls prev fs
           where
             err = X.throw $ CpiException $ q ++ " not a defined process."
       satSubs _ _ _ ((Nec _ _):_)
