@@ -2,10 +2,12 @@ species S(s) = {u-a@0.5,a-t@1.0} s<a>.(u.S(s)+t.P());
 species I(i) = {u-a@0.1} i<a>.u.I(i);
 species E(e) = e(x).x.E(e);
 species P() = tau<0.5>.0;
+species X() = 0;
 
 process Pi = [1]S(s) || [0.5]E(e) || [0]P() : {s-e@1.0};
 
 process In = [0.5]I(i) : {e-i@2.0};
+process Q' = [1]X() : {};
 
 process PiIn = [1]S(s) || [0.5]E(e) || [0.5]I(i) || [0]P() 
 	     : {s-e@1.0, e-i@2.0};
