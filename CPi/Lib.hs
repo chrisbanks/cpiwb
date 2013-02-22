@@ -17,8 +17,55 @@
 
 {-# OPTIONS_GHC -XDeriveDataTypeable -XTypeSynonymInstances -XFlexibleInstances #-}
 
-module CpiLib where
-
+module CPi.Lib 
+    (CpiException(..),
+     Species(..),
+     Process(..),
+     Prefix(..),
+     AffNet(..),
+     Aff(..),
+     Definition(..),
+     Conc,
+     Env,
+     Name,
+     OutNames,
+     InNames,
+     Rate,
+     Pretty,
+     Nf,
+     pretty,
+     prettys,
+     prettyNames,
+     prettyList,
+     aff,
+     tri1,
+     tri2,
+     tri3,
+     s2d,
+     d2s,
+     lookupDef,
+     revLookupDef,
+     lookupProcName,
+     lookupSpecName,
+     speciesInProc,
+     compose,
+     card,
+     nf,
+     sites,
+     sub,
+     remove,
+     replace,
+     ifnotnil,
+     netUnion,
+     fn, bn,
+     rename,
+     vecRename,
+     netRename,
+     specName,
+     infty,
+     (/\),(\/),(#),(##),(\\)
+     ) where
+     
 import qualified Data.List as L
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -143,6 +190,7 @@ instance Ord Definition where
     compare (SpeciesDef n _ _) (SpeciesDef n' _ _) = compare n n'
     compare (ProcessDef n _)   (ProcessDef n' _)   = compare n n'
 
+-- |Pretty print a list of Names.
 prettyNames :: [Name] -> String
 prettyNames ns = concat(L.intersperse "," ns)
 
@@ -265,7 +313,7 @@ sub ((old,new):rs) s
     | otherwise
     -- name to be replaced is not free -- error!
         = X.throw $ CpiException 
-          "CpiLib.sub: Tried to substitute a non-free name."
+          "CPi.Lib.sub: Tried to substitute a non-free name."
 
 -- alpha-conversion of species
 aconv :: (Name,Name) -> Species -> Species
@@ -274,10 +322,10 @@ aconv (old,new) s
         = rename (old,new) s
     | (new `elem` (fn s))
         = X.throw $ CpiException 
-          "CpiLib.aconv: Tried to alpha-convert to an existing free name."
+          "CPi.Lib.aconv: Tried to alpha-convert to an existing free name."
     | otherwise
         = X.throw $ CpiException 
-          "CpiLib.aconv: Tried to alpha-convert a non-bound name."
+          "CPi.Lib.aconv: Tried to alpha-convert a non-bound name."
 
 -- a fresh renaming of a name in s
 renaming :: Name -> Species -> Name
@@ -288,7 +336,7 @@ renaming n s = renaming' (renames n) s
           | otherwise            = renaming' ns s
       renaming' [] _
           = X.throw $ CpiException
-            "CpiLib.renaming: Renaming stream has been exhausted."
+            "CPi.Lib.renaming: Renaming stream has been exhausted."
       -- a stream of possible renamings for a given name
       renames x = [x++p | p <- iterate (++"'") "'"]
 
@@ -307,7 +355,7 @@ lookupDef ((SpeciesDef i ps s):env) def@(Def x ns)
     | otherwise = lookupDef env def
 lookupDef ((ProcessDef _ _):env) def = lookupDef env def
 lookupDef _ _ = X.throw $ CpiException 
-                "Unexpected pattern: CpiLib.lookupDef expects a Def!"
+                "Unexpected pattern: CPi.Lib.lookupDef expects a Def!"
 
 -- Reverse definition lookup:
 revLookupDef :: Env -> Species -> Maybe Species
@@ -434,12 +482,15 @@ instance Nf PrefixSpecies where
 ---------------------
 
 --Set operations:
+-- | Set union.
 (\/) :: (Eq a) => [a] -> [a] -> [a]
 (\/) = L.union
 
+-- | Set intersection.
 (/\) :: (Eq a) => [a] -> [a] -> [a]
 (/\) = L.intersect
 
+-- | Set difference.
 (\\) :: (Eq a) => [a] -> [a] -> [a]
 (\\) = (L.\\)
 
@@ -450,36 +501,41 @@ d2s x = show x
 s2d :: String -> Double
 s2d x = read x :: Double
 
--- If not nil:
-ifnotnil :: [a] -> ([a] -> b) -> b -> b
+-- | If List is not nil then apply Function else return Default.
+ifnotnil :: [a]        -- ^ List
+         -> ([a] -> b) -- ^ Function
+         -> b          -- ^ Default
+         -> b          
 ifnotnil [] f b = b
 ifnotnil xs f b = f xs
 
--- Pretty print a list of pretty printable expressions:
+-- | Pretty print a list of pretty printable expressions.
 prettys :: (Pretty a) => [a] -> String
 prettys x = concat $ map (\z->(pretty z)++"\n") x
 
--- pretty print a list
+-- | Pretty print a list
 prettyList x = L.concat $ L.intersperse "\n" x
 
--- Replace first matched element of a list with something else:
+-- | Replace first matched element of a list with something else.
 replace :: (Eq a) => a -> a -> [a] -> [a]
 replace _ _ [] = []
 replace src dst (x:xs)
     | x==src    = dst:xs
     | otherwise = x:(replace src dst xs)
 
--- Remove first matched element of a list
+-- | Remove first matched element of a list.
 remove _ [] = []
 remove m (x:xs)
     | x==m      = xs
     | otherwise = x:(remove m xs)
 
--- cardinality of an element in a list
+-- | Count of an element in a list.
 card :: (Eq a) => a -> [a] -> Integer
 card e l = toInteger $ length $ filter (\a->a==e) l
 
--- elements of a triple:
+-- | First element of a triple.
 tri1 (x,_,_) = x
+-- | Second element of a triple.
 tri2 (_,x,_) = x
+-- | Third element of a triple.
 tri3 (_,_,x) = x

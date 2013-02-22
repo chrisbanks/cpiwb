@@ -17,7 +17,20 @@
 
 {-# OPTIONS_GHC -XPatternGuards #-}
 
-module CpiSemantics where
+module CPi.Semantics 
+    (Concretion(..),
+     MTS(..),
+     Trans(..),
+     TTau(..),
+     TTauAff(..),
+     lookupTrans,
+     pseudoapp,
+     potentials,
+     initconc,
+     primes,
+     processMTS,
+     wholeProc
+    )where
 
 import qualified Data.List as L
 import qualified Control.Exception as X
@@ -25,7 +38,7 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Maybe
 
-import CpiLib
+import CPi.Lib
 
 --------------------
 -- Species semantics
@@ -109,14 +122,14 @@ concAconv (old,new) c
         = concRename (old,new) c
     | (new `elem` (fnc c))
         = X.throw $ CpiException $ 
-          "CpiSemantics.concAconv: " 
+          "CPi.Semantics.concAconv: " 
           ++"Tried to alpha-convert to an existing free name."
     | otherwise
         = X.throw $ CpiException 
-          "CpiSemantics.concAconv: Tried to alpha-convert a non-bound name."
+          "CPi.Semantics.concAconv: Tried to alpha-convert a non-bound name."
 
 -- Normal form for concretions
--- NOTE: see note on normal form in CpiLib
+-- NOTE: see note on normal form in CPi.Lib
 instance Nf Concretion where
     nf s
         | result==s = result
@@ -369,7 +382,7 @@ concRenaming n c = renaming' (renames n) c
           | otherwise             = renaming' ns c
       renaming' [] _
           = X.throw $ CpiException
-            "CpiSemantics.concRenaming: Renaming stream has been exhausted."
+            "CPi.Semantics.concRenaming: Renaming stream has been exhausted."
       -- a stream of possible renamings for a given name
       renames x = [x++p | p <- iterate (++"'") "'"]
 
@@ -518,7 +531,7 @@ partial env proc@(Process ps _)
         pots = potentials mts
         mts = processMTS env proc
         triple (TransSC s n c) = (s,n,c)
-        triple _ = X.throw $ CpiException ("Bug: CpiSemantics.partial.triple passed something other than a TransSC")
+        triple _ = X.throw $ CpiException ("Bug: CPi.Semantics.partial.triple passed something other than a TransSC")
 
 -- Species embedding
 embed :: Env -> Species -> P
@@ -560,7 +573,7 @@ dPdt env p@(Process [(s,c)] net)
             = (((embed env src) `pminus` (embed env dst)) 
                `ptimes` (s2d r)) `ptimes` (s2d c)
         tauexpr _ = X.throw $ CpiException
-                    ("Bug: CpiSemantics.dPdt.tauexpr passed something other than a TransT")
+                    ("Bug: CPi.Semantics.dPdt.tauexpr passed something other than a TransT")
         taus = [x|x<-openMTS(processMTS env p), tau x]
         tau (TransT _ _ _) = True
         tau _ = False
@@ -592,7 +605,7 @@ partial env mts (Process ss net) = partial' env mts ss
       expr t@(TransSC s n c) ((spec,conc):ss) =
           ((s2d conc) * (fromInteger(cardT t mts)) * (fromInteger(cardP env s spec))) + (expr t ss)
       -- NOTE: (\x.f(x))+(\x.f(x)) == \x.f(x)+f(x)
-      expr t _ = X.throw (CpiException
+      expr t _ = X.throw (CPi.Exception
                           ("This is a bug! Partial behavior depends only on Class 1 trans (SC). Incorrectly given: "++(pretty t)))
 
 -- the species embedding

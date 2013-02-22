@@ -15,11 +15,15 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CpiLogic where
+module CPi.Logic 
+    (Formula(..),
+     Val(..),
+     modelCheck
+    )where
 
-import CpiLib 
-import CpiODE (timeSeries,timePoints,dPdt',speciesIn,Solver)
-import CpiSemantics
+import CPi.Lib 
+import CPi.ODE (timeSeries,timePoints,dPdt',speciesIn,Solver)
+import CPi.Semantics
 
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -69,7 +73,7 @@ data Val = R Double   -- Real
 type State = (Double, Map Species Double)
 type Trace = [State]
 
--- The recursive model checking function
+-- The default model checker
 modelCheck :: Env                   -- Environment
            -> Solver                -- ODE solver function
            -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
@@ -77,7 +81,17 @@ modelCheck :: Env                   -- Environment
            -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
            -> Formula               -- Formula to check
            -> Bool
-modelCheck env solver trace p tps f 
+modelCheck = modelCheckHy -- use the hybrid checker.
+
+-- The recursive model checking function
+modelCheckRec :: Env                   -- Environment
+              -> Solver                -- ODE solver function
+              -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+              -> Process               -- Process to execute
+              -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+              -> Formula               -- Formula to check
+              -> Bool
+modelCheckRec env solver trace p tps f 
     | (trace == Nothing)
         = modelCheck' (solve env solver tps p) f
     | otherwise
@@ -238,7 +252,7 @@ modelCheckHy env solver trace p tps f
           hyEval (reverse (fPostOrd f')) ((\(Just x)->x) trace)
     where
       f' = rewriteU f
-      err = X.throw $ CpiException "CpiLogic.modelCheckHy: Formula not in map."
+      err = X.throw $ CpiException "CPi.Logic.modelCheckHy: Formula not in map."
       hyEval :: [Formula] -> Trace -> Map Formula Bool
       hyEval _ [] = Map.empty
       hyEval fs (t:ts) = eval fs t (hyEval fs ts)
@@ -301,7 +315,7 @@ modelCheckHy2 env solver trace p tps f
           hyEval (fPostOrd f') ((\(Just x)->x) trace)
     where
       f' = rewriteU f
-      err = X.throw $ CpiException "CpiLogic.modelCheckHy: Formula not in map."
+      err = X.throw $ CpiException "CPi.Logic.modelCheckHy: Formula not in map."
       hyEval :: [Formula] -> Trace -> Map Formula Bool
       hyEval _ [] = Map.empty
       hyEval fs (t:ts) = eval fs t (hyEval fs ts)

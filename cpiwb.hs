@@ -15,13 +15,13 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-import CpiLib
-import CpiParser
-import CpiSemantics
-import CpiODE
-import CpiPlot
-import CpiLogic
-import CpiMatlab
+import CPi.Lib
+import CPi.Parser
+import CPi.Semantics
+import CPi.ODE
+import CPi.Plot
+import CPi.Logic
+import CPi.Matlab
 
 import System.Console.Haskeline
 import Control.Monad.State.Strict
@@ -321,7 +321,7 @@ checkCmd x = do env <- getEnv
                                Left err -> say $ "Formula parse error:\n" 
                                            ++ (show err)
                                Right f  -> say $ show $ 
-                                           modelCheckHy env solveODE Nothing 
+                                           modelCheck env solveODE Nothing 
                                            p (720,(0,72)) f 
 -- FIXME: time bound needs to be generated from the fomula!
 --        (see function in K.Larsen's paper)

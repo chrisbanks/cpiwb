@@ -15,7 +15,24 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CpiODE where
+module CPi.ODE
+    (Solver,
+     P',
+     Expr(..),
+     timeSeries,
+     timePoints,
+     dPdt',
+     xdot,
+     solveODE,
+     prettyODE,
+     initials,
+     speciesIn,
+     speciesVars,
+     diff,
+     simp,
+     simpP',
+     (><)
+    )where
 
 import qualified Data.List as L
 import qualified Control.Exception as X
@@ -26,8 +43,8 @@ import Data.Maybe
 import qualified Numeric.GSL as GSL
 import qualified Numeric.LinearAlgebra as LA
 
-import CpiLib
-import CpiSemantics
+import CPi.Lib
+import CPi.Semantics
 
 --------------------------------------------
 -- Output the ODEs describing a CPi system
@@ -45,7 +62,7 @@ xdot env p = xdot'
       defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
       defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
       defs2vars [] _ = []
-      defs2vars _ [] = X.throw $ CpiException "CpiODE.xdot: run out of vars!"
+      defs2vars _ [] = X.throw $ CpiException "CPi.ODE.xdot: run out of vars!"
       xvars :: [Int]
       xvars = [0..]
       vmap :: [(Species,Int)]
@@ -59,7 +76,7 @@ xdot env p = xdot'
             convert (Times e e') = (convert e) * (convert e')
             convert (Num d) = d
             err s' = X.throw $ CpiException 
-                     ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
+                     ("Bug: bad lookup ("++(pretty s')++") in CPi.ODE.xdot.toODE")
 
 {- FIXME: xdot and jac share a lot of inlined code. Refactor!
           vmap etc. can be replaced with 'speciesVars' (see below).
@@ -80,7 +97,7 @@ jac env p = jac'
       defs2vars :: [(Species,Expr)] -> [Int] -> [(Species,Int)]
       defs2vars ((k,v):ks) (x:xs) = (k,x) : (defs2vars ks xs)
       defs2vars [] _ = []
-      defs2vars _ [] = X.throw $ CpiException "CpiODE.xdot: run out of vars!"
+      defs2vars _ [] = X.throw $ CpiException "CPi.ODE.xdot: run out of vars!"
       xvars :: [Int]
       xvars = [0..]
       vmap :: [(Species,Int)]
@@ -96,7 +113,7 @@ jac env p = jac'
             convert (Times e e') = (convert e) * (convert e')
             convert (Num d) = d
             err s' = X.throw $ CpiException 
-                     ("Bug: bad lookup ("++(pretty s')++") in CpiODE.xdot.toODE")
+                     ("Bug: bad lookup ("++(pretty s')++") in CPi.ODE.xdot.toODE")
 
 -- Bringing in some infix funs from Numeric.LinearAlgebra:
 -- Matrix constructor:
@@ -149,7 +166,7 @@ solveODE'' odes inits ts
         l2v f = \t -> LA.fromList . f t . LA.toList
 
 -- plot the time series with GNUPlot
--- NOTE: deprecated by the CpiPlot module.
+-- NOTE: deprecated by the CPi.Plot module.
 --plotODE :: LA.Matrix Double -> LA.Vector Double -> IO ()
 --plotODE x ts = Plot.mplot (ts : LA.toColumns x)
 
@@ -264,7 +281,7 @@ partial' env mts proc@(Process ps _) = foldr dplus' d0' (map partial'' ps)
                         (map (\tr->dVec' (triple tr) (Var s)) (pots s))
       pots x = potentials (MTS (lookupTrans mts x))
       triple (TransSC s n c) = (s,n,c)
-      triple _ = X.throw $ CpiException ("Bug: CpiODE.partial'.triple passed something other than a TransSC")
+      triple _ = X.throw $ CpiException ("Bug: CPi.ODE.partial'.triple passed something other than a TransSC")
 
 -- The interaction tensor
 tensor' :: Env -> AffNet -> D' -> D' -> P'
@@ -302,7 +319,7 @@ dPdt' env mts p@(Process [(s,c)] net)
               pVec' env s (Times (Num(-1*k)) (Var s))
                   where k = s2d $ rate r
                         rate (TTau r) = r
-        f _ = X.throw $ CpiException ("Bug: CpiODE.dPdt'.f passed something other than a TransT")
+        f _ = X.throw $ CpiException ("Bug: CPi.ODE.dPdt'.f passed something other than a TransT")
 dPdt' env mts (Process (p:ps) net)
     = (tensor' env net partH partT) 
       `pplus'` (dPdt' env mts procH)  

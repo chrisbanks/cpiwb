@@ -15,7 +15,9 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CpiMatlab where
+module CPi.Matlab
+    (solveODEoctave
+    ) where
 
 import qualified Data.List as L
 import qualified Control.Exception as X
@@ -28,9 +30,9 @@ import qualified Numeric.LinearAlgebra as LA
 import System.IO.Unsafe
 import qualified System.Process as OS
 
-import CpiLib
-import CpiSemantics
-import CpiODE
+import CPi.Lib
+import CPi.Semantics
+import CPi.ODE
 
 -------------------------------
 -- MATLAB script output:
@@ -62,7 +64,7 @@ matlabExpr env vs (Var x)
     = maybe (ex x) id (Map.lookup x vs)
       where 
         ex x = X.throw $ CpiException 
-               ("Bug: failed var lookup in CpiODE.matlabExpr: " ++ show x)
+               ("Bug: failed var lookup in CPi.ODE.matlabExpr: " ++ show x)
 matlabExpr env vs (Plus x y) = matlabExpr env vs x ++ " .+ " ++ matlabExpr env vs y
 matlabExpr env vs (Times (Plus x y) (Plus x' y')) 
     = "(" ++ matlabExpr env vs (Plus x y) ++ ").*(" ++ matlabExpr env vs (Plus x' y') ++ ")"

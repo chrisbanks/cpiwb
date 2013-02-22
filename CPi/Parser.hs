@@ -15,7 +15,11 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CpiParser where
+module CPi.Parser
+    (parseFile,
+     parseDefn,
+     parseFormula
+    ) where
 
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
@@ -23,9 +27,29 @@ import Text.ParserCombinators.Parsec.Expr
 import qualified Text.ParserCombinators.Parsec.Token as P
 import qualified Control.Exception as X
 
-import CpiLib
-import qualified CpiLogic as LBC
+import CPi.Lib
+import qualified CPi.Logic as LBC
 
+
+---------------------
+-- Definition Parser:
+---------------------
+
+-- | Parses a single CPi definiton (Species or Process).
+parseDefn :: String -> Either ParseError Definition
+parseDefn x = parse pDefinition "" x
+
+-- | Parses a string of CPi definitions (i.e. as read from a file).
+parseFile :: String -> Either ParseError [Definition]
+parseFile x = parse pDefinitionLines "" x
+
+----------------
+-- Logic Parser:
+----------------
+
+-- | Parses an LBC formula.
+parseFormula :: String -> Either ParseError LBC.Formula
+parseFormula x = parse pFormula "" x
 
 -----------------
 -- Lexer
@@ -208,17 +232,6 @@ pCommIO = parens (do os <- pNameList;
                      is <- pNameList;
                      return (os,is) )
 
----------------------
--- Definition Parser:
----------------------
-
-parseDefn :: String -> Either ParseError Definition
-parseDefn x = parse pDefinition "" x
-
-parseFile :: String -> Either ParseError [Definition]
-parseFile x = parse pDefinitionLines "" x
-
-
 
 ----------------------
 -- Logic Lexer:
@@ -252,9 +265,6 @@ fcomma = P.comma lexerF
 ----------------------
 -- Logic Parser:
 ----------------------
-
-parseFormula :: String -> Either ParseError LBC.Formula
-parseFormula x = parse pFormula "" x
 
 pFormula = buildExpressionParser fOps pFAtom
 fOps = [[unop "!" LBC.Neg,

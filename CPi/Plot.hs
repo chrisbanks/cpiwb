@@ -15,7 +15,13 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CpiPlot where
+module CPi.Plot
+    (plotTimeSeries,
+     plotTimeSeriesFiltered,
+     plotTimeSeriesToFile,
+     plotTimeSeriesToFileFiltered,
+     phasePlot2
+    ) where
 
 import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Gtk
@@ -26,7 +32,7 @@ import Data.Accessor
 import qualified Control.Exception as X
 import qualified Numeric.LinearAlgebra as LA
 
-import CpiLib
+import CPi.Lib
 
 -- Takes data from the ODE solver and plots them
 plotTimeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species] -> IO ()
@@ -87,7 +93,7 @@ plots ts (colour:cs) ((lbl,pts):dims)
        defaultPlotLines
       ) : plots ts cs dims
 plots _ [] _ = X.throw $ CpiException 
-               "CpiPlot.plots: Run out of colours!"
+               "CPi.Plot.plots: Run out of colours!"
 
 ---------------
 -- Phase plots:
