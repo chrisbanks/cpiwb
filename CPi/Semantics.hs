@@ -88,7 +88,7 @@ instance Pretty Concretion where
         = (pretty net)++" "++(pretty c)
 
 instance Pretty TTau where
-    pretty (TTau r) = "tau@<"++r++">"
+    pretty (TTau r) = "tau@<"++(show r)++">"
 instance Pretty TTauAff where
     pretty (TTauAff (n1,n2)) = "tau@<"++n1++","++n2++">"
 
@@ -416,7 +416,7 @@ initconc :: Process -> Species -> Double
 initconc (Process scs _) s = initconc' scs s
     where
       initconc' ((s',c):scs) s
-          | s == s'   = s2d c
+          | s == s'   = c
           | otherwise = initconc' scs s
       initconc' [] _ = 0
 
@@ -424,7 +424,7 @@ initconc (Process scs _) s = initconc' scs s
 wholeProc :: Env -> Process -> MTS -> Process
 wholeProc env p@(Process scs net) mts = Process scs' net
     where
-      scs' = map (\s->(s,d2s(initconc p s))) (allPrimes env mts)
+      scs' = map (\s->(s,initconc p s)) (allPrimes env mts)
 
 --------------------
 -- Process semantics
@@ -523,11 +523,8 @@ partial env proc@(Process ps _)
         partial' (s,c) = foldr dplus d0 
                          (map (\tr-> 
                                dVec (triple tr)
-                               ((s2d c)*
-                                -- (fromInteger(cardT tr mts))* [Not needed; we're working on lists not multisets here!]
-                                (fromInteger(cardP env (transSrc tr) s))
-                               )
-                              ) pots)
+                               (c * (fromInteger(cardP env (transSrc tr) s))))
+                          pots)
         pots = potentials mts
         mts = processMTS env proc
         triple (TransSC s n c) = (s,n,c)
@@ -551,7 +548,7 @@ tensor env net ds1 ds2 = foldr pplus p0 (map f ds)
     where
       ds = [(x,y,a,p)
             |x<-Map.toList ds1, y<-Map.toList ds2,
-             a<-[maybe 0.0 s2d (aff net ((tri2(fst(x))),(tri2(fst(y)))))],
+             a<-[maybe 0.0 id (aff net ((tri2(fst(x))),(tri2(fst(y)))))],
                 a/=0.0,
              p<-[maybe Nil id (pseudoapp (tri3(fst(x))) (tri3(fst(y))))],
                 p/=Nil
@@ -571,7 +568,7 @@ dPdt env p@(Process [(s,c)] net)
       where
         tauexpr (TransT src (TTau r) dst)
             = (((embed env src) `pminus` (embed env dst)) 
-               `ptimes` (s2d r)) `ptimes` (s2d c)
+               `ptimes` r) `ptimes` c
         tauexpr _ = X.throw $ CpiException
                     ("Bug: CPi.Semantics.dPdt.tauexpr passed something other than a TransT")
         taus = [x|x<-openMTS(processMTS env p), tau x]

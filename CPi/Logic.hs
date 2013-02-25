@@ -390,7 +390,7 @@ constructP :: Process -> Trace -> Process
 constructP (Process scs net) ((_,map):_) = Process (cons' scs map) net 
     where
       cons' [] _ = []
-      cons' ((s,_):ss) map = (s,(maybe "0.0" d2s (Map.lookup s map))) : (cons' ss map)
+      cons' ((s,_):ss) map = (s,(maybe 0.0 id (Map.lookup s map))) : (cons' ss map)
 constructP _ [] = Process [] (AffNet [])
 
 -- the post-order flattening of a formula

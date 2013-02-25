@@ -300,7 +300,7 @@ tensor' env net ds1 ds2 = foldr pplus' p0' (map expr ds)
       -- a is Rate; p is Species result of pseudoapplication
       expr' ((s,n,c),e) ((s',n',c'),e') 
           = maybe (Num 0.0)
-            (\x-> (Times (Num (s2d x)) (Times e e')))
+            (\x-> (Times (Num x) (Times e e')))
             (aff net (n,n'))
 
 -- The symbolic immediate behaviour (the set of ODEs):
@@ -317,7 +317,7 @@ dPdt' env mts p@(Process [(s,c)] net)
         f (TransT src r dst)
             = pVec' env dst (Times (Num k) (Var s)) `pplus'`
               pVec' env s (Times (Num(-1*k)) (Var s))
-                  where k = s2d $ rate r
+                  where k = rate r
                         rate (TTau r) = r
         f _ = X.throw $ CpiException ("Bug: CPi.ODE.dPdt'.f passed something other than a TransT")
 dPdt' env mts (Process (p:ps) net)

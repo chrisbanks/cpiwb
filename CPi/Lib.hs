@@ -83,8 +83,8 @@ instance X.Exception CpiException
 type Name = String
 type OutNames = [Name]
 type InNames = [Name]
-type Rate = String
-type Conc = String
+type Rate = Double
+type Conc = Double
 type PrefixSpecies = (Prefix,Species)
 infty = 1/0
 
@@ -136,7 +136,7 @@ instance Pretty Process where
     pretty (Process x@((s,c):scs) n)
         | null x = ""
         | length x == 1
-            = "["++c++"] "++(pretty s)
+            = "["++(show c)++"] "++(pretty s)
         | otherwise
             = (pretty (Process [(s,c)] n))++" || "++(pretty (Process scs n))
     pretty (Process [] _) = "<Empty process>"
@@ -162,7 +162,7 @@ instance Pretty Species where
     pretty (New n s) = (pretty n)++" "++(pretty s)
 
 instance Pretty Prefix where
-    pretty (Tau r) = "tau<"++r++">."
+    pretty (Tau r) = "tau<"++(show r)++">."
     pretty (Comm n [] []) = n++"."
     pretty (Comm n [] is) = n++"("++(prettyNames is)++")."
     pretty (Comm n os []) = n++"<"++(prettyNames os)++">."
@@ -170,7 +170,7 @@ instance Pretty Prefix where
                             ++(prettyNames is)++")."
 
 instance Pretty Aff where
-    pretty (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++r++")"
+    pretty (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++(show r)++")"
 
 instance Pretty AffNet where
     pretty an = "(new "++(prettyNames(sites an))++")"
@@ -394,7 +394,7 @@ compose (Process p1 a1) (Process p2 a2)
         compSpec s' [] = s'
         incSpec s' c' ((s,c):ss)
             | s == s'
-                = (s,(d2s (s2d c + s2d c'))) : ss
+                = (s,(c + c')) : ss
             | otherwise
                 = (s,c) : incSpec s' c' ss
         incSpec s' c' [] = [(s',c')]

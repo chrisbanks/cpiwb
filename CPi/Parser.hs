@@ -119,7 +119,7 @@ pProcess = do pcs <- sepBy pProcessComponent (rOp "||");
 pProcessComponent :: Parser (Species,Conc)
 pProcessComponent = do c <- brackets(double);
                        s <- pSpecies;
-                       return (s,(d2s c))
+                       return (s,c)
 
 -- Species expression
 pSpecies :: Parser Species
@@ -204,7 +204,7 @@ pAff = do s1 <- identifier;
           s2 <- identifier;
           rOp "@";
           r <- double;
-          return (Aff ((s1,s2),(d2s r)))
+          return (Aff ((s1,s2),r))
 
 -- Prefix:
 pPrefix :: Parser Prefix
@@ -213,7 +213,7 @@ pPrefix = pTau <|> pComm
 pTau :: Parser Prefix
 pTau = do reserved "tau";
           r <- angles double;
-          return (Tau (d2s r))
+          return (Tau r)
 
 pComm :: Parser Prefix
 pComm = try (do n <- identifier;
