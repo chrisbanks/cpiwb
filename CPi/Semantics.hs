@@ -18,17 +18,20 @@
 {-# OPTIONS_GHC -XPatternGuards #-}
 
 module CPi.Semantics 
-    (Concretion(..),
+    (-- * Important functions:
+     processMTS,
+     -- * Datatypes:
+     Concretion(..),
      MTS(..),
      Trans(..),
      TTau(..),
      TTauAff(..),
+     -- * Functions:
      lookupTrans,
      pseudoapp,
      potentials,
      initconc,
      primes,
-     processMTS,
      wholeProc
     )where
 
@@ -176,7 +179,7 @@ instance Nf Concretion where
               | net#<c    = nf c
               | otherwise = ConcNew (AffNet (L.sort ns)) (nf c)
 
--- Get the Multi-Transition System for a Process:
+-- | Get the Multi-Transition System for a Process.
 processMTS :: Env -> Process -> MTS
 processMTS env (Process scs net) = buildMTS env net (MTS []) (map fst scs)
 
@@ -322,7 +325,7 @@ transs defs mts (spec:specs)
 -- Get the transition list of an MTS:
 openMTS = \(MTS x) -> x
 
--- Lookup the transitions for a species in an MTS.
+-- | Lookup the transitions (in an MTS) from a species.
 lookupTrans :: MTS -> Species -> [Trans]
 lookupTrans (MTS []) _ =  []
 lookupTrans (MTS (tran:trans)) s
@@ -343,7 +346,8 @@ transDest (TransT _ _ s) = Just s
 transDest (TransTA _ _ s) = Just s
 
 
--- Pseudo-application of concretions:
+-- | Pseudo-application of concretions. Takes takes two concretions
+--   and if they're compatable then gives the species they combine to form.
 pseudoapp :: Concretion -> Concretion -> Maybe Species
 pseudoapp (ConcBase s1 a x) (ConcBase s2 b y)
     | (length a == length y)&&(length x == length b)
@@ -411,7 +415,7 @@ allPrimes env (MTS ts)
         nice [] = []
         nice (s:ss) = maybe s id (revLookupDef env s) : nice ss
 
--- initial concentration of a species:
+-- | Initial concentration of a species in a process.
 initconc :: Process -> Species -> Double
 initconc (Process scs _) s = initconc' scs s
     where
@@ -420,7 +424,7 @@ initconc (Process scs _) s = initconc' scs s
           | otherwise = initconc' scs s
       initconc' [] _ = 0
 
--- complete syntactic process, including all generated primes
+-- | Gives the complete syntactic process, including all potentially generated primes.
 wholeProc :: Env -> Process -> MTS -> Process
 wholeProc env p@(Process scs net) mts = Process scs' net
     where
@@ -430,7 +434,7 @@ wholeProc env p@(Process scs net) mts = Process scs' net
 -- Process semantics
  --------------------
 
--- Prime components of a species:
+-- | Prime components of a species, i.e. species that are not compositions.
 primes :: Env -> Species -> [Species]
 primes env spec = primes' env (nf spec)
     where
@@ -450,7 +454,7 @@ supp env (Process [] _) = []
 supp env (Process [(s,c)] _) = primes env s    
 supp env (Process ((s,c):ps) aff) = (primes env s)++(supp env (Process ps aff))
 
--- The Class 1 (TransSC) transitions of an MTS
+-- | Gives the Class 1 (Species-->Concretion) transitions of an MTS.
 potentials :: MTS -> [Trans]
 potentials (MTS []) = []
 potentials (MTS (t:ts))

@@ -22,7 +22,7 @@ module CPi.Logic
     )where
 
 import CPi.Lib 
-import CPi.ODE (timeSeries,timePoints,dPdt',speciesIn,Solver)
+import qualified CPi.ODE as ODE
 import CPi.Semantics
 
 import Data.Map (Map)
@@ -75,7 +75,7 @@ type Trace = [State]
 
 -- The default model checker
 modelCheck :: Env                   -- Environment
-           -> Solver                -- ODE solver function
+           -> ODE.Solver            -- ODE solver function
            -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
            -> Process               -- Process to execute
            -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
@@ -85,7 +85,7 @@ modelCheck = modelCheckHy -- use the hybrid checker.
 
 -- The recursive model checking function
 modelCheckRec :: Env                   -- Environment
-              -> Solver                -- ODE solver function
+              -> ODE.Solver                -- ODE solver function
               -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
               -> Process               -- Process to execute
               -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
@@ -131,7 +131,7 @@ modelCheckRec env solver trace p tps f
 
 -- DP model checker using explicit state
 modelCheckDP :: Env                   -- Environment
-             -> Solver                -- ODE solver function
+             -> ODE.Solver                -- ODE solver function
              -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
              -> Process               -- Process to execute
              -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
@@ -237,7 +237,7 @@ modelCheckDP env solver trace p tps f
 
 -- The hybrid model checking function
 modelCheckHy :: Env                   -- Environment
-             -> Solver                -- ODE solver function
+             -> ODE.Solver                -- ODE solver function
              -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
              -> Process               -- Process to execute
              -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
@@ -300,7 +300,7 @@ modelCheckHy env solver trace p tps f
 
 -- The lazy circular hybrid model checking function
 modelCheckHy2 :: Env                   -- Environment
-              -> Solver                -- ODE solver function
+              -> ODE.Solver                -- ODE solver function
               -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
               -> Process               -- Process to execute
               -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
@@ -375,15 +375,15 @@ getVal ts (Quot x y) = getVal ts x / getVal ts y
 getVal [] _ = 0.0
 
 -- Take a process and get a trace from the solver:
-solve :: Env -> Solver -> (Int,(Double,Double)) -> Process -> Trace
-solve env solver (r,(t0,tn)) p = timeSeries ts soln ss
+solve :: Env -> ODE.Solver -> (Int,(Double,Double)) -> Process -> Trace
+solve env solver (r,(t0,tn)) p = ODE.timeSeries ts soln ss
     where
-      ts = timePoints r (t0,tn)
+      ts = ODE.timePoints r (t0,tn)
       mts = processMTS env p
       p' = wholeProc env p mts
-      dpdt = dPdt' env mts p'
+      dpdt = ODE.dPdt env mts p'
       soln = solver env p dpdt (r,(t0,tn))
-      ss = speciesIn env dpdt
+      ss = ODE.speciesIn env dpdt
 
 -- Construct a process from the initial time-point of a trace:
 constructP :: Process -> Trace -> Process

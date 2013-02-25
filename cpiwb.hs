@@ -186,7 +186,7 @@ odesCmd x = do env <- getEnv
                               ++"\" is not in the Environment."
                  Just proc -> do let mts = processMTS env proc
                                  let proc' = wholeProc env proc mts
-                                 let dpdt = dPdt' env mts proc'
+                                 let dpdt = dPdt env mts proc'
                                  say $ prettyODE env dpdt
                                  -- TODO: replace prettyMap with something
                                  --   that prints the ODEs nicely.
@@ -205,8 +205,7 @@ plotCmd x = do env <- getEnv;
                               ++"\" is not in the Environment."
                  Just proc -> do let mts = processMTS env proc
                                  let proc' = wholeProc env proc mts
-                                 let dpdt = dPdt' env mts proc'
-                                 let odes = xdot env dpdt
+                                 let dpdt = dPdt env mts proc'
                                  let inits = initials env proc' dpdt
                                  let ts = timePoints res (start,end)
                                  let solns = solveODE env proc' dpdt (res,(start,end))
@@ -228,8 +227,7 @@ phase2Cmd x = do env <- getEnv;
                                 ++"\" is not in the Environment."
                    Just proc -> do let mts = processMTS env proc
                                    let proc' = wholeProc env proc mts
-                                   let dpdt = dPdt' env mts proc'
-                                   let odes = xdot env dpdt
+                                   let dpdt = dPdt env mts proc'
                                    let inits = initials env proc' dpdt
                                    let ts = timePoints res (start,end)
                                    let solns = solveODEoctave env proc' dpdt (res,(start,end))
@@ -255,8 +253,7 @@ plotFileCmd x = do env <- getEnv;
                                   ++"\" is not in the Environment."
                      Just proc -> do let mts = processMTS env proc
                                      let proc' = wholeProc env proc mts
-                                     let dpdt = dPdt' env mts proc'
-                                     let odes = xdot env dpdt
+                                     let dpdt = dPdt env mts proc'
                                      let inits = initials env proc' dpdt
                                      let ts = timePoints res (start,end)
                                      let solns = solveODE env proc' dpdt (res,(start,end))
@@ -279,8 +276,7 @@ plotAllCmd x = do env <- getEnv;
                                  ++"\" is not in the Environment."
                     Just proc -> do let mts = processMTS env proc
                                     let proc' = wholeProc env proc mts
-                                    let dpdt = dPdt' env mts proc'
-                                    let odes = xdot env dpdt
+                                    let dpdt = dPdt env mts proc'
                                     let inits = initials env proc' dpdt
                                     let ts = timePoints res (start,end)
                                     let solns = solveODE env proc' dpdt (res,(start,end))
@@ -301,8 +297,7 @@ plotOctaveCmd x = do env <- getEnv;
                                     ++"\" is not in the Environment."
                        Just proc -> do let mts = processMTS env proc
                                        let proc' = wholeProc env proc mts
-                                       let dpdt = dPdt' env mts proc'
-                                       let odes = xdot env dpdt
+                                       let dpdt = dPdt env mts proc'
                                        let inits = initials env proc' dpdt
                                        let ts = timePoints res (start,end)
                                        let solns = solveODEoctave env proc' dpdt (res,(start,end))
