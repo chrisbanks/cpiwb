@@ -185,11 +185,8 @@ odesCmd x = do env <- getEnv
                  Nothing   -> say $ "Process \""++(param x)
                               ++"\" is not in the Environment."
                  Just proc -> do let mts = processMTS env proc
-                                 let proc' = wholeProc env proc mts
-                                 let dpdt = dPdt env mts proc'
+                                 let dpdt = dPdt env mts proc
                                  say $ prettyODE env dpdt
-                                 -- TODO: replace prettyMap with something
-                                 --   that prints the ODEs nicely.
 
 -- plot Command
 plotCmd :: String -> Environment ()
@@ -204,14 +201,13 @@ plotCmd x = do env <- getEnv;
                  Nothing   -> say $ "Process \""++(args!!1)
                               ++"\" is not in the Environment."
                  Just proc -> do let mts = processMTS env proc
-                                 let proc' = wholeProc env proc mts
-                                 let dpdt = dPdt env mts proc'
-                                 let inits = initials env proc' dpdt
-                                 let ts = timePoints res (start,end)
-                                 let solns = solveODE env proc' dpdt (res,(start,end))
+                                 let dpdt = dPdt env mts proc
+                                 let ts = (res,(start,end))
+                                 let ts' = timePoints ts
+                                 let solns = solveODE env proc mts dpdt ts
                                  let ss = speciesIn env dpdt
                                  let ss' = speciesInProc proc
-                                 lift$lift$plotTimeSeriesFiltered ts solns ss ss'
+                                 lift$lift$plotTimeSeriesFiltered ts' solns ss ss'
 
 -- phase2 command
 phase2Cmd :: String -> Environment ()
@@ -226,15 +222,14 @@ phase2Cmd x = do env <- getEnv;
                    Nothing   -> say $ "Process \""++(args!!1)
                                 ++"\" is not in the Environment."
                    Just proc -> do let mts = processMTS env proc
-                                   let proc' = wholeProc env proc mts
-                                   let dpdt = dPdt env mts proc'
-                                   let inits = initials env proc' dpdt
-                                   let ts = timePoints res (start,end)
-                                   let solns = solveODEoctave env proc' dpdt (res,(start,end))
+                                   let dpdt = dPdt env mts proc
+                                   let ts = (res,(start,end))
+                                   let ts' = timePoints ts
+                                   let solns = solveODEoctave env proc mts dpdt ts
                                    let ss = speciesIn env dpdt
                                    let ss' = (lookupSpecName env s1', lookupSpecName env s2')
                                    case ss' of
-                                     (Just s1,Just s2) -> lift$lift$phasePlot2 ts solns ss (s1,s2)
+                                     (Just s1,Just s2) -> lift$lift$phasePlot2 ts' solns ss (s1,s2)
                                      otherwise -> say $ "Species "++s1'++" or "++s2'
                                                   ++" is not in the Environment."
 
@@ -252,14 +247,13 @@ plotFileCmd x = do env <- getEnv;
                      Nothing   -> say $ "Process \""++(args!!1)
                                   ++"\" is not in the Environment."
                      Just proc -> do let mts = processMTS env proc
-                                     let proc' = wholeProc env proc mts
-                                     let dpdt = dPdt env mts proc'
-                                     let inits = initials env proc' dpdt
-                                     let ts = timePoints res (start,end)
-                                     let solns = solveODE env proc' dpdt (res,(start,end))
+                                     let dpdt = dPdt env mts proc
+                                     let ts = (res,(start,end))
+                                     let ts' = timePoints ts
+                                     let solns = solveODE env proc mts dpdt ts
                                      let ss = speciesIn env dpdt
                                      let ss' = speciesInProc proc
-                                     lift$lift$plotTimeSeriesToFileFiltered ts solns ss ss' file
+                                     lift$lift$plotTimeSeriesToFileFiltered ts' solns ss ss' file
 
 -- plotAll Command
 -- Plot all species (inc complexes)
@@ -275,13 +269,12 @@ plotAllCmd x = do env <- getEnv;
                     Nothing   -> say $ "Process \""++(args!!1)
                                  ++"\" is not in the Environment."
                     Just proc -> do let mts = processMTS env proc
-                                    let proc' = wholeProc env proc mts
-                                    let dpdt = dPdt env mts proc'
-                                    let inits = initials env proc' dpdt
-                                    let ts = timePoints res (start,end)
-                                    let solns = solveODE env proc' dpdt (res,(start,end))
+                                    let dpdt = dPdt env mts proc
+                                    let ts = (res,(start,end))
+                                    let ts' = timePoints ts
+                                    let solns = solveODE env proc mts dpdt ts
                                     let ss = speciesIn env dpdt
-                                    lift$lift$plotTimeSeries ts solns ss
+                                    lift$lift$plotTimeSeries ts' solns ss
 
 -- plot using Octave solver Command
 plotOctaveCmd :: String -> Environment ()
@@ -296,14 +289,13 @@ plotOctaveCmd x = do env <- getEnv;
                        Nothing   -> say $ "Process \""++(args!!1)
                                     ++"\" is not in the Environment."
                        Just proc -> do let mts = processMTS env proc
-                                       let proc' = wholeProc env proc mts
-                                       let dpdt = dPdt env mts proc'
-                                       let inits = initials env proc' dpdt
-                                       let ts = timePoints res (start,end)
-                                       let solns = solveODEoctave env proc' dpdt (res,(start,end))
+                                       let dpdt = dPdt env mts proc
+                                       let ts = (res,(start,end))
+                                       let ts' = timePoints ts
+                                       let solns = solveODEoctave env proc mts dpdt ts
                                        let ss = speciesIn env dpdt
                                        let ss' = speciesInProc proc
-                                       lift$lift$plotTimeSeriesFiltered ts solns ss ss'
+                                       lift$lift$plotTimeSeriesFiltered ts' solns ss ss'
 
 -- check command:
 checkCmd :: String -> Environment ()

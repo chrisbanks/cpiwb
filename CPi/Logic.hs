@@ -378,11 +378,11 @@ getVal [] _ = 0.0
 solve :: Env -> ODE.Solver -> (Int,(Double,Double)) -> Process -> Trace
 solve env solver (r,(t0,tn)) p = ODE.timeSeries ts soln ss
     where
-      ts = ODE.timePoints r (t0,tn)
+      ts = ODE.timePoints (r,(t0,tn))
       mts = processMTS env p
       p' = wholeProc env p mts
       dpdt = ODE.dPdt env mts p'
-      soln = solver env p dpdt (r,(t0,tn))
+      soln = solver env p mts dpdt (r,(t0,tn))
       ss = ODE.speciesIn env dpdt
 
 -- Construct a process from the initial time-point of a trace:

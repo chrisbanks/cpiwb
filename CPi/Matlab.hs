@@ -94,7 +94,10 @@ matlabJac env p' = L.concat $ L.intersperse ";\n" $
 -- Using Octave to execute the scripts
 ---------------------------------------
 
-solveODEoctave :: Env -> Process -> P' -> (Int,(Double,Double)) -> LA.Matrix Double
-solveODEoctave env p p' ts@(n,(t0,tn)) 
-    = let raw = unsafePerformIO $ OS.readProcess "octave" ["-q"] (matlabODE env p p' ts)
+-- | Solver which calculates the symbolic Jacobian, writes MATLAB code, and executes it with GNU Octave. (General purpose, deals with stiff systems, uses LSODE.)
+solveODEoctave :: Solver
+solveODEoctave env p mts p' ts@(n,(t0,tn)) 
+    = let raw = unsafePerformIO 
+                $ OS.readProcess 
+                      "octave" ["-q"] (matlabODE env (wholeProc env p mts) p' ts)
       in (n><(Map.size p')) $ map s2d $ words raw
