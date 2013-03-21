@@ -49,6 +49,7 @@ data Formula = T                      -- True
              | Impl Formula Formula   -- a IMPLIES b
              | Neg Formula            -- NOT a
              | Until (Double,Double) Formula Formula -- a U[t0,tn] b
+             | Rels (Double,Double) Formula Formula -- a R[t0,tn] b
              | Nec (Double,Double) Formula           -- G[t0,tn] a
              | Pos (Double,Double) Formula           -- F[t0,tn] a
              | Gtee String Formula   -- Q |> a
@@ -230,12 +231,12 @@ modelCheckDP env solver trace p tps f
           | otherwise
               = satSubs t lbls prev fs
           where
-            err = X.throw $ CpiException $ q ++ " not a defined process."
-      satSubs _ _ _ ((Nec _ _):_)
-          = X.throw $ CpiException "DP model checker only checks Until (not F or G)"
-      satSubs _ _ _ ((Pos _ _):_)
-          = X.throw $ CpiException "DP model checker only checks Until (not F or G)"
-
+            err = X.throw $ 
+                  CpiException $ q ++ " not a defined process."
+      satSubs _ _ _ _
+          = X.throw $ 
+            CpiException $ "DP model checker only checks "
+                             ++ "Until (not F, G, or R)"
 -- The hybrid model checking function
 modelCheckHy :: Env                   -- Environment
              -> ODE.Solver                -- ODE solver function
@@ -289,15 +290,15 @@ modelCheckHy env solver trace p tps f
                           = False
                   eval' (Gtee q x)
                       = modelCheckHy env solver Nothing 
-                        (compose (maybe err id (lookupProcName env q)) (constructP p [t])) tps x
+                        (compose 
+                         (maybe err id (lookupProcName env q)) 
+                         (constructP p [t])) tps x
                             where
-                              err = X.throw $ CpiException $ q ++ " not a defined process."
-                  eval' (Pos tn x) 
-                      = X.throw $ 
-                        CpiException "Hybrid model checker only checks Until (not F or G)"
-                  eval' (Nec tn x)
-                      = X.throw $ 
-                        CpiException "Hybrid model checker only checks Until (not F or G)"
+                              err = X.throw $ 
+                                    CpiException $ q ++" not a defined process."
+                  eval' _ = X.throw $ 
+                            CpiException $ "Hybrid model checker only checks "
+                                             ++"Until (not F, G, or R)"
 
 -- The lazy circular hybrid model checking function
 modelCheckHy2 :: Env                   -- Environment
@@ -353,16 +354,16 @@ modelCheckHy2 env solver trace p tps f
                           = False
                   eval' (Gtee q x)
                       = modelCheckHy env solver Nothing 
-                        (compose (maybe err id (lookupProcName env q)) (constructP p [t])) tps x
+                        (compose 
+                         (maybe err id (lookupProcName env q)) 
+                         (constructP p [t])) tps x
                             where
-                              err = X.throw $ CpiException $ q ++ " not a defined process."
-                  eval' (Pos tn x) 
+                              err = X.throw $ 
+                                    CpiException $ q ++ " not a defined process."
+                  eval' _ 
                       = X.throw $ 
-                        CpiException "Hybrid model checker only checks Until (not F or G)"
-                  eval' (Nec tn x)
-                      = X.throw $ 
-                        CpiException "Hybrid model checker only checks Until (not F or G)"
-                  
+                        CpiException $ "Hybrid model checker only checks "
+                                         ++"Until (not F, G, or R)"
 
 -- Get a value from the trace:
 getVal :: Trace -> Val -> Double
@@ -401,21 +402,38 @@ fPostOrd f@(Disj a b) = (fPostOrd a)++(fPostOrd b)++[f]
 fPostOrd f@(Impl a b) = (fPostOrd a)++(fPostOrd b)++[f]
 fPostOrd f@(Neg a) = (fPostOrd a)++[f]
 fPostOrd f@(Until _ a b) = (fPostOrd a)++(fPostOrd b)++[f]
+fPostOrd f@(Rels _ a b) = (fPostOrd a)++(fPostOrd b)++[f]
 fPostOrd f@(Nec _ a) = (fPostOrd a)++[f]
 fPostOrd f@(Pos _ a) = (fPostOrd a)++[f]
 fPostOrd x = [x]
 
--- rewrite a temporal formula in terms of Until (i.e. rewrite F and G)
+-- rewrite a temporal formula in terms of U (i.e. rewrite F, G, R)
 rewriteU :: Formula -> Formula
 rewriteU (Nec i f) = Neg (Until i T (Neg (rewriteU f)))
 rewriteU (Pos i f) = Until i T (rewriteU f)
 rewriteU (Neg f) = Neg (rewriteU f)
 rewriteU (Gtee p f) = Gtee p (rewriteU f)
 rewriteU (Until i f1 f2) = Until i (rewriteU f1) (rewriteU f2)
+rewriteU (Rels i f1 f2) = Neg (Until i (Neg (rewriteU f1)) (Neg (rewriteU f2)))
 rewriteU (Impl f1 f2) = Impl (rewriteU f1) (rewriteU f2)
 rewriteU (Disj f1 f2) = Disj (rewriteU f1) (rewriteU f2)
 rewriteU (Conj f1 f2) = Conj (rewriteU f1) (rewriteU f2)
 rewriteU x = x
+
+-- rewrite a formula in Negation Normal Form
+nnf :: Formula -> Formula
+nnf (Conj a b) = Conj (nnf a) (nnf b)
+nnf (Disj a b) = Disj (nnf a) (nnf b)
+nnf (Neg (Conj a b)) = Disj (nnf (Neg a)) (nnf (Neg b))
+nnf (Neg (Disj a b)) = Conj (nnf (Neg a)) (nnf (Neg b))
+nnf (Pos i a) = Until i T (nnf a)
+nnf (Nec i a) = Rels i F (nnf a)
+nnf (Until i a b) = Until i (nnf a) (nnf b)
+nnf (Rels i a b) = Rels i (nnf a) (nnf b)
+nnf (Neg (Pos i a)) = Rels i F (nnf (Neg a))
+nnf (Neg (Nec i a)) = Until i T (nnf (Neg a))
+nnf (Neg (Until i a b)) = Rels i (nnf (Neg a)) (nnf (Neg b))
+nnf (Neg (Rels i a b)) = Until i (nnf (Neg a)) (nnf (Neg b))
 
 
 -- get simulation time required to verify the formula:
@@ -427,6 +445,7 @@ simTime (Impl a b) = max (simTime a) (simTime b)
 simTime (Nec (x,y) a) = y + (simTime a)
 simTime (Pos (x,y) a) = y + (simTime a)
 simTime (Until (x,y) a b) = y + max (simTime a) (simTime b)
+simTime (Rels (x,y) a b) = y + max (simTime a) (simTime b)
 simTime _ = 0
 
 -------------------------
@@ -452,6 +471,13 @@ instance Pretty Formula where
             = parens x z ++ " U{" ++ show tn ++ "} " ++ parens y z
         | otherwise 
             = parens x z ++ " U{" ++ show t0 ++ "," ++ show tn ++ "} " ++ parens y z
+    pretty z@(Rels (t0,tn) x y)
+        | (t0 == 0) && (tn == infty)
+            = parens x z ++ " R " ++ parens y z
+        | (t0 == 0)
+            = parens x z ++ " R{" ++ show tn ++ "} " ++ parens y z
+        | otherwise 
+            = parens x z ++ " R{" ++ show t0 ++ "," ++ show tn ++ "} " ++ parens y z
     pretty z@(Gtee p y) = p ++ " |> " ++ parens y z
     pretty z@(Neg x) = "!" ++ parens x z
     pretty z@(Nec (t0,tn) x) 
