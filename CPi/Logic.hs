@@ -18,7 +18,8 @@
 module CPi.Logic 
     (Formula(..),
      Val(..),
-     modelCheck
+     modelCheck,
+     simTime
     )where
 
 import CPi.Lib 
@@ -416,6 +417,17 @@ rewriteU (Disj f1 f2) = Disj (rewriteU f1) (rewriteU f2)
 rewriteU (Conj f1 f2) = Conj (rewriteU f1) (rewriteU f2)
 rewriteU x = x
 
+
+-- get simulation time required to verify the formula:
+simTime :: Formula -> Double
+simTime (Neg a) = simTime a
+simTime (Conj a b) = max (simTime a) (simTime b)
+simTime (Disj a b) = max (simTime a) (simTime b)
+simTime (Impl a b) = max (simTime a) (simTime b)
+simTime (Nec (x,y) a) = y + (simTime a)
+simTime (Pos (x,y) a) = y + (simTime a)
+simTime (Until (x,y) a b) = y + max (simTime a) (simTime b)
+simTime _ = 0
 
 -------------------------
 -- Pretty printing:
