@@ -20,7 +20,6 @@ module CPi.Logic
      Val(..),
      modelCheck,
      simTime,
-     nnf --TEMP
     )where
 
 import CPi.Lib 
