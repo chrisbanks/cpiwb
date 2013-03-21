@@ -19,7 +19,8 @@ module CPi.Logic
     (Formula(..),
      Val(..),
      modelCheck,
-     simTime
+     simTime,
+     nnf --TEMP
     )where
 
 import CPi.Lib 
@@ -119,6 +120,8 @@ modelCheckRec env solver trace p tps f
               = ((fst t) <= tn) && (modelCheck' (t:ts) y ||
                                     (modelCheck' (t:ts) x && 
                                      modelCheck' ts (Until (t0,tn) x y)))
+      modelCheck' ts (Rels i x y)
+          = modelCheck' ts (Neg (Until i (Neg x) (Neg y)))
       modelCheck' ts (Pos (t0,tn) x) 
           = modelCheck' ts (Until (t0,tn) T x)
       modelCheck' ts (Nec (t0,tn) x) 
@@ -515,6 +518,7 @@ parens x c
       prio (Nec _ _) = 10
       prio (Pos _ _) = 10
       prio (Until _ _ _) = 40
+      prio (Rels _ _ _) = 40
       prio (Conj _ _) = 50
       prio (Disj _ _) = 52
       prio (Impl _ _) = 55
