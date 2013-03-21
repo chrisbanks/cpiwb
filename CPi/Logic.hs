@@ -434,6 +434,9 @@ nnf (Neg (Pos i a)) = Rels i F (nnf (Neg a))
 nnf (Neg (Nec i a)) = Until i T (nnf (Neg a))
 nnf (Neg (Until i a b)) = Rels i (nnf (Neg a)) (nnf (Neg b))
 nnf (Neg (Rels i a b)) = Until i (nnf (Neg a)) (nnf (Neg b))
+nnf (Gtee p a) = Gtee p (nnf a)
+nnf (Neg (Gtee p a)) = Gtee p (nnf (Neg a))
+nnf x = x
 
 
 -- get simulation time required to verify the formula:
