@@ -17,14 +17,14 @@
 
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 
-module CpiTest where
+module CPi.Test where
 
-import CpiLib
-import CpiParser
-import CpiSemantics
-import CpiODE
-import CpiLogic
---import CpiPlot
+import CPi.Lib
+import CPi.Parser
+import CPi.Semantics
+import CPi.ODE
+import CPi.Logic
+--import CPi.Plot
 
 import Text.ParserCombinators.Parsec
 import System.IO
@@ -39,7 +39,7 @@ import qualified Graphics.Plot as Plot
 -----------------------------------
 -- Parser tests:
 -----------------------------------
-
+{-
 -- Parser Test harnesses:
 tParse :: (Pretty a) => Parser a -> String -> IO ()
 tParse p input = case (parse p "" input) of
@@ -71,7 +71,7 @@ tEmptyProc = Process [] (AffNet [])
 tSpec x = case (parse pSpecies "" x) of
             Left err -> error $ show err
             Right x -> return x
-
+-}
 -------------------------------
 -- Tests for transition system:
 -------------------------------
@@ -103,12 +103,13 @@ tSpec x = case (parse pSpecies "" x) of
 
 -- Some constants for playing with the Enzyme example:
 tEnzDefs = do file <- readFile "testEnzyme.cpi"
-              return ((\(Right x) -> x)(parse pDefinitionLines "" file))
+              return ((\(Right x) -> x) (parseFile file))
 
-tEnzPi = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.1"),(Def "P" [],"0.0")] (AffNet [Aff (("e","s"),"1.0")])
+tEnzPi = Process [(Def "S" ["s"],1.0),(Def "E" ["e"],0.1),(Def "P" [],0.0)] (AffNet [Aff (("e","s"),1.0)])
 
-tEnzPi' = Process [(Def "S" ["s"],"1.0"),(Def "E" ["e"],"0.5"),(Def "P" [],"0.0"),((New (AffNet [Aff (("a","t"),"1.0"),Aff (("a","u"),"0.5")]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "P" []),(Comm "u" [] [],Def "S" ["s"])]])),"0.0")] (AffNet [Aff (("e","s"),"1.0")])
+tEnzPi' = Process [(Def "S" ["s"],1.0),(Def "E" ["e"],0.5),(Def "P" [],0.0),((New (AffNet [Aff (("a","t"),1.0),Aff (("a","u"),0.5)]) (Par [Sum [(Comm "a" [] [],Def "E" ["e"])],Sum [(Comm "t" [] [],Def "P" []),(Comm "u" [] [],Def "S" ["s"])]])),0.0)] (AffNet [Aff (("e","s"),1.0)])
 
+{-
 -- Test get full MTS of a process:
 tPTrans = do file <- readFile "testEnzyme.cpi"
              let defns = (\(Right x) -> x)(parse pDefinitionLines "" file)
@@ -143,7 +144,7 @@ tTensor = do env <- tEnzDefs
              let e = Process [(Def "E" ["e"],"0.1")] net
              let s = Process [(Def "S" ["s"],"1.0")] net
              print $ tensor env net (partial env e) (partial env s)
-
+-}
 -- Test tensor':
 {-tTensor' = do env <- tEnzDefs
               let net = AffNet [Aff (("e","s"),"1.0")]
@@ -163,9 +164,9 @@ tTensor = do env <- tEnzDefs
 ------------------
 
 -- tau@<0.5>.P():
-tcSum1TauP = Sum [((Tau "0.5"),tcP)]
+tcSum1TauP = Sum [((Tau 0.5),tcP)]
 --  tau@<0.5>.P() + tau@<0.5>.Q()
-tcSum2TauPQ = Sum [((Tau "0.5"),tcP),((Tau "0.6"),tcQ)]
+tcSum2TauPQ = Sum [((Tau 0.5),tcP),((Tau 0.6),tcQ)]
 -- P()
 tcP = Def "P" []
 -- Q()
@@ -180,9 +181,9 @@ tcSs = Def "S" ["s"]
 tcSsa = Def "S" ["s","a"]
 tcXx = Def "X" ["x"]
 tcNet0 = AffNet []
-tcNet1 = AffNet [Aff (("s","s'"),"1")]
-tcNet2 = AffNet [Aff (("a","b"),"1")]
-tcNet3 = AffNet [Aff (("s","s'"),"1"),Aff (("x","y"),"1")]
+tcNet1 = AffNet [Aff (("s","s'"),1)]
+tcNet2 = AffNet [Aff (("a","b"),1)]
+tcNet3 = AffNet [Aff (("s","s'"),1),Aff (("x","y"),1)]
 tcNNS = New tcNet1 (New tcNet2 tcSs)
 tcNNSsa = New tcNet1 (New tcNet2 tcSsa)
 tcNSX = New tcNet1 (Par [tcXx,tcSs])
@@ -198,7 +199,7 @@ tcNestPar = Par [tcQ, tcP,Par [tcXx,Par [tcSs,Nil]]]
 -----------------------------------
 -- Tests for new fixmts
 -----------------------------------
-
+{-
 tNPs = do env <- tEnv "models/ddos.cpi"
           let pi = tProc env "Pi"
               net' (Process _ net) = net
@@ -211,7 +212,7 @@ tNPs = do env <- tEnv "models/ddos.cpi"
 tFixmts = do env <- tEnv "models/ddos.cpi"
              let pi = tProc env "Pi"
              return $ processMTS env pi                 
-
+-}
 -----------------------------------
 -- ODE solver tests
 -----------------------------------
@@ -235,7 +236,7 @@ tODE = Plot.mplot (ts : LA.toColumns sol)
            let sol' = GSL.odeSolve x [1.0,0,0.5,0] ts
            Plot.mplot (ts : LA.toColumns sol')
 -}
-
+{-
 tSeries = do env <- tEnv "testEnzyme.cpi"
              let pi = tProc env "Pi"
              let mts = processMTS env pi
@@ -247,12 +248,12 @@ tSeries = do env <- tEnv "testEnzyme.cpi"
              let soln = solveODE env pi' dpdt (250,(0,25))
              let ss = speciesIn env dpdt
              return $ timeSeries ts soln ss
-
+-}
 
 -------------------------
 -- Model checker tests:
 -------------------------
-
+{-
 tModelCheck src p f trc = do env <- tEnv src
                              let pi = tProc env p
                              return $ modelCheck env solveODE trc pi mcts f
@@ -268,28 +269,28 @@ tModelCheckHy src p f trc = do env <- tEnv src
 tModelCheckHy2 src p f trc = do env <- tEnv src
                                 let pi = tProc env p
                                 return $ modelCheckHy2 env solveODE trc pi mcts f
-
+-}
 mcts = (1000,(0,100))
 --
 -- Some contrived formulae for benchmarking:
 -- (Use on the testGT.cpi model)
-{--
+
 -- F(S<0.1)
 tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
 
 -- test gaurantee (introduce an inhibitor)
-inhib = Process [(Def "I" ["i"],"2.0")] (AffNet [Aff (("e","i"),"2.0")])
-tF2 = Gtee inhib (Neg tF1)
+inhib = Process [(Def "I" ["i"],2.0)] (AffNet [Aff (("e","i"),2.0)])
+tF2 = Gtee "I" (Neg tF1)
 
 -- G(E>0.001) enzyme never runs out
 tF3 = Nec (0,infty) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
 tFn3 = Neg tF3
 
 -- still true with inhibitor:
-tF4 = Gtee inhib tF3
+tF4 = Gtee "I" tF3
 
 -- test nested guarantee (re-solves for every time-point):
-tF5 = Nec (0,infty) (Gtee inhib tF3)
+tF5 = Nec (0,infty) (Gtee "I" tF3)
 
 -- test nested TL
 -- G(F(S<0.1))
@@ -303,7 +304,14 @@ tF8 = Nec (0,infty) $ Pos (0,infty) tF4
 tF9 = Pos (0,infty) (ValGT (Conc (Def "P" [])) (R 0.5))
 
 tF10 = Nec (0,infty) tF9
--}
+
+-- for checking sim times:
+phi = (ValGT (Conc (Def "A" [])) (R 0.5))
+psi = (ValGT (Conc (Def "B" [])) (R 0.5))
+tF11 = Pos (0,10) (Nec (0,20) phi)
+tF12 = Nec (0,10) (Conj (Pos (0,10) phi) (Pos (0,20) psi))
+tF13 = Gtee "I" (Pos (0,10) phi)
+
 
 --------------------------
 -- Graph plotting tests:
