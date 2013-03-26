@@ -25,6 +25,7 @@ import CPi.Semantics
 import CPi.ODE
 import CPi.Logic
 --import CPi.Plot
+import CPi.Matlab
 
 import Text.ParserCombinators.Parsec
 import System.IO
@@ -57,10 +58,10 @@ tParse' p input = case (parse p "" input) of
 
 tFile x = do f <- readFile x
              tParse' pDefinitionLines f
-
+-}
 -- Load an Env for testing:
 tEnv x = do f <- readFile x
-            case parse pDefinitionLines "" f of
+            case parseFile f of
               Left err -> return []
               Right x -> return x
 
@@ -68,10 +69,10 @@ tProc env x = maybe tEmptyProc id (lookupProcName env x)
 
 tEmptyProc = Process [] (AffNet [])
 
-tSpec x = case (parse pSpecies "" x) of
-            Left err -> error $ show err
-            Right x -> return x
--}
+-- tSpec x = case (parse pSpecies "" x) of
+--             Left err -> error $ show err
+--             Right x -> return x
+
 -------------------------------
 -- Tests for transition system:
 -------------------------------
@@ -276,34 +277,40 @@ mcts = (1000,(0,100))
 -- (Use on the testGT.cpi model)
 
 -- F(S<0.1)
-tF1 = Pos (0,infty) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
+tF1 = Pos (0,10) (ValLT (Conc (Def "S" ["s"])) (R 0.1))
+
+-- F{5}(S<0.4 AND (F{5} (S<0.1)))
+tF1b = Pos (0,5) 
+       (Conj 
+        (ValLT (Conc (Def "S" ["s"])) (R 0.4)) 
+        (Pos (0,5)
+         (ValLT (Conc (Def "S" ["s"])) (R 0.1))))
 
 -- test gaurantee (introduce an inhibitor)
-inhib = Process [(Def "I" ["i"],2.0)] (AffNet [Aff (("e","i"),2.0)])
-tF2 = Gtee "I" (Neg tF1)
+tF2 = Gtee "In" (Neg tF1)
 
 -- G(E>0.001) enzyme never runs out
-tF3 = Nec (0,infty) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
+tF3 = Nec (0,250) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
 tFn3 = Neg tF3
 
 -- still true with inhibitor:
-tF4 = Gtee "I" tF3
+tF4 = Gtee "In" tF3
 
 -- test nested guarantee (re-solves for every time-point):
-tF5 = Nec (0,infty) (Gtee "I" tF3)
+tF5 = Nec (0,250) (Gtee "In" tF3)
 
 -- test nested TL
 -- G(F(S<0.1))
-tF6 = Nec (0,infty) tF1
+tF6 = Nec (0,250) tF1
 -- G(F(G(E>0.001)))
-tF7 = Nec (0,infty) $ Pos (0,infty) tF3
+tF7 = Nec (0,250) $ Pos (0,250) tF3
 -- G(F(G(Inhib|>(E>0.001))))
-tF8 = Nec (0,infty) $ Pos (0,infty) tF4
+tF8 = Nec (0,250) $ Pos (0,250) tF4
 
 -- should be faster in Hy than in DP:
-tF9 = Pos (0,infty) (ValGT (Conc (Def "P" [])) (R 0.5))
+tF9 = Pos (0,200) (ValGT (Conc (Def "P" [])) (R 0.5))
 
-tF10 = Nec (0,infty) tF9
+tF10 = Nec (0,250) tF9
 
 -- for checking sim times:
 phi = (ValGT (Conc (Def "A" [])) (R 0.5))
