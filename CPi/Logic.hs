@@ -19,7 +19,9 @@ module CPi.Logic
     (Formula(..),
      Val(..),
      modelCheck,
+     modelCheckFR,
      simTime,
+     nnf
     )where
 
 import CPi.Lib 
@@ -30,7 +32,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Control.Exception as X
 import qualified Control.Monad.Trans.State.Strict as S
---import qualified Debug.Trace as DBG
+import qualified Debug.Trace as DBG
 
 -------------------------
 -- Data Structures:
@@ -84,6 +86,7 @@ modelCheck :: Env                   -- Environment
            -> Formula               -- Formula to check
            -> Bool
 modelCheck = modelCheckHy -- use the hybrid checker.
+--modelCheck = modelCheckFR -- use formula rewriting checker.
 
 -- The recursive model checking function
 modelCheckRec :: Env                   -- Environment
@@ -367,6 +370,129 @@ modelCheckHy2 env solver trace p tps f
                         CpiException $ "Hybrid model checker only checks "
                                          ++"Until (not F, G, or R)"
 
+-- The formula rewriting algorithm:
+modelCheckFR :: Env                   -- Environment
+             -> ODE.Solver            -- ODE solver function
+             -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
+             -> Process               -- Process to execute
+             -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
+             -> Formula               -- Formula to check
+             -> Bool
+modelCheckFR env solver trace p tps f
+    | trace == Nothing
+        = check (nnf f) (solve env solver tps p)
+    | otherwise
+        = check (nnf f) ((\(Just x)->x) trace)
+          where
+            -- recurse over the trace
+            -- check if we've rewritten to T or F.
+            check :: Formula -> Trace -> Bool
+            check f [] = False
+            check f (t:ts)
+                = DBG.trace
+                  ("CHECK ("++(pretty f)++") @ "++(show(fst(t))))
+                  $ case beta(gamma t (step(t:ts)) f) of
+                      T -> True
+                      F -> False
+                      otherwise -> check (beta(gamma t (step(t:ts)) f)) ts
+            step (t:t':ts) = fst(t')-fst(t)
+            step _ = infty
+            beta :: Formula -> Formula
+            beta (Conj a b)
+                | beta a == F || beta b == F
+                    = F
+                | beta b == T
+                    = beta a
+                | beta a == T
+                    = beta b
+                | otherwise
+                    = Conj (beta a) (beta b)
+            beta (Disj a b)
+                | beta a == T || beta b == T
+                    = T
+                | beta b == F
+                    = beta a
+                | beta a == F
+                    = beta b
+                | otherwise
+                    = Disj (beta a) (beta b)
+            beta x = x
+            -- Rewrite:
+            gamma :: State -> Double -> Formula -> Formula
+            gamma t v F = F
+            gamma t v T = T
+            gamma t v (ValGT v1 v2) | (getVal [t] v1) > (getVal [t] v2)
+                                        = T | otherwise = F
+            gamma t v (ValGE v1 v2) | (getVal [t] v1) >= (getVal [t] v2)
+                                        = T | otherwise = F
+            gamma t v (ValLT v1 v2) | (getVal [t] v1) < (getVal [t] v2)
+                                        = T | otherwise = F
+            gamma t v (ValLE v1 v2) | (getVal [t] v1) <= (getVal [t] v2)
+                                        = T | otherwise = F
+            gamma t v (ValEq v1 v2) | (getVal [t] v1) == (getVal [t] v2)
+                                        = T | otherwise = F
+            gamma t v (ValNEq v1 v2) | (getVal [t] v1) /= (getVal [t] v2)
+                                         = T | otherwise = F
+            gamma t v (Neg (ValGT v1 v2)) | (getVal [t] v1) > (getVal [t] v2)
+                                              = F | otherwise = T
+            gamma t v (Neg (ValGE v1 v2)) | (getVal [t] v1) >= (getVal [t] v2)
+                                              = F | otherwise = T
+            gamma t v (Neg (ValLT v1 v2)) | (getVal [t] v1) < (getVal [t] v2)
+                                              = F | otherwise = T
+            gamma t v (Neg (ValLE v1 v2)) | (getVal [t] v1) <= (getVal [t] v2)
+                                              = F | otherwise = T
+            gamma t v (Neg (ValEq v1 v2)) | (getVal [t] v1) == (getVal [t] v2)
+                                              = F | otherwise = T
+            gamma t v (Neg (ValNEq v1 v2)) | (getVal [t] v1) /= (getVal [t] v2)
+                                               = F | otherwise = T
+            gamma t v (Conj a b) = Conj (gamma t v a) (gamma t v b)
+            gamma t v (Disj a b) = Disj (gamma t v a) (gamma t v b)
+            gamma t v u@(Until (t0,tn) a b)
+                | t0 > 0 && v <= tn
+                    = Conj 
+                       (gamma t v a) 
+                       (Until ((max (t0-v) 0),tn-v) a b)
+                | t0 == 0 && v <= tn
+                    = Disj 
+                      (gamma t v b) 
+                      (Conj 
+                        (gamma t v a) 
+                        (Until (0,tn-v) a b))
+                | t0 == 0 && v > tn
+                    = gamma t v b
+                | t0 > 0 && v > tn
+                    = F
+            gamma t v r@(Rels (t0,tn) a b)
+                | t0 > 0 && v <= tn 
+                    = Conj 
+                      (gamma t v b) 
+                      (Rels ((max (t0-v) 0),tn-v) a b)
+                | t0 == 0 && v <= tn
+                    = Conj 
+                      (gamma t v b) 
+                      (Disj 
+                       (gamma t v a) 
+                       (Rels (0,tn-v) a b))
+                | v > tn
+                    = gamma t v b
+            gamma t v (Gtee q f)
+                | checkContext = T
+                | otherwise = F
+                where
+                  checkContext = modelCheckFR env solver Nothing 
+                                 (compose 
+                                  (maybe err id (lookupProcName env q)) 
+                                  (constructP p [t])) tps f
+                                     where
+                                       err = X.throw $ 
+                                             CpiException $ 
+                                             q++" not a defined process."
+            gamma _ _ _ = X.throw $ CpiException $
+                          "Rewriting model cheker not defined for formula: "
+                          ++(pretty f)++"\n"
+                          ++"Must be in NNF."
+
+
 -- Get a value from the trace:
 getVal :: Trace -> Val -> Double
 getVal _ (R d) = d
@@ -438,6 +564,7 @@ nnf (Neg (Until i a b)) = Rels i (nnf (Neg a)) (nnf (Neg b))
 nnf (Neg (Rels i a b)) = Until i (nnf (Neg a)) (nnf (Neg b))
 nnf (Gtee p a) = Gtee p (nnf a)
 nnf (Neg (Gtee p a)) = Gtee p (nnf (Neg a))
+nnf (Neg (Neg x)) = nnf x
 nnf x = x
 
 
