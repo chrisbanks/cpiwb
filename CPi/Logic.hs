@@ -390,13 +390,14 @@ modelCheckFR env solver trace p tps f
             check f [] = False
             check f (t:ts)
                 = DBG.trace
-                  ("CHECK ("++(pretty f)++") @ "++(show(fst(t))))
-                  $ case beta(gamma t (step(t:ts)) f) of
+                  ("CHECK ("++(show f)++") @ "++(show(fst(t))))
+                  $ case eta(beta(gamma t (step(t:ts)) f)) of
                       T -> True
                       F -> False
-                      otherwise -> check (beta(gamma t (step(t:ts)) f)) ts
+                      otherwise -> check (eta(beta(gamma t (step(t:ts)) f))) ts
             step (t:t':ts) = fst(t')-fst(t)
             step _ = infty
+            -- Reduce connectives:
             beta :: Formula -> Formula
             beta (Conj a b)
                 | beta a == F || beta b == F
@@ -417,6 +418,26 @@ modelCheckFR env solver trace p tps f
                 | otherwise
                     = Disj (beta a) (beta b)
             beta x = x
+            -- Reduce redundant temporal formulae:
+            eta z@(Disj (Until (0.0,t1) a b) (Disj (Until (0.0,t2) c d) e))
+                | a==c&&b==d
+                    = (Disj (Until (0,(max t1 t2)) a b) (eta e))
+                | otherwise = z
+            eta z@(Conj (Until (0.0,t1) a b) (Conj (Until (0.0,t2) c d) e))
+                | a==c&&b==d
+                    = (Conj (Until (0,(min t1 t2)) a b) (eta e))
+                | otherwise = z
+            eta z@(Disj (Rels (0.0,t1) a b) (Disj (Rels (0.0,t2) c d) e))
+                | a==c&&b==d
+                    = (Disj (Rels (0,(max t1 t2)) a b) (eta e))
+                | otherwise = z
+            eta z@(Conj (Rels (0.0,t1) a b) (Conj (Rels (0.0,t2) c d) e))
+                | a==c&&b==d
+                    = (Conj (Rels (0,(min t1 t2)) a b) (eta e))
+                | otherwise = z
+            eta (Conj a b) = Conj (eta a) (eta b)
+            eta (Disj a b) = Disj (eta a) (eta b)
+            eta x = x
             -- Rewrite:
             gamma :: State -> Double -> Formula -> Formula
             gamma t v F = F
