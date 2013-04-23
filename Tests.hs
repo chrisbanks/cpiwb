@@ -286,31 +286,34 @@ tF1b = Pos (0,5)
         (Pos (0,5)
          (ValLT (Conc (Def "S" ["s"])) (R 0.1))))
 
+tF1c = Pos (0,10) (Nec (0,5)
+                  (ValLT (Conc (Def "S" ["s"])) (R 0.1)))
+
 -- test gaurantee (introduce an inhibitor)
 tF2 = Gtee "In" (Neg tF1)
 
 -- G(E>0.001) enzyme never runs out
-tF3 = Nec (0,250) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
+tF3 = Nec (0,25) (ValGT (Conc (Def "E" ["e"])) (R 0.001))
 tFn3 = Neg tF3
 
 -- still true with inhibitor:
 tF4 = Gtee "In" tF3
 
 -- test nested guarantee (re-solves for every time-point):
-tF5 = Nec (0,250) (Gtee "In" tF3)
+tF5 = Nec (0,25) (Gtee "In" tF3)
 
 -- test nested TL
 -- G(F(S<0.1))
-tF6 = Nec (0,250) tF1
+tF6 = Nec (0,25) tF1
 -- G(F(G(E>0.001)))
-tF7 = Nec (0,250) $ Pos (0,250) tF3
+tF7 = Nec (0,25) $ Pos (0,25) tF3
 -- G(F(G(Inhib|>(E>0.001))))
-tF8 = Nec (0,250) $ Pos (0,250) tF4
+tF8 = Nec (0,25) $ Pos (0,25) tF4
 
 -- should be faster in Hy than in DP:
-tF9 = Pos (0,200) (ValGT (Conc (Def "P" [])) (R 0.5))
+tF9 = Pos (0,20) (ValGT (Conc (Def "P" [])) (R 0.5))
 
-tF10 = Nec (0,250) tF9
+tF10 = Nec (0,25) tF9
 
 -- for checking sim times:
 phi = (ValGT (Conc (Def "A" [])) (R 0.5))
@@ -318,6 +321,21 @@ psi = (ValGT (Conc (Def "B" [])) (R 0.5))
 tF11 = Pos (0,10) (Nec (0,20) phi)
 tF12 = Nec (0,10) (Conj (Pos (0,10) phi) (Pos (0,20) psi))
 tF13 = Gtee "I" (Pos (0,10) phi)
+
+
+tFR1 = (Disj (Until (0.0,3.3935742971887564) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,3.4939759036144586) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,3.594377510040161) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,3.694779116465864) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,3.7951807228915664) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,3.8955823293172696) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,3.9959839357429727) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,4.096385542168675) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,4.196787148594378) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,4.2971887550200805) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,4.397590361445784) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Until (0.0,4.497991967871486) T (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Until (0.0,4.598393574297189) T (ValLT (Conc (Def "S" ["s"])) (R 0.1)))))))))))))))
+
+tFR2 = (Disj (Rels (0.0,2.3895582329317264) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,2.4899598393574305) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,2.5903614457831328) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,2.690763052208835) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,2.791164658634539) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,2.8915662650602414) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,2.9919678714859437) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,3.092369477911646) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,3.19277108433735) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Disj (Rels (0.0,3.2931726907630523) F (ValLT (Conc (Def "S" ["s"])) (R 0.1))) (Rels (0.0,3.3935742971887546) F (ValLT (Conc (Def "S" ["s"])) (R 0.1)))))))))))))
+
+tFR3 = (Conj (Disj (Rels (0.0,24.49799196787149) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.59839357429719) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.698795180722893) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.799196787148595) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.49799196787149) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))))))) (Conj (Disj (Rels (0.0,24.59839357429719) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.698795180722893) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.799196787148595) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.59839357429719) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3)))))))) (Conj (Disj (Rels (0.0,24.698795180722893) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.799196787148595) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.698795180722893) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))))) (Conj (Disj (Rels (0.0,24.799196787148595) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.799196787148595) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3)))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.899598393574298) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Rels (0.0,24.49799196787149) F (Until (0.0,25.0) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))))))))
+
+tFR4 = (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,23.895582329317275) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,23.995983935742977) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.09638554216868) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.19678714859438) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.297188755020084) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.397590361445786) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.49799196787149) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.59839357429719) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.698795180722893) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.799196787148595) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Conj (Disj (Rels (0.0,24.899598393574298) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))) (Until (0.0,24.899598393574298) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))) (Rels (0.0,23.895582329317275) F (Until (0.0,25.0) T (Rels (0.0,25.0) F (ValGT (Conc (Def "E" ["e"])) (R 1.0e-3))))))))))))))))
+
+tf z@(Disj (Until (0.0,t1) a b) (Disj (Until (0.0,t2) c d) e))
+    | a==c&&b==d
+        = (Disj (Until (0,(max t1 t2)) a b) e)
+    | otherwise
+        = z
 
 
 --------------------------
