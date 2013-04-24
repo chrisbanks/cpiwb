@@ -21,7 +21,8 @@ module CPi.Logic
      modelCheck,
      modelCheckFR,
      simTime,
-     nnf
+     nnf,
+     reconcileSpecs
     )where
 
 import CPi.Lib 
@@ -77,13 +78,13 @@ data Val = R Double   -- Real
 type State = (Double, Map Species Double)
 type Trace = [State]
 
--- The default model checker
-modelCheck :: Env                   -- Environment
-           -> ODE.Solver            -- ODE solver function
-           -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
-           -> Process               -- Process to execute
-           -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
-           -> Formula               -- Formula to check
+-- | The default model checker
+modelCheck :: Env                   -- ^ Environment
+           -> ODE.Solver            -- ^ ODE solver function
+           -> (Maybe Trace)         -- ^ Pre-computed time series (or Nothing)
+           -> Process               -- ^ Process to execute
+           -> (Int,(Double,Double)) -- ^ Time points: (points,(t0,tn))
+           -> Formula               -- ^ Formula to check
            -> Bool
 modelCheck = modelCheckHy -- use the hybrid checker.
 --modelCheck = modelCheckFR -- use formula rewriting checker.
@@ -138,7 +139,7 @@ modelCheckRec env solver trace p tps f
 
 -- DP model checker using explicit state
 modelCheckDP :: Env                   -- Environment
-             -> ODE.Solver                -- ODE solver function
+             -> ODE.Solver             -- ODE solver function
              -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
              -> Process               -- Process to execute
              -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
@@ -370,13 +371,13 @@ modelCheckHy2 env solver trace p tps f
                         CpiException $ "Hybrid model checker only checks "
                                          ++"Until (not F, G, or R)"
 
--- The formula rewriting algorithm:
-modelCheckFR :: Env                   -- Environment
-             -> ODE.Solver            -- ODE solver function
-             -> (Maybe Trace)         -- Pre-computed time series (or Nothing)
-             -> Process               -- Process to execute
-             -> (Int,(Double,Double)) -- Time points: (points,(t0,tn))
-             -> Formula               -- Formula to check
+-- | The formula rewriting algorithm:
+modelCheckFR :: Env                   -- ^ Environment
+             -> ODE.Solver            -- ^ ODE solver function
+             -> (Maybe Trace)         -- ^ Pre-computed time series (or Nothing)
+             -> Process               -- ^ Process to execute
+             -> (Int,(Double,Double)) -- ^ Time points: (points,(t0,tn))
+             -> Formula               -- ^ Formula to check
              -> Bool
 modelCheckFR env solver trace p tps f
     | trace == Nothing
@@ -390,7 +391,7 @@ modelCheckFR env solver trace p tps f
             check f [] = False
             check f (t:ts)
                 = DBG.trace
-                  ("CHECK ("++(show f)++") @ "++(show(fst(t))))
+                  ("CHECK ("++(pretty f)++") @ "++(show(fst(t))))
                   $ case eta(beta(gamma t (step(t:ts)) f)) of
                       T -> True
                       F -> False
@@ -569,7 +570,7 @@ rewriteU (Disj f1 f2) = Disj (rewriteU f1) (rewriteU f2)
 rewriteU (Conj f1 f2) = Conj (rewriteU f1) (rewriteU f2)
 rewriteU x = x
 
--- rewrite a formula in Negation Normal Form
+-- | rewrite a formula in Negation Normal Form
 nnf :: Formula -> Formula
 nnf (Conj a b) = Conj (nnf a) (nnf b)
 nnf (Disj a b) = Disj (nnf a) (nnf b)
@@ -589,7 +590,7 @@ nnf (Neg (Neg x)) = nnf x
 nnf x = x
 
 
--- get simulation time required to verify the formula:
+-- | get simulation time required to verify the formula:
 simTime :: Formula -> Double
 simTime (Neg a) = simTime a
 simTime (Conj a b) = max (simTime a) (simTime b)
@@ -600,6 +601,60 @@ simTime (Pos (x,y) a) = y + (simTime a)
 simTime (Until (x,y) a b) = y + max (simTime a) (simTime b)
 simTime (Rels (x,y) a b) = y + max (simTime a) (simTime b)
 simTime _ = 0
+
+-- | Take parsed (possibly incomplete) Speciess in forumla
+-- | and reconcile with Species from the Environment.
+reconcileSpecs :: Env -> Formula -> Formula
+reconcileSpecs env T = T
+reconcileSpecs env F = F
+reconcileSpecs env (ValGT v1 v2) 
+    = ValGT (reconcileVal env v1) (reconcileVal env v2)
+reconcileSpecs env (ValGE v1 v2) 
+    = ValGE (reconcileVal env v1) (reconcileVal env v2)
+reconcileSpecs env (ValLT v1 v2) 
+    = ValLT (reconcileVal env v1) (reconcileVal env v2)
+reconcileSpecs env (ValLE v1 v2) 
+    = ValLE (reconcileVal env v1) (reconcileVal env v2)
+reconcileSpecs env (ValEq v1 v2) 
+    = ValEq (reconcileVal env v1) (reconcileVal env v2)
+reconcileSpecs env (ValNEq v1 v2) 
+    = ValNEq (reconcileVal env v1) (reconcileVal env v2)
+reconcileSpecs env (Conj f1 f2)
+    = Conj (reconcileSpecs env f1) (reconcileSpecs env f2)
+reconcileSpecs env (Disj f1 f2)
+    = Disj (reconcileSpecs env f1) (reconcileSpecs env f2)
+reconcileSpecs env (Impl f1 f2)
+    = Impl (reconcileSpecs env f1) (reconcileSpecs env f2)
+reconcileSpecs env (Neg f) 
+    = Neg (reconcileSpecs env f)
+reconcileSpecs env (Until i f1 f2) 
+    = Until i (reconcileSpecs env f1) (reconcileSpecs env f2)
+reconcileSpecs env (Rels i f1 f2) 
+    = Rels i (reconcileSpecs env f1) (reconcileSpecs env f2)
+reconcileSpecs env (Nec i f) 
+    = Nec i (reconcileSpecs env f)
+reconcileSpecs env (Pos i f) 
+    = Pos i (reconcileSpecs env f)
+reconcileSpecs env (Gtee p f)
+    = Gtee p (reconcileSpecs env f)
+
+reconcileVal :: Env -> Val -> Val
+reconcileVal env (R d) = R d
+reconcileVal env (Conc s) = Conc (reconcileSpec env s)
+reconcileVal env (Deriv s) = Deriv (reconcileSpec env s)
+reconcileVal env (Plus v1 v2) = Plus (reconcileVal env v1) (reconcileVal env v2)
+reconcileVal env (Minus v1 v2) = Minus (reconcileVal env v1) (reconcileVal env v2)
+reconcileVal env (Times v1 v2) = Times (reconcileVal env v1) (reconcileVal env v2)
+reconcileVal env (Quot v1 v2) = Quot (reconcileVal env v1) (reconcileVal env v2)
+
+reconcileSpec env Nil = Nil
+reconcileSpec env (Sum pxs) = Sum (reconcilePxs env pxs)
+reconcileSpec env (Par ss) = Par (map (reconcileSpec env) ss)
+reconcileSpec env (New n s) = New n (reconcileSpec env s)
+reconcileSpec env (Def s ns) = maybe (Def s ns) id (lookupSpecName env s)
+
+reconcilePxs env [] = []
+reconcilePxs env ((p,s):pxs) = (p,(reconcileSpec env s)):(reconcilePxs env pxs)
 
 -------------------------
 -- Pretty printing:
