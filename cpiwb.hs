@@ -108,6 +108,9 @@ commands = [("help",
             ("check",
              CmdRec {cmdFn = checkCmd,
                      cmdHelp = helpTextCheck}),
+            ("check2",
+             CmdRec {cmdFn = check2Cmd,
+                     cmdHelp = helpTextCheck2}),
             ("plotall",
              CmdRec {cmdFn = plotAllCmd,
                      cmdHelp = helpTextPlotAll}),
@@ -307,13 +310,37 @@ checkCmd x = do env <- getEnv
                   Just p  -> case parseFormula (unwords(drop 2 args)) of
                                Left err -> say $ "Formula parse error:\n" 
                                            ++ (show err)
-                               Right f  -> say $ show $ 
-                                           modelCheck env solveODE Nothing 
-                                           p (720,(0,72)) f 
+                               Right f  -> let f' = reconcileSpecs env f
+                                           in say $ show $ 
+                                              modelCheck env 
+                                                         solveODE 
+                                                         Nothing 
+                                                         p 
+                                                         (500,(0,(simTime f'))) 
+                                                         f'
+
 -- FIXME: time bound needs to be generated from the fomula!
 --        (see function in K.Larsen's paper)
 --        in the case of open interval we could prompt for a time to check over?
+--    -- See check2Cmd
 
+check2Cmd :: String -> Environment ()
+check2Cmd x = do env <- getEnv
+                 let args = words x
+                 case lookupProcName env (args!!1) of
+                   Nothing -> say $ "Process \""++(args!!1)
+                              ++"\" is not in the Environment."
+                   Just p  -> case parseFormula (unwords(drop 2 args)) of
+                                Left err -> say $ "Formula parse error:\n" 
+                                            ++ (show err)
+                                Right f  -> let f' = reconcileSpecs env f
+                                            in say $ show $ 
+                                               modelCheckFR env 
+                                                            solveODEoctave 
+                                                            Nothing 
+                                                            p 
+                                                            (500,(0,(simTime f')))
+                                                            f'
 
 ----------------------
 -- Command help texts:
@@ -333,6 +360,7 @@ helpTextOdes = ("odes <process>","Shoes the ODEs for a process.")
 helpTextPlot = ("plot <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points.")
 helpTextPlotFile = ("plotfile <process> <start> <end> <points> <file>","Plots the time series of a process for the given interval [start,end] with the given number of time points to a PDF")
 helpTextCheck = ("check <process> <formula>","Model checker -- checks the process satisfies the formula")
+helpTextCheck2 = ("check2 <process> <formula>","Model checker -- checks the process satisfies the formula using the formula rewriting algorithm with relative time bounds.")
 helpTextPlotAll = ("plotall <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, including all species defined and generated complexes.")
 helpTextPlotOctave = ("plotoctave <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, using GNU Octave to solve the ODEs.")
 helpTextPhase2 = ("phasePlot2 <process>  <species> <species> <start> <end> <points>","Plots the (2-dimensional) phase diagram for two species, for the given interval [start,end] with the given number of time points.")
