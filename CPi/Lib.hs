@@ -22,6 +22,7 @@ module CPi.Lib
      Species(..),
      Process(..),
      Prefix(..),
+     PrefixSpecies,
      AffNet(..),
      Aff(..),
      Definition(..),
