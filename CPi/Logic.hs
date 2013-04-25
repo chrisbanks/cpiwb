@@ -528,7 +528,11 @@ getVal [] _ = 0.0
 
 -- Take a process and get a trace from the solver:
 solve :: Env -> ODE.Solver -> (Int,(Double,Double)) -> Process -> Trace
-solve env solver (r,(t0,tn)) p = ODE.timeSeries ts soln ss
+solve env solver (r,(t0,tn)) p 
+    | (t0,tn) == (0,0)
+        = [(0, Map.fromList(zip ss (ODE.initials env p' dpdt)))]
+    | otherwise 
+        = ODE.timeSeries ts soln ss
     where
       ts = ODE.timePoints (r,(t0,tn))
       mts = processMTS env p
