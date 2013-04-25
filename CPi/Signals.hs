@@ -22,10 +22,18 @@ module CPi.Signals
 import CPi.Lib 
 import qualified CPi.ODE as ODE
 import CPi.Semantics
+import CPi.Logic
+
+import Data.Map (Map)
+import qualified Data.Map as Map
 
 -------------------------------------
 -- Signal Monitoring for LBC and CPi
 -------------------------------------
+
+-- Signal for a formula is a covering list of intervals with truth value.
+type Signal = [((Double,Double),Bool)]
+type SignalSet = Map Formula Signal
 
 -- | Model checking using the Signal Monitoring technique
 modelCheckSig :: Env                   -- ^ Environment
@@ -35,5 +43,25 @@ modelCheckSig :: Env                   -- ^ Environment
               -> (Int,(Double,Double)) -- ^ Time points: (points,(t0,tn))
               -> Formula               -- ^ Formula to check
               -> Bool
-modelCheckSig = undefined --TODO:######################
+modelCheckSig env solver trace p tps f 
+    | (trace == Nothing)
+        = initSat $ mt $ basicSigs (solve env solver tps p) f
+    | otherwise
+        = initSat $ mt $ basicSigs ((\(Just x)->x) trace) f
+    where
+      mt :: SignalSet -> SignalSet
+      mt = undefined --TODO:#######################
+      
+      initSat :: SignalSet -> Bool 
+      initSat = undefined --TODO:###################
 
+-- Produce the set of basic signals for the atomic propositions of a formula.
+basicSigs :: Trace -> Formula -> SignalSet
+basicSigs trace f = basicSigs' trace (aps f)
+    where
+      basicSigs' trace [] = Map.empty
+      basicSigs' trace (f:fs) = Map.insert f (sig trace f) (basicSigs' trace fs)
+
+-- Produce the basic signal for an AP
+sig :: Trace -> Formula -> Signal
+sig trace f = undefined --TODO:###############
