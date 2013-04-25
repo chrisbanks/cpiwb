@@ -1,4 +1,4 @@
--- (C) Copyright Chris Banks 2011-2012
+-- (C) Copyright Chris Banks 2011-2013
 
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
