@@ -27,7 +27,10 @@ module CPi.Logic
      reconcileSpecs,
      solve,
      getVal,
-     traceNext
+     traceNext,
+     traceInterval,
+     traceLength,
+     traceStart
     )where
 
 import CPi.Lib 
@@ -535,7 +538,22 @@ getVal [] _ = 0.0
 -- | Trace iterator: Return the trace from the next time point.
 traceNext :: Trace -> Trace
 traceNext [] = []
-traceNext (t:ts) = ts
+traceNext (t:tr) = tr
+
+-- | Time interval the trace covers
+traceInterval :: Trace -> (Double,Double)
+traceInterval [] = (0,0)
+traceInterval (t:tr) = (fst t, fst (last tr))
+
+-- | Initial time of a trace
+traceStart :: Trace -> Double
+traceStart [] = 0
+traceStart (t:_) = fst t
+
+-- | Number of time-points in the trace
+traceLength :: Trace -> Int
+traceLength [] = 0
+traceLength (_:tr) = 1 + traceLength tr
 
 -- Take a process and get a trace from the solver:
 solve :: Env -> ODE.Solver -> (Int,(Double,Double)) -> Process -> Trace
