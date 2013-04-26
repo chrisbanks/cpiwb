@@ -16,7 +16,9 @@
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
 module CPi.Signals 
-    (modelCheckSig
+    (modelCheckSig,
+     Signal,
+     SignalSet
     )where
 
 import CPi.Lib 
@@ -26,6 +28,7 @@ import CPi.Logic
 
 import Data.Map (Map)
 import qualified Data.Map as Map
+import qualified Control.Exception as X
 
 -------------------------------------
 -- Signal Monitoring for LBC and CPi
@@ -57,11 +60,34 @@ modelCheckSig env solver trace p tps f
 
 -- Produce the set of basic signals for the atomic propositions of a formula.
 basicSigs :: Trace -> Formula -> SignalSet
-basicSigs trace f = basicSigs' trace (aps f)
+basicSigs tr f = basicSigs' tr (aps f)
     where
-      basicSigs' trace [] = Map.empty
-      basicSigs' trace (f:fs) = Map.insert f (sig trace f) (basicSigs' trace fs)
+      basicSigs' tr [] = Map.empty
+      basicSigs' tr (f:fs) = Map.insert f (sig tr f) (basicSigs' tr fs)
 
 -- Produce the basic signal for an AP
 sig :: Trace -> Formula -> Signal
-sig trace f = undefined --TODO:###############
+sig tr T = [(traceInterval tr,True)]
+sig tr F = [(traceInterval tr,False)]
+sig tr (ValGT v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 > getVal t v2)
+sig tr (ValGE v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 >= getVal t v2)
+sig tr (ValLT v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 < getVal t v2)
+sig tr (ValLE v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 <= getVal t v2)
+sig tr (ValEq v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 == getVal t v2)
+sig tr (ValNEq v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 /= getVal t v2)
+sig _ _ = X.throw $ CpiException "CPi.Signals.sig only takes APs"
+
+sigTrav :: Trace -> (Trace -> Bool) -> Signal 
+sigTrav [] _ = []
+sigTrav tr f = ((traceStart tr, traceStart(traceNext tr)), (f tr)) 
+               : sigTrav (traceNext tr) f
+
+-- Produces the minimal covering of a signal
+minCover :: Signal -> Signal
+minCover [] = []
+minCover [i] = [i]
+minCover (i1:i2:is)
+    | (snd i1 == snd i2) 
+        = minCover $ ((fst(fst i1), snd(fst i2)), snd i1) : is
+    | otherwise 
+        = i1 : minCover (i2:is)
