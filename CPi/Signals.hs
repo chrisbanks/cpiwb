@@ -34,7 +34,7 @@ import qualified Control.Exception as X
 -- Signal Monitoring for LBC and CPi
 -------------------------------------
 
--- Signal for a formula is a covering list of intervals with truth value.
+-- | Signal for a formula is a covering list of intervals, each with truth value.
 type Signal = [((Double,Double),Bool)]
 type SignalSet = Map Formula Signal
 
@@ -48,15 +48,15 @@ modelCheckSig :: Env                   -- ^ Environment
               -> Bool
 modelCheckSig env solver trace p tps f 
     | (trace == Nothing)
-        = initSat $ mt $ basicSigs (solve env solver tps p) f
+        = initSat $ combine f $ basicSigs (solve env solver tps p) f
     | otherwise
-        = initSat $ mt $ basicSigs ((\(Just x)->x) trace) f
+        = initSat $ combine f $ basicSigs ((\(Just x)->x) trace) f
     where
-      mt :: SignalSet -> SignalSet
-      mt = undefined --TODO:#######################
+      combine :: Formula -> SignalSet -> SignalSet
+      combine = undefined --TODO:###########################
       
       initSat :: SignalSet -> Bool 
-      initSat = undefined --TODO:###################
+      initSat ss = maybe False (\x->snd(head(x))) (Map.lookup f ss)
 
 -- Produce the set of basic signals for the atomic propositions of a formula.
 basicSigs :: Trace -> Formula -> SignalSet
@@ -65,7 +65,6 @@ basicSigs tr f = basicSigs' tr (aps f)
       basicSigs' tr [] = Map.empty
       basicSigs' tr (f:fs) = Map.insert f (sig tr f) (basicSigs' tr fs)
 
--- Produce the basic signal for an AP
 sig :: Trace -> Formula -> Signal
 sig tr T = [(traceInterval tr,True)]
 sig tr F = [(traceInterval tr,False)]
@@ -82,7 +81,7 @@ sigTrav [] _ = []
 sigTrav tr f = ((traceStart tr, traceStart(traceNext tr)), (f tr)) 
                : sigTrav (traceNext tr) f
 
--- Produces the minimal covering of a signal
+-- The minimal covering of a signal
 minCover :: Signal -> Signal
 minCover [] = []
 minCover [i] = [i]
@@ -91,3 +90,112 @@ minCover (i1:i2:is)
         = minCover $ ((fst(fst i1), snd(fst i2)), snd i1) : is
     | otherwise 
         = i1 : minCover (i2:is)
+
+-- The negation of a signal
+negSig :: Signal -> Signal
+negSig [] = []
+negSig ((i,v):sig) = (i,not v) : negSig sig
+
+-- The minimal common (uniform) covering of signals:
+-- mccl gives the left signal w.r.t. the right
+-- FIXME: assumes signals have same cover
+mccl :: Signal -> Signal -> Signal
+mccl (((l1,u1),v1):sig1) (((l2,u2),v2):sig2)
+    | u1 < u2
+        = ((l1,u1),v1) : mccl sig1 (((l2,u2),v2):sig2)
+    | u1 > u2
+        = ((l1,u2),v1) : mccl (((u2,u1),v1):sig1) sig2
+    | otherwise
+        = ((l1,u1),v1) : mccl sig1 sig2
+mccl [] (s:sig) = X.throw $ CpiException 
+                  "CPi.Signals.mccl requires signals of same cover"
+mccl (s:sig) [] = X.throw $ CpiException
+                  "CPi.Signals.mccl requires signals of same cover"
+mccl [] [] = []
+-- and mccr gives the right signal w.r.t. the left
+-- FIXME: assumes signals have same cover
+mccr :: Signal -> Signal -> Signal
+mccr (((l1,u1),v1):sig1) (((l2,u2),v2):sig2)
+    | u1 < u2
+        = ((l2,u1),v2) : mccr sig1 (((u1,u2),v2):sig2)
+    | u1 > u2
+        = ((l2,u2),v2) : mccr (((u2,u1),v1):sig1) sig2
+    | otherwise
+        = ((l2,u2),v2) : mccr sig1 sig2
+mccr [] (s:sig) = X.throw $ CpiException
+                  "CPi.Signals.mccr requires signals of same cover"
+mccr (s:sig) [] = X.throw $ CpiException
+                  "CPi.Signals.mccr requires signals of same cover"
+mccr [] [] = []
+
+-- Test if two signals have uniform covering
+uniform :: Signal -> Signal -> Bool
+uniform ((i,_):s) ((j,_):t)
+    | i==j      = uniform s t
+    | otherwise = False
+uniform ((i,_):s) [] = False
+uniform [] ((i,_):s) = False
+uniform [] [] = True
+
+-- The conjunction of two signals
+conjSig :: Signal -> Signal -> Signal
+conjSig sig1 sig2 = minCover $ conjSig' (mccl sig1 sig2) (mccr sig1 sig2)
+    where
+      conjSig' ((i1,v1):s1) ((i2,v2):s2)
+          | i1==i2
+              = (i1,(v1 && v2)) : conjSig' s1 s2
+          | otherwise
+              = X.throw $ CpiException
+                "CPi.Signals.conjSig: signals are not uniform!"
+      conjSig' [] (s:sig) = X.throw $ CpiException
+                            "CPi.Signals.conjSig: signals are not uniform!"
+      conjSig' (s:sig) [] = X.throw $ CpiException
+                            "CPi.Signals.conjSig: signals are not uniform!"
+      conjSig' [] [] = []
+
+-- The disjunction of two signals
+disjSig :: Signal -> Signal -> Signal
+disjSig sig1 sig2 = minCover $ disjSig' (mccl sig1 sig2) (mccr sig1 sig2)
+    where
+      disjSig' ((i1,v1):s1) ((i2,v2):s2)
+          | i1==i2
+              = (i1,(v1 || v2)) : disjSig' s1 s2
+          | otherwise
+              = X.throw $ CpiException
+                "CPi.Signals.disjSig: signals are not uniform!"
+      disjSig' [] (s:sig) = X.throw $ CpiException
+                            "CPi.Signals.disjSig: signals are not uniform!"
+      disjSig' (s:sig) [] = X.throw $ CpiException
+                            "CPi.Signals.disjSig: signals are not uniform!"
+      disjSig' [] [] = []
+
+
+
+---------------------------
+-- Tests
+---------------------------
+
+test1 = not (uniform testSig1 testSig2)
+test2 = uniform (mccl testSig1 testSig2) (mccr testSig1 testSig2)
+test3 = conjSig testSig1 testSig2 == testConj12
+test4 = disjSig testSig1 testSig2 == testDisj12
+
+-------------
+-- Test data
+-------------
+
+testSig1 = [((0,1),False),
+            ((1,3),True),
+            ((3,6),False),
+            ((6,8),True)] :: Signal
+testSig2 = [((0,2),False),
+            ((2,7),True),
+            ((7,8),False)] :: Signal
+
+testConj12 = [((0,2),False),
+              ((2,3),True),
+              ((3,6),False),
+              ((6,7),True),
+              ((7,8),False)] :: Signal
+testDisj12 = [((0,1),False),
+              ((1,8),True)] :: Signal
