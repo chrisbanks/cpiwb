@@ -179,6 +179,8 @@ test1 = not (uniform testSig1 testSig2)
 test2 = uniform (mccl testSig1 testSig2) (mccr testSig1 testSig2)
 test3 = conjSig testSig1 testSig2 == testConj12
 test4 = disjSig testSig1 testSig2 == testDisj12
+test5 = conjSig testSig3 testSig4 == testConj34
+test6 = disjSig testSig3 testSig4 == testDisj34
 
 -------------
 -- Test data
@@ -191,7 +193,6 @@ testSig1 = [((0,1),False),
 testSig2 = [((0,2),False),
             ((2,7),True),
             ((7,8),False)] :: Signal
-
 testConj12 = [((0,2),False),
               ((2,3),True),
               ((3,6),False),
@@ -199,3 +200,17 @@ testConj12 = [((0,2),False),
               ((7,8),False)] :: Signal
 testDisj12 = [((0,1),False),
               ((1,8),True)] :: Signal
+testSig3 = [((0,2),True),
+            ((2,3),False),
+            ((3,5),True),
+            ((5,7),False)] :: Signal
+testSig4 = [((0,1),True),
+            ((1,2),False),
+            ((2,4),True),
+            ((4,5),False),
+            ((5,7),True)] :: Signal
+testConj34 = [((0,1),True),
+              ((1,3),False),
+              ((3,4),True),
+              ((4,7),False)] :: Signal 
+testDisj34 = [((0,7),True)] :: Signal
