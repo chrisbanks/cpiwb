@@ -169,48 +169,110 @@ disjSig sig1 sig2 = minCover $ disjSig' (mccl sig1 sig2) (mccr sig1 sig2)
                             "CPi.Signals.disjSig: signals are not uniform!"
       disjSig' [] [] = []
 
+-- Give the covering range of the signal
+cover :: Signal -> (Double,Double)
+cover [] = (0,0)
+cover (((l,_),_):sig) = (l,(\((_,h),_)->h)(last sig))
+
+-- Remove False intervals from the signal
+trueSig :: Signal -> Signal
+trueSig [] = []
+trueSig ((i,True):sig) = (i,True):(trueSig sig)
+trueSig ((i,False):sig) = trueSig sig
+
+-- Test if a signal is well-formed (has no gaps or overlaps)
+wellformed :: Signal -> Bool
+wellformed [] = False
+wellformed [x] = True
+wellformed (((_,u),_):s@((l,_),_):sig)
+    | (u==l)
+        = wellformed (s:sig)
+    | otherwise
+        = False
+
+-- Take a True only signal and a desired cover and fill in False intervals
+fillTrueSig :: (Double,Double) -> Signal -> Signal
+fillTrueSig _ [] = []
+fillTrueSig (mn,mx) [s@((l,u),_)]
+    | l>mn && u<mx
+        = ((mn,l),False):s:((u,mx),False):[]
+    | l>mn
+        = ((mn,l),False):s:[]
+    | u<mx
+        = s:((u,mx),False):[]
+    | otherwise
+        = s:[]
+fillTrueSig (mn,mx) (s1@((i,u),_):s2@((l,_),_):sig)
+    | (i>mn)
+        = ((mn,i),False):(fillTrueSig (i,mx) (s1:s2:sig))
+    | (u>=l)
+        = s1:(fillTrueSig (l,mx) (s2:sig))
+    | otherwise
+        = s1:((u,l),False):(fillTrueSig (l,mx) (s2:sig))
+
+-- the Minkowski difference of an interval
+minkDiff :: (Double,Double) -> (Double,Double) -> (Double,Double)
+minkDiff (m,n) (a,b) = (m-b,n-a)
+
+-- Shift a signal by [a,b] -- the Minkowski difference of each 
+-- positive interval, union the positive Reals.
+shift :: Signal -> (Double,Double) -> Signal
+shift s i = minCover $ fillTrueSig (cover s) $ shift' (trueSig s) i
+    where
+      shift' [] _ = []
+      shift' (((m,n),t):sig) (a,b)
+          | a>b || a<0 || b<0
+              = X.throw $ CpiException
+                "CPi.Signals.shift only takes positive intervals"
+          | c<0 && d<0
+              = shift' sig (a,b)
+          | c<0
+              = ((0,d),t):(shift' sig (a,b))
+          | otherwise
+              = ((c,d),t):(shift' sig (a,b))
+          where
+            (c,d) = minkDiff (m,n) (a,b)
 
 
 ---------------------------
 -- Tests
 ---------------------------
 
-test1 = not (uniform testSig1 testSig2)
-test2 = uniform (mccl testSig1 testSig2) (mccr testSig1 testSig2)
-test3 = conjSig testSig1 testSig2 == testConj12
-test4 = disjSig testSig1 testSig2 == testDisj12
-test5 = conjSig testSig3 testSig4 == testConj34
-test6 = disjSig testSig3 testSig4 == testDisj34
+-- min cover
+test1 = not (uniform tSig1 tSig2)
+test2 = uniform (mccl tSig1 tSig2) (mccr tSig1 tSig2)
+-- conjunction/disjunction
+test3 = conjSig tSig1 tSig2 == tConj12
+test4 = disjSig tSig1 tSig2 == tDisj12
+test5 = conjSig tSig3 tSig4 == tConj34
+test6 = disjSig tSig3 tSig4 == tDisj34
+-- signals <-> True only signals
+test7 = fillTrueSig (cover tSig1) (trueSig tSig1) == tSig1 
+test8 = fillTrueSig (cover tSig2) (trueSig tSig2) == tSig2
+test9 = fillTrueSig (cover tSig3) (trueSig tSig3) == tSig3
+test10 = fillTrueSig (cover tSig4) (trueSig tSig4) == tSig4
+-- shift
+test11 = shift tSig1 (0,1) == tSig1shift01
+test12 = shift tSig1 (0,2) == tSig1shift02
+test13 = shift tSig1 (0,3) == tSig1shift03
+test14 = shift tSig1 (1,2) == tSig1shift12
 
 -------------
 -- Test data
 -------------
 
-testSig1 = [((0,1),False),
-            ((1,3),True),
-            ((3,6),False),
-            ((6,8),True)] :: Signal
-testSig2 = [((0,2),False),
-            ((2,7),True),
-            ((7,8),False)] :: Signal
-testConj12 = [((0,2),False),
-              ((2,3),True),
-              ((3,6),False),
-              ((6,7),True),
-              ((7,8),False)] :: Signal
-testDisj12 = [((0,1),False),
-              ((1,8),True)] :: Signal
-testSig3 = [((0,2),True),
-            ((2,3),False),
-            ((3,5),True),
-            ((5,7),False)] :: Signal
-testSig4 = [((0,1),True),
-            ((1,2),False),
-            ((2,4),True),
-            ((4,5),False),
-            ((5,7),True)] :: Signal
-testConj34 = [((0,1),True),
-              ((1,3),False),
-              ((3,4),True),
-              ((4,7),False)] :: Signal 
-testDisj34 = [((0,7),True)] :: Signal
+tSig1 = [((0,1),False),((1,3),True),((3,6),False),((6,8),True)] :: Signal
+tSig2 = [((0,2),False),((2,7),True),((7,8),False)] :: Signal
+tConj12 = [((0,2),False),((2,3),True),((3,6),False),
+           ((6,7),True),((7,8),False)] :: Signal
+tDisj12 = [((0,1),False),((1,8),True)] :: Signal
+tSig3 = [((0,2),True),((2,3),False),((3,5),True),((5,7),False)] :: Signal
+tSig4 = [((0,1),True),((1,2),False),((2,4),True),
+         ((4,5),False),((5,7),True)] :: Signal
+tConj34 = [((0,1),True),((1,3),False),((3,4),True),((4,7),False)] :: Signal 
+tDisj34 = [((0,7),True)] :: Signal
+tSig1shift01 = [((0.0,3.0),True),((3.0,5.0),False),((5.0,8.0),True)]
+tSig1shift02 = [((0.0,3.0),True),((3.0,4.0),False),((4.0,8.0),True)]
+tSig1shift03 = [((0.0,8.0),True)]
+tSig1shift12 = [((0.0,2.0),True),((2.0,4.0),False),
+                ((4.0,7.0),True),((7.0,8.0),False)]
