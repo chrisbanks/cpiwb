@@ -98,7 +98,6 @@ negSig ((i,v):sig) = (i,not v) : negSig sig
 
 -- The minimal common (uniform) covering of signals:
 -- mccl gives the left signal w.r.t. the right
--- FIXME: assumes signals have same cover
 mccl :: Signal -> Signal -> Signal
 mccl (((l1,u1),v1):sig1) (((l2,u2),v2):sig2)
     | u1 < u2
@@ -113,7 +112,6 @@ mccl (s:sig) [] = X.throw $ CpiException
                   "CPi.Signals.mccl requires signals of same cover"
 mccl [] [] = []
 -- and mccr gives the right signal w.r.t. the left
--- FIXME: assumes signals have same cover
 mccr :: Signal -> Signal -> Signal
 mccr (((l1,u1),v1):sig1) (((l2,u2),v2):sig2)
     | u1 < u2
@@ -172,6 +170,7 @@ disjSig sig1 sig2 = minCover $ disjSig' (mccl sig1 sig2) (mccr sig1 sig2)
 -- Give the covering range of the signal
 cover :: Signal -> (Double,Double)
 cover [] = (0,0)
+cover [((l,h),_)] = (l,h)
 cover (((l,_),_):sig) = (l,(\((_,h),_)->h)(last sig))
 
 -- Remove False intervals from the signal
@@ -192,7 +191,7 @@ wellformed (((_,u),_):s@((l,_),_):sig)
 
 -- Take a True only signal and a desired cover and fill in False intervals
 fillTrueSig :: (Double,Double) -> Signal -> Signal
-fillTrueSig _ [] = []
+fillTrueSig (mn,mx) [] = [((mn,mx),False)]
 fillTrueSig (mn,mx) [s@((l,u),_)]
     | l>mn && u<mx
         = ((mn,l),False):s:((u,mx),False):[]
@@ -233,6 +232,33 @@ shift s i = minCover $ fillTrueSig (cover s) $ shift' (trueSig s) i
           where
             (c,d) = minkDiff (m,n) (a,b)
 
+-- decompose a signal into unitary signals
+decompose :: Signal -> [Signal]
+decompose sig = map (fillTrueSig (cover sig)) (dc (trueSig sig))
+    where
+      dc [] = []
+      dc (s:sig) = [s]:(dc sig)
+
+-- compose a signal of given cover from a list of unitary signals
+recompose :: [Signal] -> Signal
+recompose [] = []
+recompose (sig:sigs) 
+    | all (\x-> cover x == cover sig) sigs
+        = minCover $ foldr disjSig [(cover sig,False)] sigs
+    | otherwise
+        = X.throw $ CpiException
+          "CPi.Signals.recompose requires all signals to have same cover"
+
+-- temporal until of two signal
+untilSig :: Signal -> (Double,Double) -> Signal -> Signal
+untilSig p (a,b) q 
+    | cover p == cover q
+        = recompose 
+          $ map (\x->conjSig x (shift (conjSig x q) (a,b))) (decompose p)
+    | otherwise
+        = X.throw $ CpiException 
+          "CPi.Signals.untilSig only takes signals of same cover"
+          
 
 ---------------------------
 -- Tests
@@ -256,6 +282,17 @@ test11 = shift tSig1 (0,1) == tSig1shift01
 test12 = shift tSig1 (0,2) == tSig1shift02
 test13 = shift tSig1 (0,3) == tSig1shift03
 test14 = shift tSig1 (1,2) == tSig1shift12
+-- until
+test15 = decompose tSigP == [tSigP1,tSigP2]
+test16 = conjSig tSigP1 tSigQ == tConjP1Q
+test17 = conjSig tSigP2 tSigQ == tConjP2Q
+test18 = shift tConjP1Q (1,2) == tShift12ConjP1Q 
+test19 = shift tConjP2Q (1,2) == tShift12ConjP2Q 
+test20 = conjSig tShift12ConjP1Q tSigP1 == tConjR1P1
+test21 = conjSig tShift12ConjP2Q tSigP2 == tConjR2P2
+test22 = disjSig tConjR1P1 tConjR2P2 == tPUntilQ
+test23 = recompose [tConjR1P1, tConjR2P2] == tPUntilQ
+test24 = untilSig tSigP (1,2) tSigQ == tPUntilQ
 
 -------------
 -- Test data
@@ -276,3 +313,34 @@ tSig1shift02 = [((0.0,3.0),True),((3.0,4.0),False),((4.0,8.0),True)]
 tSig1shift03 = [((0.0,8.0),True)]
 tSig1shift12 = [((0.0,2.0),True),((2.0,4.0),False),
                 ((4.0,7.0),True),((7.0,8.0),False)]
+
+tSigP = [((0,1),False),
+         ((1,3),True),
+         ((3,4),False),
+         ((4,7),True),
+         ((7,8),False)] :: Signal
+tSigQ = [((0,4),False),
+         ((4,5),True),
+         ((5,6),False),
+         ((6,8),True)] :: Signal
+tSigP1 = [((0,1),False),
+          ((1,3),True),
+          ((3,8),False)] :: Signal
+tSigP2 = [((0,4),False),
+          ((4,7),True),
+          ((7,8),False)] :: Signal
+tConjP1Q = [((0,8),False)] :: Signal
+tConjP2Q = [((0,4),False),
+            ((4,5),True),
+            ((5,6),False),
+            ((6,7),True),
+            ((7,8),False)] :: Signal
+tShift12ConjP1Q = tConjP1Q -- = R1
+tShift12ConjP2Q = [((0,2),False), -- = R2
+                   ((2,6),True),
+                   ((6,8),False)] :: Signal 
+tConjR1P1 = tConjP1Q
+tConjR2P2 = [((0,4),False),
+             ((4,6),True),
+             ((6,8),False)] :: Signal
+tPUntilQ = tConjR2P2
