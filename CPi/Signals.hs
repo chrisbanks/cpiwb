@@ -29,6 +29,8 @@ import CPi.Logic
 import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Control.Exception as X
+import qualified Control.Monad.Trans.State as S
+
 
 -------------------------------------
 -- Signal Monitoring for LBC and CPi
@@ -46,17 +48,72 @@ modelCheckSig :: Env                   -- ^ Environment
               -> (Int,(Double,Double)) -- ^ Time points: (points,(t0,tn))
               -> Formula               -- ^ Formula to check
               -> Bool
-modelCheckSig env solver trace p tps f 
+modelCheckSig env solver trace p (res,tms) f 
     | (trace == Nothing)
-        = initSat $ combine f $ basicSigs (solve env solver tps p) f
+        = initSat $ combine f $ basicSigs (solve env solver (res,tms) p) f
     | otherwise
         = initSat $ combine f $ basicSigs ((\(Just x)->x) trace) f
     where
       combine :: Formula -> SignalSet -> SignalSet
-      combine = undefined --TODO:###########################
+      combine f set = S.evalState (combine' (fPostOrd f)) set
+      -- get the set of combined signals for each sub-formula
+      -- memoizes in the state monad
+      combine' :: [Formula] -> S.State SignalSet SignalSet
+      combine' [] = S.get >>= return
+      combine' (f:fs) = do sset <- S.get
+                           S.put $ maybe (combine'' f sset) 
+                                (\_->sset) (Map.lookup f sset)
+                           combine' fs
+      -- put a new combined signal in the set
+      combine'' :: Formula -> SignalSet -> SignalSet
+      combine'' f@(Conj a b) sset 
+          = Map.insert f (conjSig (defly a sset) (defly b sset)) sset
+      combine'' f@(Disj a b) sset 
+          = Map.insert f (disjSig (defly a sset) (defly b sset)) sset
+      combine'' f@(Impl a b) sset 
+          = Map.insert f (disjSig (defly b sset) (negSig (defly a sset))) sset
+      combine'' f@(Neg a) sset 
+          = Map.insert f (negSig (defly a sset)) sset
+      combine'' f@(Until i a b) sset 
+          = Map.insert f (untilSig (defly a sset) i (defly b sset)) sset
+      combine'' f@(Rels i a b) sset 
+          = Map.insert f (negSig (untilSig (negSig (defly a sset)) i 
+                                               (negSig (defly b sset)))) sset
+      combine'' f@(Nec i a) sset 
+          = Map.insert f (negSig (shift (negSig (defly a sset)) i)) sset
+      combine'' f@(Pos i a) sset 
+          = Map.insert f (shift (defly a sset) i) sset
+      combine'' f@(Gtee q a) sset 
+          | (trace == Nothing)
+              = Map.insert f (gteeSig (solve env solver (res,tms) p) q' a) sset
+          | otherwise
+              = Map.insert f (gteeSig ((\(Just x)->x) trace) q' a) sset
+          where q' = maybe (er3 q) id (lookupProcName env q)
+      combine'' f _ = X.throw $ CpiException
+                      "CPi.Signals.modelCheckSig.combine'': only for non-atomic."
+      er2 = X.throw $ CpiException
+            "CPi.Signals.modelCheckSig.combine'': Bug: failed gtee lookup"
+      er3 q = X.throw $ CpiException 
+              $ "Process "++q++" is not in the environment."
+      -- defly: get a value which is "definitely" in a map:
+      defly k m = maybe er1 id (Map.lookup k m)
+      er1 = X.throw $ CpiException
+             "CPi.Signals.modelCheckSig.combine'': Bug: given incomplete sig set."
       
       initSat :: SignalSet -> Bool 
       initSat ss = maybe False (\x->snd(head(x))) (Map.lookup f ss)
+      -- produce the signal for a guarantee
+      -- NOTE: here we calculate the signal at every time point
+      --      of the original trace. Can we do better?
+      gteeSig :: Trace -> Process -> Formula -> Signal
+      gteeSig trs q f = minCover $ gteeSig' (traceInterval trs) q f trs
+      gteeSig' _ _ _ [] = []
+      gteeSig' i q f trs = ((traceStart trs, traceStart(traceNext trs)),
+                            modelCheckSig env solver Nothing
+                                              (compose (constructP p trs) q)
+                                              (res,(0,simTime f)) f)
+                           : gteeSig' i q f (traceNext trs)
+
 
 -- Produce the set of basic signals for the atomic propositions of a formula.
 basicSigs :: Trace -> Formula -> SignalSet
