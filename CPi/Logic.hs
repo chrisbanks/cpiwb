@@ -30,7 +30,9 @@ module CPi.Logic
      traceNext,
      traceInterval,
      traceLength,
-     traceStart
+     traceStart,
+     fPostOrd,
+     constructP
     )where
 
 import CPi.Lib 
@@ -623,6 +625,8 @@ nnf (Neg (Neg x)) = nnf x
 nnf x = x
 
 -- | Atomic propositions of a formula
+-- | NOTE: treats context modality as non-atomic and any sub-formula
+-- |      of a context modality is ignored (as it is in a different context).
 aps :: Formula -> [Formula]
 aps f = L.nub $ aps' f
     where
@@ -634,7 +638,7 @@ aps f = L.nub $ aps' f
       aps' (Rels _ a b) = aps' a ++ aps' b
       aps' (Nec _ a) = aps' a
       aps' (Pos _ a) = aps' a
-      aps' (Gtee _ a) = aps' a
+      aps' (Gtee _ a) = []
       aps' x = [x]
 
 -- | get simulation time required to verify the formula:
