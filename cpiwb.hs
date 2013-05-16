@@ -119,7 +119,10 @@ commands = [("help",
                      cmdHelp = helpTextPlotOctave}),
             ("phasePlot2",
              CmdRec {cmdFn = phase2Cmd,
-                     cmdHelp = helpTextPhase2})]
+                     cmdHelp = helpTextPhase2}),
+            ("matlab",
+             CmdRec {cmdFn = matlabCmd,
+                     cmdHelp = helpTextMatlab})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -342,6 +345,20 @@ check2Cmd x = do env <- getEnv
                                                             (500,(0,(simTime f')))
                                                             f'
 
+matlabCmd :: String -> Environment ()
+matlabCmd x = do env <- getEnv
+                 let args = words x
+                     start = read(args!!2)
+                     end = read(args!!3)
+                     res = read(args!!4)
+                 case lookupProcName env (args!!1) of
+                   Nothing -> say $ "Process \""++(args!!1)
+                              ++"\" is not in the Environment."
+                   Just p -> let mts = processMTS env p
+                                 p' = dPdt env mts p
+                                 ts = (res,(start,end))
+                             in putFile (args!!5) $ matlabScript env p mts p' ts
+
 ----------------------
 -- Command help texts:
 ----------------------
@@ -364,6 +381,7 @@ helpTextCheck2 = ("check2 <process> <formula>","Model checker -- checks the proc
 helpTextPlotAll = ("plotall <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, including all species defined and generated complexes.")
 helpTextPlotOctave = ("plotoctave <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, using GNU Octave to solve the ODEs.")
 helpTextPhase2 = ("phasePlot2 <process>  <species> <species> <start> <end> <points>","Plots the (2-dimensional) phase diagram for two species, for the given interval [start,end] with the given number of time points.")
+helpTextMatlab = ("matlab <process> <start> <end> <points> <filename>","Writes the MATLAB code for the ODEs to a file.")
 
 ---------------------
 -- Utility functions:
@@ -388,6 +406,10 @@ addEnv x = do env <- getEnv;
 -- Read in a file:
 getFile :: FilePath -> Environment String
 getFile = lift . lift . readFile
+
+-- Write a file:
+putFile :: FilePath -> String -> Environment ()
+putFile f s = lift $ lift $ writeFile f s
 
 -- get the parameters from a command line:
 params :: String -> [String]

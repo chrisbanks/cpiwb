@@ -16,8 +16,13 @@
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
 module CPi.Matlab
-    (solveODEoctave
+    (solveODEoctave,
+     matlabScript
     ) where
+
+import CPi.Lib
+import CPi.Semantics
+import CPi.ODE
 
 import qualified Data.List as L
 import qualified Control.Exception as X
@@ -30,9 +35,6 @@ import qualified Numeric.LinearAlgebra as LA
 import System.IO.Unsafe
 import qualified System.Process as OS
 
-import CPi.Lib
-import CPi.Semantics
-import CPi.ODE
 
 -------------------------------
 -- MATLAB script output:
@@ -101,3 +103,13 @@ solveODEoctave env p mts p' ts@(n,(t0,tn))
                 $ OS.readProcess 
                       "octave" ["-q"] (matlabODE env (wholeProc env p mts) p' ts)
       in (n><(Map.size p')) $ map s2d $ words raw
+
+
+-- Return the MATLAB script for ODEs
+matlabScript :: Env 
+             -> Process 
+             -> MTS 
+             -> P' 
+             -> (Int, (Double, Double)) 
+             -> String
+matlabScript env p mts p' ts = matlabODE env (wholeProc env p mts) p' ts
