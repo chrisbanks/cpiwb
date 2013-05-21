@@ -144,7 +144,7 @@ instance Pretty Process where
 
 instance Pretty Species where
     pretty Nil = "0"
-    pretty (Def i ns) = i -- ++"("++(prettyNames ns)++")"
+    pretty (Def i ns) = i ++"("++(prettyNames ns)++")"
                           -- NOTE: temp removed def params!
     pretty x'@(Sum x@((p,s):pss)) 
         | (length x == 1) 
@@ -171,10 +171,12 @@ instance Pretty Prefix where
                             ++(prettyNames is)++")."
 
 instance Pretty Aff where
-    pretty (Aff ((n1,n2),r)) = "("++n1++"-"++n2++"@"++(show r)++")"
+    pretty (Aff ((n1,n2),r)) = n1++"-"++n2++"@"++(show r)
+
+prettyAffs affs = concat(L.intersperse ", " (map pretty affs))
 
 instance Pretty AffNet where
-    pretty an = "(new "++(prettyNames(sites an))++")"
+    pretty (AffNet affs) = "{"++(prettyAffs affs)++"}"
 
 instance Pretty Definition where
     pretty (SpeciesDef n fns s) 
