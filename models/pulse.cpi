@@ -1,0 +1,17 @@
+-- Q generates a pulse of P.
+-- P has a site suitable for arbitrary interaction.
+
+species Q(p) = tau<5>.P(p);
+species P(p) = tau<1>.0 + p(x).x.P(p);
+
+-- R binds to P and can be degraded by it.
+
+species R(r) = {x-u@5, x-d@1}
+			   r<x>.(u.R(r) + d.0);
+
+-- Whilst the pulse of P is present, R is degraded, then it flat-lines.
+
+process Pi = [0] P(p) ||
+		   	 [1] Q(p) ||
+			 [2] R(r)
+           : {p-r@1};

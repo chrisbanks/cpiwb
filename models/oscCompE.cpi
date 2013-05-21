@@ -1,0 +1,161 @@
+--------------
+-- Clock 1:
+--------------
+
+species S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		= {u-xe@10.02, ca-xe@163.31, cb-xe@0} 
+		  s00a<xe>.(u.S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b))
+		  +
+		  s00b<xe>.(u.S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b));
+
+species S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		= {xe-u@10.02, xe-c@40.83, xf1-u@10.02, xf1-c@8.17}
+		  s01e<xe>.(u.S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b))
+		  +
+		  s01f1<xf1>.(u.S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b));
+
+species S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		= {xe-u@10.02, xe-c@8.17, xf1-u@10.02, xf1-c@40.83}
+		  s10e<xe>.(u.S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b))
+		  +
+		  s10f1<xf1>.(u.S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b));
+
+species S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		= {u-xf1@10.02, ca-xf1@0, cb-xf1@163.31} 
+		  s11a<xf1>.(u.S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b))
+		  +
+		  s11b<xf1>.(u.S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b));
+
+---------------
+-- Clock 2:
+---------------
+
+species T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		= {u-xe@10.02, ca-xe@163.31, cb-xe@0} 
+		  t00a<xe>.(u.T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		  		   + 
+				   ca.T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b))
+		  +
+		  t00b<xe>.(u.T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		  		   + 
+				   cb.T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b));
+
+species T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		= {xe-u@10.02, xe-c@40.83, xf2-u@10.02, xf2-c@8.17}
+		  t01e<xe>.(u.T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b)
+				   +
+				   c.T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b))
+		  +
+		  t01f2<xf2>.(u.T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b)
+				   +
+				   c.T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b));
+
+species T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		= {xe-u@10.02, xe-c@8.17, xf2-u@10.02, xf2-c@40.83}
+		  t10e<xe>.(u.T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b)
+				   +
+				   c.T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b))
+		  +
+		  t10f2<xf2>.(u.T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b)
+				   +
+				   c.T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b));
+
+species T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		= {u-xf2@10.02, ca-xf2@0, cb-xf2@163.31} 
+		  t11a<xf2>.(u.T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		  		   + 
+				   ca.T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b))
+		  +
+		  t11b<xf2>.(u.T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) 
+		  		   + 
+				   cb.T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b));
+-------------
+-- Enzymes:
+-------------
+
+species E(e) = e(x).x.E(e);
+
+species F1(f1) = f1(x).x.F1(f1);
+species F2(f2) = f2(x).x.F2(f2);
+
+
+--------------
+-- Process:
+--------------
+
+process Pi1 = [10e4] S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F1(f1)
+		   	 : {s00a-e@818.18,
+				s00b-e@0,
+				s01e-e@13.64,
+				s10e-e@4093.17,
+				s01f1-f1@4093.17,
+				s10f1-f1@13.64,
+				s11a-f1@0,
+				s11b-f1@818.18};
+
+process Pi2 = [10e4] T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+		   	 [0] T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+			 [0] T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+			 [0] T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+		   	 [1] E(e) || 
+			 [1] F2(f2)
+		   	 : {t00a-e@818.18,
+				t00b-e@0,
+				t01e-e@13.64,
+				t10e-e@4093.17,
+				t01f2-f2@4093.17,
+				t10f2-f2@13.64,
+				t11a-f2@0,
+				t11b-f2@818.18};
+
+-- Conjecture: de-phosphoylation occurs more quickly,
+--             clocks are not competeing for phosphatase.
+
+process Pi12 = [10e4] S00(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+		  [0] S01(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+		  [0] S10(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+		  [0] S11(s00a,s00b,s01e,s01f1,s10e,s10f1,s11a,s11b) || 
+	       [10e4] T00(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+		  [0] T01(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+		  [0] T10(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) || 
+		  [0] T11(t00a,t00b,t01e,t01f2,t10e,t10f2,t11a,t11b) ||
+		  [1] E(e) || 
+		  [1] F1(f1) ||
+		  [1] F2(f2)
+		: {s00a-e@818.18,
+		   s00b-e@0,
+		   s01e-e@13.64,
+		   s10e-e@4093.17,
+		   s01f1-f1@4093.17,
+		   s10f1-f1@13.64,
+		   s11a-f1@0,
+		   s11b-f1@818.18,
+		   t00a-e@818.18,
+		   t00b-e@0,
+		   t01e-e@13.64,
+		   t10e-e@4093.17,
+		   t01f2-f2@4093.17,
+		   t10f2-f2@13.64,
+		   t11a-f2@0,
+		   t11b-f2@818.18};

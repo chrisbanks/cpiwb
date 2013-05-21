@@ -1,0 +1,59 @@
+species S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xe@10.02, ca-xe@14.12, cb-xe@7.06} 
+		  s00a<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s00b<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@105.91, xf-u@10.02, xf-c@0}
+		  s01e<xe>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s01f<xf>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@0, xf-u@10.02, xf-c@105.91}
+		  s10e<xe>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s10f<xf>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xf@10.02, ca-xf@7.06, cb-xf@14.12} 
+		  s11a<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s11b<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species E(e) = e(x).x.E(e);
+
+species F(f) = f(x).x.F(f);
+
+
+process Pi = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f)
+		   	 : {s00a-e@7074.12,
+				s00b-e@70.74,
+				s01e-e@2.12,
+				s10e-e@0,
+				s01f-f@0,
+				s10f-f@2.12,
+				s11a-f@70.74,
+				s11b-f@7074.12};
