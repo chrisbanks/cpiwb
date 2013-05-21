@@ -19,6 +19,7 @@ module CPi.ODE
     (-- * Important functions:
      dPdt,
      solveODE,
+     evolveProcess,
      -- * Types:
      Solver,
      P',
@@ -216,7 +217,26 @@ timeSeries v m ss
             = (t, Map.fromList (zip ss cs)) : timeSeries' ts css ss
 
 
+-----------------------------------
+-- Process evolution
+-----------------------------------
 
+-- | Gives the syntactic process with initial conditions corresponding to the 
+-- | end conditions of the given process.
+
+evolveProcess :: Env -- ^ the environment
+              -> Process -- ^ the syntactic process
+              -> MTS -- ^ the MTS (from 'processMTS')
+              -> P' -- ^ the symbolic process space (from 'dPdt')
+              -> (Int,(Double,Double)) -- ^ time points to solve for (points(start,end))
+              -> Solver -- ^ the ODE solving function to use
+              -> Process
+evolveProcess env p mts p' ts solver 
+    = let matrix = solver env p mts p' ts
+          vals = LA.toList $ last $ LA.toRows $ matrix
+          ss = speciesIn env p'
+          (Process _ net) = p
+      in Process (zip ss vals) net
 
 --------------------------------------------
 -- Symbolic semantics

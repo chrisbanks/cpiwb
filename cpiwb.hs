@@ -122,7 +122,10 @@ commands = [("help",
                      cmdHelp = helpTextPhase2}),
             ("matlab",
              CmdRec {cmdFn = matlabCmd,
-                     cmdHelp = helpTextMatlab})]
+                     cmdHelp = helpTextMatlab}),
+            ("evolve",
+             CmdRec {cmdFn = evolveCmd,
+                     cmdHelp = helpTextEvolve})]
 
 -- TODO: * delete a specific defn cmd
 --       * network cmd (need to parameterise in syntax first)
@@ -344,7 +347,7 @@ check2Cmd x = do env <- getEnv
                                                             p 
                                                             (500,(0,(simTime f')))
                                                             f'
-
+-- MATLAB command - produce MATLAB script for ODEs.
 matlabCmd :: String -> Environment ()
 matlabCmd x = do env <- getEnv
                  let args = words x
@@ -358,6 +361,26 @@ matlabCmd x = do env <- getEnv
                                  p' = dPdt env mts p
                                  ts = (res,(start,end))
                              in putFile (args!!5) $ matlabScript env p mts p' ts
+
+-- Evolve command
+evolveCmd :: String -> Environment ()
+evolveCmd x = do env <- getEnv
+                 let args = words x
+                     start = read(args!!2)
+                     end = read(args!!3)
+                     res = read(args!!4)
+                     newPname = (args!!5)
+                 case lookupProcName env (args!!1) of
+                   Nothing -> say $ "Process \""++(args!!1)
+                              ++"\" is not in the Environment."
+                   Just p -> let mts = processMTS env p
+                                 p' = dPdt env mts p
+                                 ts = (res,(start,end))
+                                 newP = (evolveProcess env p mts p' 
+                                                       ts solveODEoctave)
+                             in do addEnv $ ProcessDef newPname newP
+                                   say $ newPname ++ " = " 
+                                           ++ (pretty newP)
 
 ----------------------
 -- Command help texts:
@@ -382,6 +405,7 @@ helpTextPlotAll = ("plotall <process> <start> <end> <points>","Plots the time se
 helpTextPlotOctave = ("plotoctave <process> <start> <end> <points>","Plots the time series of a process for the given interval [start,end] with the given number of time points, using GNU Octave to solve the ODEs.")
 helpTextPhase2 = ("phasePlot2 <process>  <species> <species> <start> <end> <points>","Plots the (2-dimensional) phase diagram for two species, for the given interval [start,end] with the given number of time points.")
 helpTextMatlab = ("matlab <process> <start> <end> <points> <filename>","Writes the MATLAB code for the ODEs to a file.")
+helpTextEvolve = ("evolve <process> <start> <end> <points> <new process>","Gives a new process corresponding to the given process evolved to its end point.")
 
 ---------------------
 -- Utility functions:
