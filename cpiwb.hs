@@ -27,6 +27,7 @@ import System.Console.Haskeline
 import Control.Monad.State.Strict
 
 import qualified Data.List as L
+import qualified Control.Exception as X
 
 
 -- Some configurables:
@@ -117,6 +118,9 @@ commands = [("help",
             ("plotoctave",
              CmdRec {cmdFn = plotOctaveCmd,
                      cmdHelp = helpTextPlotOctave}),
+            ("plotonly",
+             CmdRec {cmdFn = plotOnlyCmd,
+                     cmdHelp = helpTextPlotOnly}),
             ("phasePlot2",
              CmdRec {cmdFn = phase2Cmd,
                      cmdHelp = helpTextPhase2}),
@@ -308,6 +312,34 @@ plotOctaveCmd x = do env <- getEnv;
                                        let ss' = speciesInProc proc
                                        lift$lift$plotTimeSeriesFiltered ts' solns ss ss'
 
+-- plot only the specified species
+plotOnlyCmd :: String -> Environment ()
+plotOnlyCmd x = do env <- getEnv;
+                   let args = words x
+                   -- TODO: properly parse the command!
+                   --       and have some defaults?
+                   let res = read(args!!4)
+                   let start = read(args!!2)
+                   let end = read(args!!3)
+                   let err x = X.throw $ CpiException $
+                               "Species \""++x++"\" is not in the Environment."
+                   let onlyss = map 
+                                (\x->maybe (err x) id (lookupSpecName env x)) 
+                                (drop 5 args)
+                   case lookupProcName env (args!!1) of
+                     Nothing   -> say $ "Process \""++(args!!1)
+                                  ++"\" is not in the Environment."
+                     Just proc -> do let mts = processMTS env proc
+                                     let dpdt = dPdt env mts proc
+                                     let ts = (res,(start,end))
+                                     let ts' = timePoints ts
+                                     let solns = solveODEoctave env proc 
+                                                                mts dpdt ts
+                                     let ss = speciesIn env dpdt
+                                     lift$lift$
+                                         plotTimeSeriesFiltered ts' solns 
+                                                                ss onlyss
+
 -- check command:
 checkCmd :: String -> Environment ()
 checkCmd x = do env <- getEnv
@@ -408,6 +440,7 @@ helpTextPlotOctave = ("plotoctave <process> <start> <end> <points>","Plots the t
 helpTextPhase2 = ("phasePlot2 <process>  <species> <species> <start> <end> <points>","Plots the (2-dimensional) phase diagram for two species, for the given interval [start,end] with the given number of time points.")
 helpTextMatlab = ("matlab <process> <start> <end> <points> <filename>","Writes the MATLAB code for the ODEs to a file.")
 helpTextEvolve = ("evolve <process> <start> <end> <points> <new process>","Gives a new process corresponding to the given process evolved to its end point.")
+helpTextPlotOnly = ("plotonly <process> <start> <end> <points> <species...>","Plots the time series of a process for the given interval [start,end] with the given number of time points, plotting only the given (space separated) list of species.")
 
 ---------------------
 -- Utility functions:
