@@ -199,7 +199,8 @@ odesCmd x = do env <- getEnv
 
 -- plot Command
 plotCmd :: String -> Environment ()
-plotCmd x = do env <- getEnv;
+plotCmd = plotOctaveCmd
+{-plotCmd x = do env <- getEnv;
                let args = words x
                -- TODO: properly parse the command!
                --       and have some defaults?
@@ -217,6 +218,7 @@ plotCmd x = do env <- getEnv;
                                  let ss = speciesIn env dpdt
                                  let ss' = speciesInProc proc
                                  lift$lift$plotTimeSeriesFiltered ts' solns ss ss'
+-}
 
 -- phase2 command
 phase2Cmd :: String -> Environment ()
@@ -281,7 +283,7 @@ plotAllCmd x = do env <- getEnv;
                                     let dpdt = dPdt env mts proc
                                     let ts = (res,(start,end))
                                     let ts' = timePoints ts
-                                    let solns = solveODE env proc mts dpdt ts
+                                    let solns = solveODEoctave env proc mts dpdt ts
                                     let ss = speciesIn env dpdt
                                     lift$lift$plotTimeSeries ts' solns ss
 
