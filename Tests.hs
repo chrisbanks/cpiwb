@@ -24,7 +24,7 @@ import CPi.Parser
 import CPi.Semantics
 import CPi.ODE
 import CPi.Logic
---import CPi.Plot
+import CPi.Plot
 import CPi.Matlab
 
 import Text.ParserCombinators.Parsec

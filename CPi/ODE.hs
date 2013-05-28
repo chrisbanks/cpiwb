@@ -20,6 +20,7 @@ module CPi.ODE
      dPdt,
      solveODE,
      evolveProcess,
+     derivs,
      -- * Types:
      Solver,
      P',
@@ -237,6 +238,22 @@ evolveProcess env p mts p' ts solver
           ss = speciesIn env p'
           (Process _ net) = p
       in Process (zip ss vals) net
+
+
+-----------------------------
+-- Concentration derivatives
+-----------------------------
+
+derivs :: Env
+       -> P' 
+       -> (Int,(Double,Double))
+       -> LA.Matrix Double
+       -> LA.Matrix Double
+derivs env p' ts solns
+    = LA.fromLists $
+      map 
+      (\(t,sol)->(xdot env p') t sol) 
+      (zip (LA.toList(timePoints ts)) (LA.toLists solns))
 
 --------------------------------------------
 -- Symbolic semantics
