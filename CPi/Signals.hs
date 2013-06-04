@@ -23,13 +23,13 @@ module CPi.Signals
 
 import CPi.Lib 
 import qualified CPi.ODE as ODE
-import CPi.Semantics
+-- import CPi.Semantics
 import CPi.Logic
 
 import Data.Map (Map)
-import qualified Data.Map as Map
+-- import qualified Data.Map as Map
 import qualified Control.Exception as X
-import qualified Control.Monad.Trans.State as S
+-- import qualified Control.Monad.Trans.State as S
 
 
 -------------------------------------
@@ -48,90 +48,49 @@ modelCheckSig :: Env                   -- ^ Environment
               -> (Int,(Double,Double)) -- ^ Time points: (points,(t0,tn))
               -> Formula               -- ^ Formula to check
               -> Bool
-modelCheckSig env solver trace p (res,tms) f 
-    | (trace == Nothing)
-        = initSat $ combine f $ basicSigs (solve env solver (res,tms) p) f
-    | otherwise
-        = initSat $ combine f $ basicSigs ((\(Just x)->x) trace) f
-    where
-      combine :: Formula -> SignalSet -> SignalSet
-      combine f set = S.evalState (combine' (fPostOrd f)) set
-      -- get the set of combined signals for each sub-formula
-      -- memoizes in the state monad
-      combine' :: [Formula] -> S.State SignalSet SignalSet
-      combine' [] = S.get >>= return
-      combine' (f:fs) = do sset <- S.get
-                           S.put $ maybe (combine'' f sset) 
-                                (\_->sset) (Map.lookup f sset)
-                           combine' fs
-      -- put a new combined signal in the set
-      combine'' :: Formula -> SignalSet -> SignalSet
-      combine'' f@(Conj a b) sset 
-          = Map.insert f (conjSig (defly a sset) (defly b sset)) sset
-      combine'' f@(Disj a b) sset 
-          = Map.insert f (disjSig (defly a sset) (defly b sset)) sset
-      combine'' f@(Impl a b) sset 
-          = Map.insert f (disjSig (defly b sset) (negSig (defly a sset))) sset
-      combine'' f@(Neg a) sset 
-          = Map.insert f (negSig (defly a sset)) sset
-      combine'' f@(Until i a b) sset 
-          = Map.insert f (untilSig (defly a sset) i (defly b sset)) sset
-      combine'' f@(Rels i a b) sset 
-          = Map.insert f (negSig (untilSig (negSig (defly a sset)) i 
-                                               (negSig (defly b sset)))) sset
-      combine'' f@(Nec i a) sset 
-          = Map.insert f (negSig (shift (negSig (defly a sset)) i)) sset
-      combine'' f@(Pos i a) sset 
-          = Map.insert f (shift (defly a sset) i) sset
-      combine'' f@(Gtee q a) sset 
-          | (trace == Nothing)
-              = Map.insert f (gteeSig (solve env solver (res,tms) p) q' a) sset
-          | otherwise
-              = Map.insert f (gteeSig ((\(Just x)->x) trace) q' a) sset
-          where q' = maybe (er3 q) id (lookupProcName env q)
-      combine'' f _ = X.throw $ CpiException
-                      "CPi.Signals.modelCheckSig.combine'': only for non-atomic."
-      er2 = X.throw $ CpiException
-            "CPi.Signals.modelCheckSig.combine'': Bug: failed gtee lookup"
-      er3 q = X.throw $ CpiException 
-              $ "Process "++q++" is not in the environment."
-      -- defly: get a value which is "definitely" in a map:
-      defly k m = maybe er1 id (Map.lookup k m)
-      er1 = X.throw $ CpiException
-             "CPi.Signals.modelCheckSig.combine'': Bug: given incomplete sig set."
-      
-      initSat :: SignalSet -> Bool 
-      initSat ss = maybe False (\x->snd(head(x))) (Map.lookup f ss)
-      -- produce the signal for a guarantee
-      -- NOTE: here we calculate the signal at every time point
-      --      of the original trace. Can we do better?
-      gteeSig :: Trace -> Process -> Formula -> Signal
-      gteeSig trs q f = minCover $ gteeSig' (traceInterval trs) q f trs
-      gteeSig' _ _ _ [] = []
-      gteeSig' i q f trs = ((traceStart trs, traceStart(traceNext trs)),
-                            modelCheckSig env solver Nothing
-                                              (compose (constructP p trs) q)
-                                              (res,(0,simTime f)) f)
-                           : gteeSig' i q f (traceNext trs)
+modelCheckSig env solver (Just trace) p (res,tms) f
+    = snd . head $ minCover $ sig env p solver trace f
+modelCheckSig env solver Nothing p (res,tms) f
+    = snd . head $ minCover $ sig env p solver (solve env solver (res,tms) p) f
+--FIXME: unchecked use of head
+--TODO:  optimise: memoize sigs, overusing minCover?
 
-
--- Produce the set of basic signals for the atomic propositions of a formula.
-basicSigs :: Trace -> Formula -> SignalSet
-basicSigs tr f = basicSigs' tr (aps f)
-    where
-      basicSigs' tr [] = Map.empty
-      basicSigs' tr (f:fs) = Map.insert f (sig tr f) (basicSigs' tr fs)
-
-sig :: Trace -> Formula -> Signal
-sig tr T = [(traceInterval tr,True)]
-sig tr F = [(traceInterval tr,False)]
-sig tr (ValGT v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 > getVal t v2)
-sig tr (ValGE v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 >= getVal t v2)
-sig tr (ValLT v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 < getVal t v2)
-sig tr (ValLE v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 <= getVal t v2)
-sig tr (ValEq v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 == getVal t v2)
-sig tr (ValNEq v1 v2) = minCover $ sigTrav tr (\t-> getVal t v1 /= getVal t v2)
-sig _ _ = X.throw $ CpiException "CPi.Signals.sig only takes APs"
+-- calculate the signal for an LBC formula
+sig :: Env -> Process -> ODE.Solver -> Trace -> Formula -> Signal
+sig _ _ _ tr T = [(traceInterval tr,True)]
+sig _ _ _ tr F = [(traceInterval tr,False)]
+sig _ _ _ tr (ValGT v1 v2) 
+    = minCover $ sigTrav tr (\t-> getVal t v1 > getVal t v2)
+sig _ _ _ tr (ValGE v1 v2) 
+    = minCover $ sigTrav tr (\t-> getVal t v1 >= getVal t v2)
+sig _ _ _ tr (ValLT v1 v2) 
+    = minCover $ sigTrav tr (\t-> getVal t v1 < getVal t v2)
+sig _ _ _ tr (ValLE v1 v2) 
+    = minCover $ sigTrav tr (\t-> getVal t v1 <= getVal t v2)
+sig _ _ _ tr (ValEq v1 v2) 
+    = minCover $ sigTrav tr (\t-> getVal t v1 == getVal t v2)
+sig _ _ _ tr (ValNEq v1 v2) 
+    = minCover $ sigTrav tr (\t-> getVal t v1 /= getVal t v2)
+sig env p solver tr (Conj f1 f2) 
+    = conjSig (sig env p solver tr f1) (sig env p solver tr f2)
+sig env p solver tr (Disj f1 f2) 
+    = disjSig (sig env p solver tr f1) (sig env p solver tr f2)
+sig env p solver tr (Impl f1 f2) 
+    = sig env p solver tr (Disj f2 (Neg f1))
+sig env p solver tr (Neg f) 
+    = negSig (sig env p solver tr f)
+sig env p solver tr (Until i f1 f2) 
+    = untilSig i (sig env p solver tr f1) (sig env p solver tr f2)
+sig env p solver tr (Rels i f1 f2) 
+    = sig env p solver tr (Neg (Until i (Neg f1) (Neg f2)))
+sig env p solver tr (Nec i f) 
+    = sig env p solver tr (Neg (Pos i (Neg f)))
+sig env p solver tr (Pos i f) 
+    = shiftSig i (sig env p solver tr f)
+sig env p solver tr (Gtee q f) 
+    = gteeSig env p solver tr (maybe (bad q) id (lookupProcName env q)) f
+      where bad q = X.throw $ CpiException $
+                    "Process \""++q++"\" not in the Environment."
 
 sigTrav :: Trace -> (Trace -> Bool) -> Signal 
 sigTrav [] _ = []
@@ -272,8 +231,8 @@ minkDiff (m,n) (a,b) = (m-b,n-a)
 
 -- Shift a signal by [a,b] -- the Minkowski difference of each 
 -- positive interval, union the positive Reals.
-shift :: Signal -> (Double,Double) -> Signal
-shift s i = minCover $ fillTrueSig (cover s) $ shift' (trueSig s) i
+shiftSig :: (Double,Double) -> Signal -> Signal
+shiftSig i s = minCover $ fillTrueSig (cover s) $ shift' (trueSig s) i
     where
       shift' [] _ = []
       shift' (((m,n),t):sig) (a,b)
@@ -307,19 +266,45 @@ recompose (sig:sigs)
           "CPi.Signals.recompose requires all signals to have same cover"
 
 -- temporal until of two signal
-untilSig :: Signal -> (Double,Double) -> Signal -> Signal
-untilSig p (a,b) q 
+untilSig :: (Double,Double) -> Signal -> Signal -> Signal
+untilSig (a,b) p q 
     | cover p == cover q
         = recompose 
-          $ map (\x->conjSig x (shift (conjSig x q) (a,b))) (decompose p)
+          $ map (\x->conjSig x (shiftSig (a,b) (conjSig x q))) (decompose p)
     | otherwise
         = X.throw $ CpiException 
           "CPi.Signals.untilSig only takes signals of same cover"
+
+-- produce the signal for a guarantee
+-- NOTE: here we calculate the signal at every time point
+--      of the original trace. Can we do better?
+gteeSig :: Env 
+        -> Process
+        -> ODE.Solver 
+        -> Trace
+        -> Process 
+        -> Formula 
+        -> Signal
+gteeSig env p solver trs q f 
+    = minCover $ gteeSig' env p solver (traceInterval trs) q f trs
+    where
+      gteeSig' _ _ _ _ _ _ [] = []
+      gteeSig' env p solver i q f trs 
+          = ((traceStart trs, traceStart(traceNext trs)),
+             modelCheckSig env solver Nothing
+                               (compose (constructP p trs) q)
+                               (traceLength trs,(0,simTime f)) f)
+            : gteeSig' env p solver i q f (traceNext trs)
           
 
 ---------------------------
 -- Tests
 ---------------------------
+
+--all tests
+tests = [test1,test2,test3,test4,test5,test6,test7,test8,test9,test10,
+         test11,test12,test13,test14,test15,test16,test17,test18,test19,test20,
+         test21,test22,test23,test24,test25,test26,test27]
 
 -- min cover
 test1 = not (uniform tSig1 tSig2)
@@ -335,21 +320,26 @@ test8 = fillTrueSig (cover tSig2) (trueSig tSig2) == tSig2
 test9 = fillTrueSig (cover tSig3) (trueSig tSig3) == tSig3
 test10 = fillTrueSig (cover tSig4) (trueSig tSig4) == tSig4
 -- shift
-test11 = shift tSig1 (0,1) == tSig1shift01
-test12 = shift tSig1 (0,2) == tSig1shift02
-test13 = shift tSig1 (0,3) == tSig1shift03
-test14 = shift tSig1 (1,2) == tSig1shift12
+test11 = shiftSig (0,1) tSig1 == tSig1shift01
+test12 = shiftSig (0,2) tSig1 == tSig1shift02
+test13 = shiftSig (0,3) tSig1 == tSig1shift03
+test14 = shiftSig (1,2) tSig1 == tSig1shift12
 -- until
 test15 = decompose tSigP == [tSigP1,tSigP2]
 test16 = conjSig tSigP1 tSigQ == tConjP1Q
 test17 = conjSig tSigP2 tSigQ == tConjP2Q
-test18 = shift tConjP1Q (1,2) == tShift12ConjP1Q 
-test19 = shift tConjP2Q (1,2) == tShift12ConjP2Q 
+test18 = shiftSig (1,2) tConjP1Q == tShift12ConjP1Q 
+test19 = shiftSig (1,2) tConjP2Q == tShift12ConjP2Q 
 test20 = conjSig tShift12ConjP1Q tSigP1 == tConjR1P1
 test21 = conjSig tShift12ConjP2Q tSigP2 == tConjR2P2
 test22 = disjSig tConjR1P1 tConjR2P2 == tPUntilQ
 test23 = recompose [tConjR1P1, tConjR2P2] == tPUntilQ
-test24 = untilSig tSigP (1,2) tSigQ == tPUntilQ
+test24 = untilSig (1,2) tSigP tSigQ == tPUntilQ
+
+-- relative bounds
+test25 = shiftSig (0,2) tSigL == tShift2L
+test26 = conjSig tSigH tShift2L == tHConjFL
+test27 = shiftSig (0,5) tHConjFL == tShift5HFL
 
 -------------
 -- Test data
@@ -401,3 +391,16 @@ tConjR2P2 = [((0,4),False),
              ((4,6),True),
              ((6,8),False)] :: Signal
 tPUntilQ = tConjR2P2
+
+tSigH = [((0,4),False),
+         ((4,5),True),
+         ((5,10),False)] :: Signal
+tSigL = [((0,4),True),
+         ((4,5),False),
+         ((5,10),True)] ::Signal
+tShift2L = [((0,10),True)] :: Signal -- = FL
+tHConjFL = [((0,4),False),
+            ((4,5),True),
+            ((5,10),False)] :: Signal -- = HFL
+tShift5HFL = [((0,5),True),
+              ((5,10),False)] :: Signal
