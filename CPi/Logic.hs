@@ -544,12 +544,12 @@ traceNext (t:tr) = tr
 
 -- | Time interval the trace covers
 traceInterval :: Trace -> (Double,Double)
-traceInterval [] = (0,0)
+traceInterval [] = undefined
 traceInterval (t:tr) = (fst t, fst (last tr))
 
 -- | Initial time of a trace
 traceStart :: Trace -> Double
-traceStart [] = 0
+traceStart [] = undefined
 traceStart (t:_) = fst t
 
 -- | Number of time-points in the trace

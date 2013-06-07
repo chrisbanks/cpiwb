@@ -15,7 +15,7 @@
 --     You should have received a copy of the GNU General Public License
 --     along with CPiWB.  If not, see <http://www.gnu.org/licenses/>.
 
-module CPi.Signals 
+module CPi.Signals
     (modelCheckSig,
      Signal,
      SignalSet
@@ -37,7 +37,7 @@ import qualified Control.Exception as X
 -------------------------------------
 
 -- | Signal for a formula is a covering list of intervals, each with truth value.
-type Signal = [((Double,Double),Bool)]
+type Signal = ((Double,Double),[(Double,Double)])
 type SignalSet = Map Formula Signal
 
 -- | Model checking using the Signal Monitoring technique
@@ -49,16 +49,20 @@ modelCheckSig :: Env                   -- ^ Environment
               -> Formula               -- ^ Formula to check
               -> Bool
 modelCheckSig env solver (Just trace) p (res,tms) f
-    = snd . head $ minCover $ sig env p solver trace f
+    = initSat $ minCover $ sig env p solver trace f
 modelCheckSig env solver Nothing p (res,tms) f
-    = snd . head $ minCover $ sig env p solver (solve env solver (res,tms) p) f
---FIXME: unchecked use of head
+    = initSat $ minCover $ sig env p solver (solve env solver (res,tms) p) f
 --TODO:  optimise: memoize sigs, overusing minCover?
+
+-- is the formula true at the start of the signal?
+initSat :: Signal -> Bool
+initSat (_,[]) = False
+initSat (c,(i:is)) = (fst c) == (fst i)
 
 -- calculate the signal for an LBC formula
 sig :: Env -> Process -> ODE.Solver -> Trace -> Formula -> Signal
-sig _ _ _ tr T = [(traceInterval tr,True)]
-sig _ _ _ tr F = [(traceInterval tr,False)]
+sig _ _ _ tr T = (traceInterval tr, [traceInterval tr])
+sig _ _ _ tr F = (traceInterval tr, [])
 sig _ _ _ tr (ValGT v1 v2) 
     = minCover $ sigTrav tr (\t-> getVal t v1 > getVal t v2)
 sig _ _ _ tr (ValGE v1 v2) 
@@ -92,188 +96,129 @@ sig env p solver tr (Gtee q f)
       where bad q = X.throw $ CpiException $
                     "Process \""++q++"\" not in the Environment."
 
-sigTrav :: Trace -> (Trace -> Bool) -> Signal 
-sigTrav [] _ = []
-sigTrav tr f = ((traceStart tr, traceStart(traceNext tr)), (f tr)) 
-               : sigTrav (traceNext tr) f
-
--- The minimal covering of a signal
-minCover :: Signal -> Signal
-minCover [] = []
-minCover [i] = [i]
-minCover (i1:i2:is)
-    | (snd i1 == snd i2) 
-        = minCover $ ((fst(fst i1), snd(fst i2)), snd i1) : is
-    | otherwise 
-        = i1 : minCover (i2:is)
+-- Traverse the trace and produce a signal for the given
+-- boolean function
+sigTrav :: Trace -> (Trace -> Bool) -> Signal
+sigTrav tr f = (traceInterval tr, sigTrav' tr)
+    where
+      sigTrav' [] = []
+      sigTrav' [tr]
+          | f [tr] 
+              = (traceStart [tr], traceStart [tr]) : []
+          | otherwise
+              = []
+      sigTrav' tr 
+          | f tr 
+              = (traceStart tr, traceStart(traceNext tr)) 
+                : sigTrav' (traceNext tr)
+          | otherwise
+              = sigTrav' (traceNext tr)
 
 -- The negation of a signal
 negSig :: Signal -> Signal
-negSig [] = []
-negSig ((i,v):sig) = (i,not v) : negSig sig
+negSig (c,is) = (c, ns c is)
+    where
+      ns t []
+          | fst t < snd t
+              = (fst t, snd t):[]
+          | otherwise
+              = []
+      ns t (i:is)
+          | fst i > fst t
+              = (fst t, fst i) : ns (fst i, snd t) is
+          | otherwise
+              = ns (snd i, snd t) is
 
--- The minimal common (uniform) covering of signals:
--- mccl gives the left signal w.r.t. the right
-mccl :: Signal -> Signal -> Signal
-mccl (((l1,u1),v1):sig1) (((l2,u2),v2):sig2)
-    | u1 < u2
-        = ((l1,u1),v1) : mccl sig1 (((l2,u2),v2):sig2)
-    | u1 > u2
-        = ((l1,u2),v1) : mccl (((u2,u1),v1):sig1) sig2
-    | otherwise
-        = ((l1,u1),v1) : mccl sig1 sig2
-mccl [] (s:sig) = X.throw $ CpiException 
-                  "CPi.Signals.mccl requires signals of same cover"
-mccl (s:sig) [] = X.throw $ CpiException
-                  "CPi.Signals.mccl requires signals of same cover"
-mccl [] [] = []
--- and mccr gives the right signal w.r.t. the left
-mccr :: Signal -> Signal -> Signal
-mccr (((l1,u1),v1):sig1) (((l2,u2),v2):sig2)
-    | u1 < u2
-        = ((l2,u1),v2) : mccr sig1 (((u1,u2),v2):sig2)
-    | u1 > u2
-        = ((l2,u2),v2) : mccr (((u2,u1),v1):sig1) sig2
-    | otherwise
-        = ((l2,u2),v2) : mccr sig1 sig2
-mccr [] (s:sig) = X.throw $ CpiException
-                  "CPi.Signals.mccr requires signals of same cover"
-mccr (s:sig) [] = X.throw $ CpiException
-                  "CPi.Signals.mccr requires signals of same cover"
-mccr [] [] = []
-
--- Test if two signals have uniform covering
-uniform :: Signal -> Signal -> Bool
-uniform ((i,_):s) ((j,_):t)
-    | i==j      = uniform s t
-    | otherwise = False
-uniform ((i,_):s) [] = False
-uniform [] ((i,_):s) = False
-uniform [] [] = True
+-- The minimal common (uniform) coverings of two signals
+mcc :: (Signal,Signal) -> (Signal,Signal)
+mcc (((c0,cn),is), ((d0,dn),js))
+    -- make sure range is the same
+    | c0 < d0 = (((c0,cn),is), ((c0,dn),js))
+    | c0 > d0 = (((d0,cn),is), ((d0,dn),js))
+    | cn < dn = (((c0,dn),is), ((d0,dn),js))
+    | cn > dn = (((c0,cn),is), ((d0,cn),js))
+    -- make sure there are no overlaps
+    | otherwise = (((c0,cn), mccr js is), ((d0,dn), mccr is js))
+    where
+      mccr (i:is) (j:js)
+          | fst i < fst j && snd i <= fst j
+              = mccr is (j:js)
+          | fst i < fst j && snd i > fst j && snd i > snd j
+              = j : mccr (i:is) js
+          | fst i < fst j && snd i > fst j && snd i <= snd j
+              = (fst j, snd i) : mccr is ((snd i, snd j):js)
+          | fst i == fst j && snd i >= snd j
+              = j : mccr (i:is) js
+          | fst i == fst j && snd i < snd j
+              = (fst j, snd i) : mccr is ((snd i, snd j):js)
+          | fst i > fst j && fst i >= snd j
+              = j : mccr (i:is) js
+          | fst i > fst j && fst i < snd j
+              = (fst j, fst i) : mccr (i:is) ((fst i, snd j):js)
+          | otherwise = undefined --to satisfy the case checker
+      mccr [] js = js
+      mccr _ [] = []
 
 -- The conjunction of two signals
 conjSig :: Signal -> Signal -> Signal
-conjSig sig1 sig2 = minCover $ conjSig' (mccl sig1 sig2) (mccr sig1 sig2)
+conjSig s1 s2 
+    | c == d = minCover (c, conjSig' is js)
+    | otherwise = undefined
     where
-      conjSig' ((i1,v1):s1) ((i2,v2):s2)
-          | i1==i2
-              = (i1,(v1 && v2)) : conjSig' s1 s2
-          | otherwise
-              = X.throw $ CpiException
-                "CPi.Signals.conjSig: signals are not uniform!"
-      conjSig' [] (s:sig) = X.throw $ CpiException
-                            "CPi.Signals.conjSig: signals are not uniform!"
-      conjSig' (s:sig) [] = X.throw $ CpiException
-                            "CPi.Signals.conjSig: signals are not uniform!"
-      conjSig' [] [] = []
+      ((c,is),(d,js)) = mcc (s1,s2)
+      conjSig' [] _ = []
+      conjSig' _ [] = []
+      conjSig' (i:is) (j:js) 
+          | j < i  = conjSig' (i:is) js
+          | j > i  = conjSig' is (j:js)
+          | otherwise = i : conjSig' is js
 
 -- The disjunction of two signals
 disjSig :: Signal -> Signal -> Signal
-disjSig sig1 sig2 = minCover $ disjSig' (mccl sig1 sig2) (mccr sig1 sig2)
+disjSig s1 s2 
+    | c == d = minCover (c, disjSig' is js)
+    | otherwise = undefined
     where
-      disjSig' ((i1,v1):s1) ((i2,v2):s2)
-          | i1==i2
-              = (i1,(v1 || v2)) : disjSig' s1 s2
-          | otherwise
-              = X.throw $ CpiException
-                "CPi.Signals.disjSig: signals are not uniform!"
-      disjSig' [] (s:sig) = X.throw $ CpiException
-                            "CPi.Signals.disjSig: signals are not uniform!"
-      disjSig' (s:sig) [] = X.throw $ CpiException
-                            "CPi.Signals.disjSig: signals are not uniform!"
-      disjSig' [] [] = []
+      ((c,is),(d,js)) = mcc (s1,s2)
+      disjSig' [] js = js
+      disjSig' is [] = is
+      disjSig' (i:is) (j:js) 
+          | j < i  = j : disjSig' (i:is) js
+          | j > i  = i : disjSig' is (j:js)
+          | otherwise = i : disjSig' is js
 
--- Give the covering range of the signal
-cover :: Signal -> (Double,Double)
-cover [] = (0,0)
-cover [((l,h),_)] = (l,h)
-cover (((l,_),_):sig) = (l,(\((_,h),_)->h)(last sig))
-
--- Remove False intervals from the signal
-trueSig :: Signal -> Signal
-trueSig [] = []
-trueSig ((i,True):sig) = (i,True):(trueSig sig)
-trueSig ((i,False):sig) = trueSig sig
-
--- Test if a signal is well-formed (has no gaps or overlaps)
-wellformed :: Signal -> Bool
-wellformed [] = False
-wellformed [x] = True
-wellformed (((_,u),_):s@((l,_),_):sig)
-    | (u==l)
-        = wellformed (s:sig)
-    | otherwise
-        = False
-
--- Take a True only signal and a desired cover and fill in False intervals
-fillTrueSig :: (Double,Double) -> Signal -> Signal
-fillTrueSig (mn,mx) [] = [((mn,mx),False)]
-fillTrueSig (mn,mx) [s@((l,u),_)]
-    | l>mn && u<mx
-        = ((mn,l),False):s:((u,mx),False):[]
-    | l>mn
-        = ((mn,l),False):s:[]
-    | u<mx
-        = s:((u,mx),False):[]
-    | otherwise
-        = s:[]
-fillTrueSig (mn,mx) (s1@((i,u),_):s2@((l,_),_):sig)
-    | (i>mn)
-        = ((mn,i),False):(fillTrueSig (i,mx) (s1:s2:sig))
-    | (u>=l)
-        = s1:(fillTrueSig (l,mx) (s2:sig))
-    | otherwise
-        = s1:((u,l),False):(fillTrueSig (l,mx) (s2:sig))
-
--- the Minkowski difference of an interval
+-- the Minkowski difference of two intervals
 minkDiff :: (Double,Double) -> (Double,Double) -> (Double,Double)
 minkDiff (m,n) (a,b) = (m-b,n-a)
 
 -- Shift a signal by [a,b] -- the Minkowski difference of each 
--- positive interval, union the positive Reals.
+-- positive interval, intersecting the covering range.
 shiftSig :: (Double,Double) -> Signal -> Signal
-shiftSig i s = minCover $ fillTrueSig (cover s) $ shift' (trueSig s) i
+shiftSig int ((c0,cn),is) = minCover $ ((c0,cn), shift' int is)
     where
-      shift' [] _ = []
-      shift' (((m,n),t):sig) (a,b)
+      shift' _ [] = []
+      shift' (a,b) ((m,n):is)
           | a>b || a<0 || b<0
               = X.throw $ CpiException
-                "CPi.Signals.shift only takes positive intervals"
-          | c<0 && d<0
-              = shift' sig (a,b)
-          | c<0
-              = ((0,d),t):(shift' sig (a,b))
+                "CPi.Signals.shiftSig only takes positive intervals"
           | otherwise
-              = ((c,d),t):(shift' sig (a,b))
-          where
-            (c,d) = minkDiff (m,n) (a,b)
+              = (\(x,y)->(max x c0, min y cn)) (minkDiff (m,n) (a,b)) 
+                : shift' (a,b) is
 
 -- decompose a signal into unitary signals
-decompose :: Signal -> [Signal]
-decompose sig = map (fillTrueSig (cover sig)) (dc (trueSig sig))
-    where
-      dc [] = []
-      dc (s:sig) = [s]:(dc sig)
+decomposeSig :: Signal -> [Signal]
+decomposeSig (_,[]) = []
+decomposeSig (c,i:is) = (c,[i]) : decomposeSig (c,is) 
 
 -- compose a signal of given cover from a list of unitary signals
-recompose :: [Signal] -> Signal
-recompose [] = []
-recompose (sig:sigs) 
-    | all (\x-> cover x == cover sig) sigs
-        = minCover $ foldr disjSig [(cover sig,False)] sigs
-    | otherwise
-        = X.throw $ CpiException
-          "CPi.Signals.recompose requires all signals to have same cover"
+composeSig :: [Signal] -> Signal
+composeSig sigs = foldr disjSig (cover (head sigs),[]) sigs
 
 -- temporal until of two signal
 untilSig :: (Double,Double) -> Signal -> Signal -> Signal
 untilSig (a,b) p q 
-    | cover p == cover q
-        = recompose 
-          $ map (\x->conjSig x (shiftSig (a,b) (conjSig x q))) (decompose p)
-    | otherwise
-        = X.throw $ CpiException 
-          "CPi.Signals.untilSig only takes signals of same cover"
+    = composeSig $
+      map (\x->conjSig x (shiftSig (a,b) (conjSig x q))) (decomposeSig p)
 
 -- produce the signal for a guarantee
 -- NOTE: here we calculate the signal at every time point
@@ -286,46 +231,78 @@ gteeSig :: Env
         -> Formula 
         -> Signal
 gteeSig env p solver trs q f 
-    = minCover $ gteeSig' env p solver (traceInterval trs) q f trs
+    = minCover $ 
+      (traceInterval trs, gteeSig' env p solver (traceInterval trs) q f trs)
     where
       gteeSig' _ _ _ _ _ _ [] = []
-      gteeSig' env p solver i q f trs 
-          = ((traceStart trs, traceStart(traceNext trs)),
-             modelCheckSig env solver Nothing
-                               (compose (constructP p trs) q)
-                               (traceLength trs,(0,simTime f)) f)
-            : gteeSig' env p solver i q f (traceNext trs)
-          
+      gteeSig' env p solver i q f trs
+          | modelCheckSig env solver Nothing
+            (compose (constructP p trs) q)
+            (traceLength trs,(0,simTime f)) f
+              = (traceStart trs, traceStart(traceNext trs))
+                : gteeSig' env p solver i q f (traceNext trs)
+          | otherwise
+              = gteeSig' env p solver i q f (traceNext trs)
+
+
+-- The minimal covering of a signal
+minCover :: Signal -> Signal
+minCover (c,is) = (c, minCover' is)
+    where
+      minCover' [] = []
+      minCover' [i] = [i]
+      minCover' (i1:i2:is)
+          | (snd i1 >= fst i2) 
+              = minCover' $ (fst i1, snd i2) : is
+          | otherwise 
+              = i1 : minCover' (i2:is)
+
+-- Test if two signals have uniform covering
+uniform :: Signal -> Signal -> Bool
+uniform (c,is) (d,js) = c == d && uniform' is js
+    where
+      uniform' [] [] = True
+      uniform' [] (j:js) = True
+      uniform' (i:is) [] = True
+      uniform' (i:is) (j:js) 
+          | fst i > fst j
+              = fst i >= snd j && uniform' (i:is) js
+          | fst i < fst j
+              = fst j >= snd i && uniform' is (j:js)
+          | otherwise
+              = snd i == snd j && uniform' is js 
+
+-- Give the covering range of the signal
+cover :: Signal -> (Double,Double)
+cover (c,_) = c
 
 ---------------------------
 -- Tests
 ---------------------------
 
 --all tests
-tests = [test1,test2,test3,test4,test5,test6,test7,test8,test9,test10,
+tests = [test1,test2,test3,test4,test5,test6,
          test11,test12,test13,test14,test15,test16,test17,test18,test19,test20,
          test21,test22,test23,test24,test25,test26,test27]
 
--- min cover
+
+-- min common cover
 test1 = not (uniform tSig1 tSig2)
-test2 = uniform (mccl tSig1 tSig2) (mccr tSig1 tSig2)
+test2 = uncurry uniform $ mcc (tSig1,tSig2)
 -- conjunction/disjunction
 test3 = conjSig tSig1 tSig2 == tConj12
 test4 = disjSig tSig1 tSig2 == tDisj12
 test5 = conjSig tSig3 tSig4 == tConj34
 test6 = disjSig tSig3 tSig4 == tDisj34
--- signals <-> True only signals
-test7 = fillTrueSig (cover tSig1) (trueSig tSig1) == tSig1 
-test8 = fillTrueSig (cover tSig2) (trueSig tSig2) == tSig2
-test9 = fillTrueSig (cover tSig3) (trueSig tSig3) == tSig3
-test10 = fillTrueSig (cover tSig4) (trueSig tSig4) == tSig4
+
 -- shift
 test11 = shiftSig (0,1) tSig1 == tSig1shift01
 test12 = shiftSig (0,2) tSig1 == tSig1shift02
 test13 = shiftSig (0,3) tSig1 == tSig1shift03
 test14 = shiftSig (1,2) tSig1 == tSig1shift12
+
 -- until
-test15 = decompose tSigP == [tSigP1,tSigP2]
+test15 = decomposeSig tSigP == [tSigP1,tSigP2]
 test16 = conjSig tSigP1 tSigQ == tConjP1Q
 test17 = conjSig tSigP2 tSigQ == tConjP2Q
 test18 = shiftSig (1,2) tConjP1Q == tShift12ConjP1Q 
@@ -333,7 +310,7 @@ test19 = shiftSig (1,2) tConjP2Q == tShift12ConjP2Q
 test20 = conjSig tShift12ConjP1Q tSigP1 == tConjR1P1
 test21 = conjSig tShift12ConjP2Q tSigP2 == tConjR2P2
 test22 = disjSig tConjR1P1 tConjR2P2 == tPUntilQ
-test23 = recompose [tConjR1P1, tConjR2P2] == tPUntilQ
+test23 = composeSig [tConjR1P1, tConjR2P2] == tPUntilQ
 test24 = untilSig (1,2) tSigP tSigQ == tPUntilQ
 
 -- relative bounds
@@ -341,66 +318,38 @@ test25 = shiftSig (0,2) tSigL == tShift2L
 test26 = conjSig tSigH tShift2L == tHConjFL
 test27 = shiftSig (0,5) tHConjFL == tShift5HFL
 
+
 -------------
 -- Test data
 -------------
 
-tSig1 = [((0,1),False),((1,3),True),((3,6),False),((6,8),True)] :: Signal
-tSig2 = [((0,2),False),((2,7),True),((7,8),False)] :: Signal
-tConj12 = [((0,2),False),((2,3),True),((3,6),False),
-           ((6,7),True),((7,8),False)] :: Signal
-tDisj12 = [((0,1),False),((1,8),True)] :: Signal
-tSig3 = [((0,2),True),((2,3),False),((3,5),True),((5,7),False)] :: Signal
-tSig4 = [((0,1),True),((1,2),False),((2,4),True),
-         ((4,5),False),((5,7),True)] :: Signal
-tConj34 = [((0,1),True),((1,3),False),((3,4),True),((4,7),False)] :: Signal 
-tDisj34 = [((0,7),True)] :: Signal
-tSig1shift01 = [((0.0,3.0),True),((3.0,5.0),False),((5.0,8.0),True)]
-tSig1shift02 = [((0.0,3.0),True),((3.0,4.0),False),((4.0,8.0),True)]
-tSig1shift03 = [((0.0,8.0),True)]
-tSig1shift12 = [((0.0,2.0),True),((2.0,4.0),False),
-                ((4.0,7.0),True),((7.0,8.0),False)]
+tSig1 = ((0,8), [(1,3),(6,8)]) :: Signal
+tSig2 = ((0,8), [(2,7)]) :: Signal
+tConj12 = ((0,8), [(2,3),(6,7)]) :: Signal
+tDisj12 = ((0,8), [(1,8)]) :: Signal
+tSig3 = ((0,8), [(0,2),(3,5)]) :: Signal
+tSig4 = ((0,8), [(0,1),(2,4),(5,7)]) :: Signal
+tConj34 = ((0,8), [(0,1),(3,4)]) :: Signal 
+tDisj34 = ((0,8), [(0,7)]) :: Signal
+tSig1shift01 = ((0,8), [(0,3),(5,8)]) ::Signal
+tSig1shift02 = ((0,8), [(0,3),(4,8)]) ::Signal
+tSig1shift03 = ((0,8), [(0,8)]) ::Signal
+tSig1shift12 = ((0,8), [(0,2),(4,7)]) :: Signal
 
-tSigP = [((0,1),False),
-         ((1,3),True),
-         ((3,4),False),
-         ((4,7),True),
-         ((7,8),False)] :: Signal
-tSigQ = [((0,4),False),
-         ((4,5),True),
-         ((5,6),False),
-         ((6,8),True)] :: Signal
-tSigP1 = [((0,1),False),
-          ((1,3),True),
-          ((3,8),False)] :: Signal
-tSigP2 = [((0,4),False),
-          ((4,7),True),
-          ((7,8),False)] :: Signal
-tConjP1Q = [((0,8),False)] :: Signal
-tConjP2Q = [((0,4),False),
-            ((4,5),True),
-            ((5,6),False),
-            ((6,7),True),
-            ((7,8),False)] :: Signal
+tSigP = ((0,8), [(1,3),(4,7)]) :: Signal
+tSigQ = ((0,8), [(4,5),(6,8)]) :: Signal
+tSigP1 = ((0,8), [(1,3)]) :: Signal
+tSigP2 = ((0,8), [(4,7)]) :: Signal
+tConjP1Q = ((0,8), []) :: Signal
+tConjP2Q = ((0,8), [(4,5),(6,7)]) :: Signal
 tShift12ConjP1Q = tConjP1Q -- = R1
-tShift12ConjP2Q = [((0,2),False), -- = R2
-                   ((2,6),True),
-                   ((6,8),False)] :: Signal 
+tShift12ConjP2Q = ((0,8), [(2,6)]) :: Signal -- = R2
 tConjR1P1 = tConjP1Q
-tConjR2P2 = [((0,4),False),
-             ((4,6),True),
-             ((6,8),False)] :: Signal
+tConjR2P2 = ((0,8), [(4,6)]) :: Signal
 tPUntilQ = tConjR2P2
 
-tSigH = [((0,4),False),
-         ((4,5),True),
-         ((5,10),False)] :: Signal
-tSigL = [((0,4),True),
-         ((4,5),False),
-         ((5,10),True)] ::Signal
-tShift2L = [((0,10),True)] :: Signal -- = FL
-tHConjFL = [((0,4),False),
-            ((4,5),True),
-            ((5,10),False)] :: Signal -- = HFL
-tShift5HFL = [((0,5),True),
-              ((5,10),False)] :: Signal
+tSigH = ((0,10), [(4,5)]) :: Signal
+tSigL = ((0,10), [(0,4),(5,10)]) ::Signal
+tShift2L = ((0,10), [(0,10)]) :: Signal -- = FL
+tHConjFL = ((0,10), [(4,5)]) :: Signal -- = HFL
+tShift5HFL = ((0, 10), [(0,5)]) :: Signal
