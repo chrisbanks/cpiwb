@@ -22,6 +22,7 @@ import CPi.ODE
 import CPi.Plot
 import CPi.Logic
 import CPi.Matlab
+import CPi.Signals
 
 import System.Console.Haskeline
 import Control.Monad.State.Strict
@@ -265,7 +266,7 @@ plotFileCmd x = do env <- getEnv;
                                      let dpdt = dPdt env mts proc
                                      let ts = (res,(start,end))
                                      let ts' = timePoints ts
-                                     let solns = solveODE env proc mts dpdt ts
+                                     let solns = solveODEoctave env proc mts dpdt ts
                                      let ss = speciesIn env dpdt
                                      let ss' = speciesInProc proc
                                      lift$lift$plotTimeSeriesToFileFiltered ts' solns ss ss' file
@@ -375,7 +376,7 @@ check2Cmd x = do env <- getEnv
                                             ++ (show err)
                                 Right f  -> let f' = reconcileSpecs env f
                                             in say $ show $ 
-                                               modelCheckFR env 
+                                               modelCheckSig env 
                                                             solveODEoctave 
                                                             Nothing 
                                                             p 

@@ -1,4 +1,4 @@
--- (C) Copyright Chris Banks 2011-2012
+-- (C) Copyright Chris Banks 2011-2013
 
 -- This file is part of The Continuous Pi-calculus Workbench (CPiWB). 
 
@@ -18,11 +18,21 @@
 module CPi.Logic 
     (Formula(..),
      Val(..),
+     Trace,
      modelCheck,
      modelCheckFR,
      simTime,
      nnf,
-     reconcileSpecs
+     aps,
+     reconcileSpecs,
+     solve,
+     getVal,
+     traceNext,
+     traceInterval,
+     traceLength,
+     traceStart,
+     fPostOrd,
+     constructP
     )where
 
 import CPi.Lib 
@@ -34,6 +44,7 @@ import qualified Data.Map as Map
 import qualified Control.Exception as X
 import qualified Control.Monad.Trans.State.Strict as S
 import qualified Debug.Trace as DBG
+import qualified Data.List as L
 
 -------------------------
 -- Data Structures:
@@ -515,7 +526,7 @@ modelCheckFR env solver trace p tps f
                           ++"Must be in NNF."
 
 
--- Get a value from the trace:
+-- | Get a value from the trace.
 getVal :: Trace -> Val -> Double
 getVal _ (R d) = d
 getVal (t:ts) (Conc s) = maybe 0.0 id (Map.lookup s (snd t))
@@ -525,6 +536,26 @@ getVal ts (Minus x y) = getVal ts x - getVal ts y
 getVal ts (Times x y) = getVal ts x * getVal ts y
 getVal ts (Quot x y) = getVal ts x / getVal ts y
 getVal [] _ = 0.0
+
+-- | Trace iterator: Return the trace from the next time point.
+traceNext :: Trace -> Trace
+traceNext [] = []
+traceNext (t:tr) = tr
+
+-- | Time interval the trace covers
+traceInterval :: Trace -> (Double,Double)
+traceInterval [] = undefined
+traceInterval (t:tr) = (fst t, fst (last tr))
+
+-- | Initial time of a trace
+traceStart :: Trace -> Double
+traceStart [] = undefined
+traceStart (t:_) = fst t
+
+-- | Number of time-points in the trace
+traceLength :: Trace -> Int
+traceLength [] = 0
+traceLength (_:tr) = 1 + traceLength tr
 
 -- Take a process and get a trace from the solver:
 solve :: Env -> ODE.Solver -> (Int,(Double,Double)) -> Process -> Trace
@@ -593,6 +624,22 @@ nnf (Neg (Gtee p a)) = Gtee p (nnf (Neg a))
 nnf (Neg (Neg x)) = nnf x
 nnf x = x
 
+-- | Atomic propositions of a formula
+-- | NOTE: treats context modality as non-atomic and any sub-formula
+-- |      of a context modality is ignored (as it is in a different context).
+aps :: Formula -> [Formula]
+aps f = L.nub $ aps' f
+    where
+      aps' (Conj a b) = aps' a ++ aps' b
+      aps' (Disj a b) = aps' a ++ aps' b
+      aps' (Impl a b) = aps' a ++ aps' b
+      aps' (Neg a) = aps' a
+      aps' (Until _ a b) = aps' a ++ aps' b
+      aps' (Rels _ a b) = aps' a ++ aps' b
+      aps' (Nec _ a) = aps' a
+      aps' (Pos _ a) = aps' a
+      aps' (Gtee _ a) = []
+      aps' x = [x]
 
 -- | get simulation time required to verify the formula:
 simTime :: Formula -> Double

@@ -28,9 +28,9 @@ import qualified Data.List as L
 import qualified Control.Exception as X
 import qualified Data.Map as Map
 import Data.Map (Map)
-import Data.Maybe
+--import Data.Maybe
 
-import qualified Numeric.LinearAlgebra as LA
+--import qualified Numeric.LinearAlgebra as LA
 
 import System.IO.Unsafe
 import qualified System.Process as OS
