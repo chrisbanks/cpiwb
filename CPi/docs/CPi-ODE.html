@@ -20,7 +20,12 @@ window.onload = function () {pageLoad();setSynopsis("mini_CPi-ODE.html");};
 </p></td></tr><tr><td class="src">-&gt; <a href="CPi-ODE.html#t:Solver">Solver</a></td><td class="doc"><p>the ODE solving function to use
 </p></td></tr><tr><td class="src">-&gt; <a href="CPi-Lib.html#t:Process">Process</a></td><td class="doc empty">&nbsp;</td></tr></table></div><div class="doc"><p>Gives the syntactic process with initial conditions corresponding to the 
  | end conditions of the given process.
-</p></div></div><div class="top"><p class="src"><a name="v:derivs" class="def">derivs</a> :: <a href="CPi-Lib.html#t:Env">Env</a> -&gt; <a href="CPi-ODE.html#t:P-39-">P'</a> -&gt; (Int, (Double, Double)) -&gt; Matrix Double -&gt; Matrix Double</p></div><h1 id="g:2">Types:
+</p></div></div><div class="top"><p class="src"><a name="v:derivs" class="def">derivs</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="CPi-Lib.html#t:Env">Env</a></td><td class="doc"><p>the Environment
+</p></td></tr><tr><td class="src">-&gt; <a href="CPi-ODE.html#t:P-39-">P'</a></td><td class="doc"><p>the symbolic process space (from <code><a href="CPi-ODE.html#v:dPdt">dPdt</a></code>)
+</p></td></tr><tr><td class="src">-&gt; (Int, (Double, Double))</td><td class="doc"><p>time points to solve for (points(start,end))
+</p></td></tr><tr><td class="src">-&gt; Matrix Double</td><td class="doc"><p>Matrix of numerical solution
+</p></td></tr><tr><td class="src">-&gt; Matrix Double</td><td class="doc"><p>Matrix of concentration derivatives
+</p></td></tr></table></div></div><h1 id="g:2">Types:
 </h1><div class="top"><p class="src"><span class="keyword">type</span> <a name="t:Solver" class="def">Solver</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">&nbsp;= <a href="CPi-Lib.html#t:Env">Env</a></td><td class="doc"><p>the environment
 </p></td></tr><tr><td class="src">-&gt; <a href="CPi-Lib.html#t:Process">Process</a></td><td class="doc"><p>the syntactic process
 </p></td></tr><tr><td class="src">-&gt; <a href="CPi-Semantics.html#t:MTS">MTS</a></td><td class="doc"><p>the MTS (from <code><a href="CPi-Semantics.html#v:processMTS">processMTS</a></code>)

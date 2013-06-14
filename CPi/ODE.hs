@@ -244,11 +244,11 @@ evolveProcess env p mts p' ts solver
 -- Concentration derivatives
 -----------------------------
 
-derivs :: Env
-       -> P' 
-       -> (Int,(Double,Double))
-       -> LA.Matrix Double
-       -> LA.Matrix Double
+derivs :: Env -- ^ the Environment
+       -> P' -- ^ the symbolic process space (from 'dPdt')
+       -> (Int,(Double,Double)) -- ^ time points to solve for (points(start,end))
+       -> LA.Matrix Double -- ^ Matrix of numerical solution
+       -> LA.Matrix Double -- ^ Matrix of concentration derivatives
 derivs env p' ts solns
     = LA.fromLists $
       map 
