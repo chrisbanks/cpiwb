@@ -86,7 +86,9 @@ data Val = R Double   -- Real
 -- This is an implementation of the trace-based model checker for LTL(R)+Guarantee
 
 -- A trace is a time series from the ODE solver:
-type State = (Double, Map Species Double)
+--   State = (Time,   Concentrations,     Derivatives)
+type State = (Double, Map Species Double, Map Species Double)
+--   Trace = Sequence of states
 type Trace = [State]
 
 -- | The default model checker
@@ -127,11 +129,11 @@ modelCheckRec env solver trace p tps f
       modelCheck' ts (Disj x y) = modelCheck' ts x || modelCheck' ts y
       modelCheck' ts (Impl x y) = not(modelCheck' ts x) || modelCheck' ts y
       modelCheck' ts (Neg x) = not $ modelCheck' ts x
-      modelCheck' (t:ts) (Until (t0,tn) x y) 
-          | (fst t) < t0
+      modelCheck' (t@(t',_,_):ts) (Until (t0,tn) x y) 
+          | t' < t0
               = modelCheck' ts (Until (t0,tn) x y)
           | otherwise
-              = ((fst t) <= tn) && (modelCheck' (t:ts) y ||
+              = (t' <= tn) && (modelCheck' (t:ts) y ||
                                     (modelCheck' (t:ts) x && 
                                      modelCheck' ts (Until (t0,tn) x y)))
       modelCheck' ts (Rels i x y)
@@ -226,17 +228,17 @@ modelCheckDP env solver trace p tps f
               = satSubs t (f:lbls) prev fs
           | otherwise
               = satSubs t lbls prev fs
-      satSubs t lbls [] (f@(Until (t0,tn) a b):fs)
-          | ((fst t)<=tn) && (b `elem` lbls)
+      satSubs t@(t',_,_) lbls [] (f@(Until (t0,tn) a b):fs)
+          | (t'<=tn) && (b `elem` lbls)
               = satSubs t (f:lbls) [] fs
           | otherwise
               = satSubs t lbls [] fs
-      satSubs t lbls prev (f@(Until (t0,tn) a b):fs)
-          | ((fst t)<t0) && (f `elem` prev)
+      satSubs t@(t',_,_) lbls prev (f@(Until (t0,tn) a b):fs)
+          | (t'<t0) && (f `elem` prev)
               = satSubs t (f:lbls) prev fs
-          | ((fst t)<=tn) && (b `elem` lbls)
+          | (t'<=tn) && (b `elem` lbls)
               = satSubs t (f:lbls) prev fs
-          | ((fst t)<=tn) && (a `elem` lbls) && (f `elem` prev)
+          | (t'<=tn) && (a `elem` lbls) && (f `elem` prev)
               = satSubs t (f:lbls) prev fs
           | otherwise
               = satSubs t lbls prev fs
@@ -278,7 +280,7 @@ modelCheckHy env solver trace p tps f
           where
             eval :: [Formula] -> State -> Map Formula Bool -> Map Formula Bool
             eval [] _ _ = Map.empty
-            eval (f:fs) t next = Map.insert f (eval' f) subs
+            eval (f:fs) t@(t',_,_) next = Map.insert f (eval' f) subs
                 where
                   subs = eval fs t next
                   eval' T = True
@@ -297,9 +299,9 @@ modelCheckHy env solver trace p tps f
                                      || maybe False id (Map.lookup y subs)
                   eval' (Neg x) = not (maybe False id (Map.lookup x subs))
                   eval' u@(Until (t0,tn) x y)
-                      | (fst t) < t0
+                      | t' < t0
                           = maybe False id (Map.lookup u next)
-                      | (fst t) <= tn
+                      | t' <= tn
                           = maybe False id (Map.lookup y subs)
                             || (maybe False id (Map.lookup x subs)
                                 && maybe False id (Map.lookup u next))
@@ -340,7 +342,7 @@ modelCheckHy2 env solver trace p tps f
       hyEval fs (t:ts) = eval fs t (hyEval fs ts)
           where
             eval :: [Formula] -> State -> Map Formula Bool -> Map Formula Bool
-            eval fs t next = now
+            eval fs t@(t',_,_) next = now
                 where
                   now = eval'' fs
                   eval'' (f:fs) = Map.insert f (eval' f) (eval'' fs)
@@ -361,9 +363,9 @@ modelCheckHy2 env solver trace p tps f
                                      || maybe False id (Map.lookup y now)
                   eval' (Neg x) = not (maybe False id (Map.lookup x now))
                   eval' u@(Until (t0,tn) x y)
-                      | (fst t) < t0
+                      | t' < t0
                           = maybe False id (Map.lookup u next)
-                      | (fst t) <= tn
+                      | t' <= tn
                           = maybe False id (Map.lookup y now)
                             || (maybe False id (Map.lookup x now)
                                 && maybe False id (Map.lookup u next))
@@ -400,14 +402,14 @@ modelCheckFR env solver trace p tps f
             -- check if we've rewritten to T or F.
             check :: Formula -> Trace -> Bool
             check f [] = False
-            check f (t:ts)
+            check f (t@(t',_,_):ts)
                 = DBG.trace
-                  ("CHECK ("++(pretty f)++") @ "++(show(fst(t))))
+                  ("CHECK ("++(pretty f)++") @ "++(show(t')))
                   $ case eta(beta(gamma t (step(t:ts)) f)) of
                       T -> True
                       F -> False
                       otherwise -> check (eta(beta(gamma t (step(t:ts)) f))) ts
-            step (t:t':ts) = fst(t')-fst(t)
+            step ((t,_,_):(t',_,_):ts) = t'-t
             step _ = infty
             -- Reduce connectives:
             beta :: Formula -> Formula
@@ -529,8 +531,8 @@ modelCheckFR env solver trace p tps f
 -- | Get a value from the trace.
 getVal :: Trace -> Val -> Double
 getVal _ (R d) = d
-getVal (t:ts) (Conc s) = maybe 0.0 id (Map.lookup s (snd t))
-getVal (t:ts) (Deriv s) = X.throw $ CpiException "Concentration derivatives not implemeted yet."
+getVal ((_,cs,_):ts) (Conc s) = maybe 0.0 id (Map.lookup s (cs))
+getVal ((_,_,ds):ts) (Deriv s) = maybe 0.0 id (Map.lookup s (ds))
 getVal ts (Plus x y) = getVal ts x + getVal ts y
 getVal ts (Minus x y) = getVal ts x - getVal ts y
 getVal ts (Times x y) = getVal ts x * getVal ts y
@@ -545,12 +547,12 @@ traceNext (t:tr) = tr
 -- | Time interval the trace covers
 traceInterval :: Trace -> (Double,Double)
 traceInterval [] = undefined
-traceInterval (t:tr) = (fst t, fst (last tr))
+traceInterval ((t,_,_):tr) = (t, traceStart ((last tr):[]))
 
 -- | Initial time of a trace
 traceStart :: Trace -> Double
 traceStart [] = undefined
-traceStart (t:_) = fst t
+traceStart ((t,_,_):_) = t
 
 -- | Number of time-points in the trace
 traceLength :: Trace -> Int
@@ -561,20 +563,23 @@ traceLength (_:tr) = 1 + traceLength tr
 solve :: Env -> ODE.Solver -> (Int,(Double,Double)) -> Process -> Trace
 solve env solver (r,(t0,tn)) p 
     | (t0,tn) == (0,0)
-        = [(0, Map.fromList(zip ss (ODE.initials env p' dpdt)))]
+        = [(0, 
+             Map.fromList(zip ss (ODE.initials env p' dpdt)),
+             Map.fromList(zip ss (repeat 0)))]
     | otherwise 
-        = ODE.timeSeries ts soln ss
+        = ODE.timeSeries ts soln deriv ss
     where
       ts = ODE.timePoints (r,(t0,tn))
       mts = processMTS env p
       p' = wholeProc env p mts
       dpdt = ODE.dPdt env mts p'
       soln = solver env p mts dpdt (r,(t0,tn))
-      ss = ODE.speciesIn env dpdt
+      deriv = ODE.derivs env dpdt (r,(t0,tn)) soln
+      ss = ODE.speciesIn env dpdt 
 
 -- Construct a process from the initial time-point of a trace:
 constructP :: Process -> Trace -> Process
-constructP (Process scs net) ((_,map):_) = Process (cons' scs map) net 
+constructP (Process scs net) ((_,map,_):_) = Process (cons' scs map) net 
     where
       cons' [] _ = []
       cons' ((s,_):ss) map = (s,(maybe 0.0 id (Map.lookup s map))) : (cons' ss map)

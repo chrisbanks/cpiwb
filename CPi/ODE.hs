@@ -198,7 +198,7 @@ prettyODE env map = pp (Map.toList (simpP' env map))
 
 -- A time series here is a list of time points with corresponding 
 -- map from Species to concentration.
-type TimeSeries = [(Double, Map Species Double)]
+type TimeSeries = [(Double, Map Species Double, Map Species Double)]
 
 -- List of species in a process space (reduced to Defs if possible):
 speciesIn :: Env -> P' -> [Species]
@@ -207,15 +207,24 @@ speciesIn env p = map
                   (map fst (Map.toList (simpP' env p)))
 
 -- Get the raw time series:
-timeSeries :: LA.Vector Double -> LA.Matrix Double -> [Species]-> TimeSeries
-timeSeries v m ss 
-    = timeSeries' (LA.toList v) (map LA.toList (LA.toColumns (LA.trans m))) ss
-      where
-        timeSeries' [] _ _ = []
-        timeSeries' _ [] _ = []
-        timeSeries' _ _ [] = []
-        timeSeries' (t:ts) (cs:css) ss 
-            = (t, Map.fromList (zip ss cs)) : timeSeries' ts css ss
+timeSeries :: LA.Vector Double -- times
+           -> LA.Matrix Double -- concs
+           -> LA.Matrix Double -- derivs
+           -> [Species]
+           -> TimeSeries
+timeSeries v cm dm ss 
+    = timeSeries' (LA.toList v) 
+      (map LA.toList (LA.toColumns (LA.trans cm))) 
+      (map LA.toList (LA.toColumns (LA.trans dm))) 
+      ss
+          where
+            timeSeries' [] _ _ _ = []
+            timeSeries' _ [] _ _ = []
+            timeSeries' _ _ [] _ = []
+            timeSeries' _ _ _ [] = []
+            timeSeries' (t:ts) (cs:css) (ds:dss) ss 
+                = (t, Map.fromList (zip ss cs), Map.fromList (zip ss ds)) 
+                  : timeSeries' ts css dss ss
 
 
 -----------------------------------

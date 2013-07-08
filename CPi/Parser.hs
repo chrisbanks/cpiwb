@@ -321,12 +321,15 @@ valOps = [[op "*" LBC.Times, op "/" LBC.Quot],
     where
       op s f = Infix (fOp s >> return f) AssocLeft
 
-pFVal = parens pFValExpr <|> pFReal <|> pFConc
+pFVal = parens pFValExpr <|> pFReal <|> try pFDeriv <|> pFConc
 
 pFReal = do r <- fdouble
             return (LBC.R r)
 pFConc = do id <- brackets fidentifier
             return (LBC.Conc (Def id []))
+pFDeriv = do id <- brackets fidentifier
+             symbol "'"
+             return (LBC.Deriv (Def id []))
 
 pFTrue = freserved "true" >> return LBC.T
 pFFalse = freserved "false" >> return LBC.F
