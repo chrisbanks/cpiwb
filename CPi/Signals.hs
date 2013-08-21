@@ -318,6 +318,12 @@ test25 = shiftSig (0,2) tSigL == tShift2L
 test26 = conjSig tSigH tShift2L == tHConjFL
 test27 = shiftSig (0,5) tHConjFL == tShift5HFL
 
+-- more until tests
+test28 = decomposeSig tSigS11i == [tSigS11i1,tSigS11i2,tSigS11i3]
+test29 = conjSig tSigS11i1 tSigS11d == tConjid
+test30 = conjSig tSigS11i2 tSigS11d == tConjid
+test31 = conjSig tSigS11i3 tSigS11d == tConjid
+test32 = shiftSig (0,6) tConjid == tConjid
 
 -------------
 -- Test data
@@ -353,3 +359,11 @@ tSigL = ((0,10), [(0,4),(5,10)]) ::Signal
 tShift2L = ((0,10), [(0,10)]) :: Signal -- = FL
 tHConjFL = ((0,10), [(4,5)]) :: Signal -- = HFL
 tShift5HFL = ((0, 10), [(0,5)]) :: Signal
+
+tSigS11i = ((0,6), [(0,1),(2,3),(4,5)]) :: Signal
+tSigS11d = ((0,6), [(1,2),(3,4),(5,6)]) :: Signal
+tSigS11i1 = ((0,6), [(0,1)]) :: Signal
+tSigS11i2 = ((0,6), [(2,3)]) :: Signal
+tSigS11i3 = ((0,6), [(4,5)]) :: Signal
+tConjid = ((0,6),[]) :: Signal
+
