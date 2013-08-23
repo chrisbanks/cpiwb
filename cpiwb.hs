@@ -122,6 +122,9 @@ commands = [("help",
             ("plotonly",
              CmdRec {cmdFn = plotOnlyCmd,
                      cmdHelp = helpTextPlotOnly}),
+            ("plotonlyfile",
+             CmdRec {cmdFn = plotOnlyFileCmd,
+                     cmdHelp = helpTextPlotOnlyFile}),
             ("phasePlot2",
              CmdRec {cmdFn = phase2Cmd,
                      cmdHelp = helpTextPhase2}),
@@ -344,6 +347,35 @@ plotOnlyCmd x = do env <- getEnv;
                                          plotTimeSeriesFiltered ts' solns 
                                                                 ss onlyss
 
+-- plot only the specified species to a file
+plotOnlyFileCmd :: String -> Environment ()
+plotOnlyFileCmd x = do env <- getEnv;
+                       let args = words x
+                       -- TODO: properly parse the command!
+                       --       and have some defaults?
+                       let res = read(args!!4)
+                       let start = read(args!!2)
+                       let end = read(args!!3)
+                       let file = args!!5
+                       let err x = X.throw $ CpiException $
+                                   "Species \""++x++"\" is not in the Environment."
+                       let onlyss = map 
+                                    (\x->maybe (err x) id (lookupSpecName env x)) 
+                                    (drop 6 args)
+                       case lookupProcName env (args!!1) of
+                         Nothing   -> say $ "Process \""++(args!!1)
+                                      ++"\" is not in the Environment."
+                         Just proc -> do let mts = processMTS env proc
+                                         let dpdt = dPdt env mts proc
+                                         let ts = (res,(start,end))
+                                         let ts' = timePoints ts
+                                         let solns = solveODEoctave env proc 
+                                                         mts dpdt ts
+                                         let ss = speciesIn env dpdt
+                                         lift$lift$
+                                             plotTimeSeriesToFileFiltered 
+                                             ts' solns ss onlyss file
+
 -- plot concentration derivatives command:
 plotDerivsCmd :: String -> Environment ()
 plotDerivsCmd x = do env <- getEnv;
@@ -476,6 +508,7 @@ helpTextMatlab = ("matlab <process> <start> <end> <points> <filename>","Writes t
 helpTextEvolve = ("evolve <process> <start> <end> <points> <new process>","Gives a new process corresponding to the given process evolved to its end point.")
 helpTextPlotOnly = ("plotonly <process> <start> <end> <points> <species...>","Plots the time series of a process for the given interval [start,end] with the given number of time points, plotting only the given (space separated) list of species.")
 helpTextDerivs = ("derivs <process> <start> <end> <points> <species...>","Plots the concentration derivatives of a process for the given interval [start,end] with the given number of time points, plotting only the given (space separated) list of species.")
+helpTextPlotOnlyFile = ("plotonlyfile <process> <start> <end> <points> <file> <species...>","Plots the time series of a process for the given interval [start,end] with the given number of time points, plotting only the given (space separated) list of species, to the specified PDF file.")
 
 ---------------------
 -- Utility functions:

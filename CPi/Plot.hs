@@ -74,7 +74,7 @@ plot ts dims = renderableToWindow (toRenderable (layout ts dims)) 640 480
 
 -- Plots the time series to a file
 plotToFile :: [Double] -> [(String,[Double])] -> String -> IO ()
-plotToFile ts dims file = renderableToPDFFile (toRenderable (layout ts dims)) 842 595 file
+plotToFile ts dims file = renderableToPDFFile (toRenderable (layout ts dims)) 560 400 file
 
 -- gets a plot layout with plots for each dimension
 layout ts dims = layout1_plots ^= plots ts (colours (length dims)) dims $

@@ -144,7 +144,7 @@ instance Pretty Process where
 
 instance Pretty Species where
     pretty Nil = "0"
-    pretty (Def i ns) = i ++"("++(prettyNames ns)++")"
+    pretty (Def i ns) = i -- ++"("++(prettyNames ns)++")"
                           -- NOTE: temp removed def params!
     pretty x'@(Sum x@((p,s):pss)) 
         | (length x == 1) 
