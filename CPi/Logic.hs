@@ -547,6 +547,7 @@ traceNext (t:tr) = tr
 -- | Time interval the trace covers
 traceInterval :: Trace -> (Double,Double)
 traceInterval [] = undefined
+traceInterval [(t,_,_)] = (t,t)
 traceInterval ((t,_,_):tr) = (t, traceStart ((last tr):[]))
 
 -- | Initial time of a trace
@@ -579,10 +580,7 @@ solve env solver (r,(t0,tn)) p
 
 -- Construct a process from the initial time-point of a trace:
 constructP :: Process -> Trace -> Process
-constructP (Process scs net) ((_,map,_):_) = Process (cons' scs map) net 
-    where
-      cons' [] _ = []
-      cons' ((s,_):ss) map = (s,(maybe 0.0 id (Map.lookup s map))) : (cons' ss map)
+constructP (Process scs net) ((_,map,_):_) = Process (Map.toList map) net 
 constructP _ [] = Process [] (AffNet [])
 
 -- the post-order flattening of a formula

@@ -30,6 +30,8 @@ import Control.Monad.State.Strict
 import qualified Data.List as L
 import qualified Control.Exception as X
 
+import Debug.Trace(trace)
+
 
 -- Some configurables:
 welcome = "\nWelcome to the Continuous Pi-calculus Workbench (CPiWB).\n"
@@ -393,11 +395,6 @@ checkCmd x = do env <- getEnv
                                                          (500,(0,(simTime f'))) 
                                                          f'
 
--- FIXME: time bound needs to be generated from the fomula!
---        (see function in K.Larsen's paper)
---        in the case of open interval we could prompt for a time to check over?
---    -- See check2Cmd
-
 check2Cmd :: String -> Environment ()
 check2Cmd x = do env <- getEnv
                  let args = words x
@@ -408,7 +405,7 @@ check2Cmd x = do env <- getEnv
                                 Left err -> say $ "Formula parse error:\n" 
                                             ++ (show err)
                                 Right f  -> let f' = reconcileSpecs env f
-                                            in say $ show $ 
+                                            in say $ show $
                                                modelCheckSig env 
                                                             solveODEoctave 
                                                             Nothing 

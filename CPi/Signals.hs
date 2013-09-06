@@ -238,12 +238,15 @@ gteeSig env p solver trs q f
       gteeSig' env p solver i q f trs
           | modelCheckSig env solver Nothing
             (compose (constructP p trs) q)
-            (traceLength trs,(0,simTime f)) f
-              = (traceStart trs, traceStart(traceNext trs))
+            (500,(0,simTime f)) f  --NOTE: Temp hack: hard-coded trace res.
+              = (traceStart trs, end)
                 : gteeSig' env p solver i q f (traceNext trs)
           | otherwise
               = gteeSig' env p solver i q f (traceNext trs)
-
+          where
+            end = if traceNext trs == [] 
+                  then traceStart trs 
+                  else traceStart (traceNext trs)               
 
 -- The minimal covering of a signal
 minCover :: Signal -> Signal
