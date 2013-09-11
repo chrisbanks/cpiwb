@@ -1,8 +1,8 @@
-import CpiLib
-import CpiTest
-import CpiODE
-import CpiSemantics
-import CpiLogic
+import CPi.Lib
+import Tests
+import CPi.ODE
+import CPi.Semantics
+import CPi.Logic
 
 import System.Environment (getArgs)
 

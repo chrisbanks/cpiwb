@@ -17,7 +17,7 @@
 
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 
-module CPi.Test where
+module Tests where
 
 import CPi.Lib
 import CPi.Parser
