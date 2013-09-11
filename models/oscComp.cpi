@@ -116,9 +116,7 @@ process Pi1 = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) ||
 process Pi2 = [10e4] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
 		   	 [0] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
 			 [0] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
-			 [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
-		   	 [1] E(e) || 
-			 [1] F(f)
+			 [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
 		   	 : {t00a-e@818.18,
 				t00b-e@0,
 				t01e-e@13.64,
