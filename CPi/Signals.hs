@@ -230,15 +230,15 @@ gteeSig :: Env
         -> Process 
         -> Formula 
         -> Signal
-gteeSig env p solver trs q f 
+gteeSig env p solver tr q f 
     = minCover $ 
-      (traceInterval trs, gteeSig' env p solver (traceInterval trs) q f trs)
+      (traceInterval tr, gteeSig' env p solver (traceInterval tr) q f tr)
     where
       gteeSig' _ _ _ _ _ _ [] = []
       gteeSig' env p solver i q f trs
           | modelCheckSig env solver Nothing
             (compose (constructP p trs) q)
-            (500,(0,simTime f)) f  --NOTE: Temp hack: hard-coded trace res.
+            (traceLength tr,(0,simTime f)) f
               = (traceStart trs, end)
                 : gteeSig' env p solver i q f (traceNext trs)
           | otherwise
