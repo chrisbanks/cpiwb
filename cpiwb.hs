@@ -25,7 +25,8 @@ import CPi.Matlab
 import CPi.Signals
 
 import System.Console.Haskeline
-import Control.Monad.State.Strict
+import Control.Monad.Trans.State.Strict
+import Control.Monad.Trans.Class
 
 import qualified Data.List as L
 import qualified Control.Exception as X
