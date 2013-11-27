@@ -131,14 +131,11 @@ negSig (c,is) = (c, ns c is)
 
 -- The minimal common (uniform) coverings of two signals
 mcc :: (Signal,Signal) -> (Signal,Signal)
-mcc (((c0,cn),is), ((d0,dn),js))
+mcc ((r1,is), (r2,js))
     -- make sure range is the same
-    | c0 < d0 = (((c0,cn),is), ((c0,dn),js))
-    | c0 > d0 = (((d0,cn),is), ((d0,dn),js))
-    | cn < dn = (((c0,dn),is), ((d0,dn),js))
-    | cn > dn = (((c0,cn),is), ((d0,cn),js))
+    | r1 /= r2 = error "CPi.Signals.mcc: given signals with different ranges"
     -- make sure there are no overlaps
-    | otherwise = (((c0,cn), mccr js is), ((d0,dn), mccr is js))
+    | otherwise = ((r1, mccr js is), (r2, mccr is js))
     where
       mccr (i:is) (j:js)
           | fst i < fst j && snd i <= fst j
@@ -155,7 +152,7 @@ mcc (((c0,cn),is), ((d0,dn),js))
               = j : mccr (i:is) js
           | fst i > fst j && fst i < snd j
               = (fst j, fst i) : mccr (i:is) ((fst i, snd j):js)
-          | otherwise = undefined --to satisfy the case checker
+          | otherwise = error "CPi.Signals.mcc.mccr: bad case!" --to satisfy the case checker
       mccr [] js = js
       mccr _ [] = []
 
@@ -163,7 +160,7 @@ mcc (((c0,cn),is), ((d0,dn),js))
 conjSig :: Signal -> Signal -> Signal
 conjSig s1 s2 
     | c == d = minCover (c, conjSig' is js)
-    | otherwise = undefined
+    | otherwise = error "CPi.Signals.conjSig: bad mcc"
     where
       ((c,is),(d,js)) = mcc (s1,s2)
       conjSig' [] _ = []
@@ -177,7 +174,7 @@ conjSig s1 s2
 disjSig :: Signal -> Signal -> Signal
 disjSig s1 s2 
     | c == d = minCover (c, disjSig' is js)
-    | otherwise = undefined
+    | otherwise = error "CPi.Signals.disjSig: bad mcc"
     where
       ((c,is),(d,js)) = mcc (s1,s2)
       disjSig' [] js = js

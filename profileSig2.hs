@@ -19,9 +19,9 @@ f4 = Nec (0,25) (ValGT (Conc (Def "E" ["e"])) (R 0.4))
 
 -- 1-nested TL
 f5 = Nec (0,25) f1
-f6 = Nec (0,25) f1
-f7 = Pos (0,25) f1
-f8 = Pos (0,25) f1
+f6 = Nec (0,25) f2
+f7 = Pos (0,25) f3
+f8 = Pos (0,25) f4
 
 -- 2-nested TL
 f9 = Pos (0,25) f5
@@ -101,6 +101,35 @@ main = do env <- tEnv "models/testGT.cpi"
           let tps = (read(res!!0),(0,25))
           let pi = tProc env "Pi"
           let trace = solve env solveODEoctave tps pi
+
+          let r1 = {-# SCC "f17-Signal" #-} modelCheckSig 
+                   env solveODE (Just trace) pi tps f17
+              r2 = {-# SCC "f17-Trace" #-} modelCheck
+                   env solveODE (Just trace) pi tps f17
+          print $ pretty f17
+          print r1
+          print r2
+          let r1 = {-# SCC "f18-Signal" #-} modelCheckSig 
+                   env solveODE (Just trace) pi tps f18
+              r2 = {-# SCC "f18-Trace" #-} modelCheck
+                   env solveODE (Just trace) pi tps f18
+          print $ pretty f18
+          print r1
+          print r2
+          let r1 = {-# SCC "f19-Signal" #-} modelCheckSig 
+                   env solveODE (Just trace) pi tps f19
+              r2 = {-# SCC "f19-Trace" #-} modelCheck
+                   env solveODE (Just trace) pi tps f19
+          print $ pretty f19
+          print r1
+          print r2
+          let r1 = {-# SCC "f20-Signal" #-} modelCheckSig 
+                   env solveODE (Just trace) pi tps f20
+              r2 = {-# SCC "f20-Trace" #-} modelCheck
+                   env solveODE (Just trace) pi tps f20
+          print $ pretty f20
+          print r1
+          print r2
           let r1 = {-# SCC "f21-Signal" #-} modelCheckSig 
                    env solveODE (Just trace) pi tps f21
               r2 = {-# SCC "f21-Trace" #-} modelCheck

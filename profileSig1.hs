@@ -19,9 +19,9 @@ f4 = Nec (0,25) (ValGT (Conc (Def "E" ["e"])) (R 0.4))
 
 -- 1-nested TL
 f5 = Nec (0,25) f1
-f6 = Nec (0,25) f1
-f7 = Pos (0,25) f1
-f8 = Pos (0,25) f1
+f6 = Nec (0,25) f2
+f7 = Pos (0,25) f3
+f8 = Pos (0,25) f4
 
 -- 2-nested TL
 f9 = Pos (0,25) f5
