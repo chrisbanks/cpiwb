@@ -1,0 +1,461 @@
+preamble
+kAf = [1.72e5, 1.72e5, 1.72e5, 1.72e5, 1.72e5, 1.72e5, 1.72e5];
+kAb = [10, 30, 90, 270, 810, 2430, 7290];
+kkBf = [2.97e4, 2.97e6, 2.97e6, 2.97e6, 2.97e6, 2.97e6, 2.97e6];
+kkBbl = 100;
+kkBbh = 1000;
+kkAf = [0.0, 2.97e12, 2.97e14, 2.97e14, 2.97e12, 0.0, 0.0];
+kkAb = 100;
+kpf = 1.0;
+kps = 2.5e-2;
+kdps = 0.4;
+kkps = 2.5e-2;
+kkdps = 0.4;
+flip = [1e-5, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 10];
+bflip = [100, 100, 100, 100, 100, 100, 100];
+kvf = 1e20;
+#lsode_options('absolute tolerance', 1e-6); 
+#lsode_options('relative tolerance', 1e-6); 
+#lsode_options('maximum step size', 0.01);
+end
+
+network
+# Binding sites of KaiA and KaiB
+site a, b; 
+# Different binding sites for KaiA (active forms)
+site a0, a1, a2, a3, a4, a5; 
+# Sites for the first binding of KaiB to the inactive forms
+site bb0, bb1, bb2, bb3, bb4, bb5, bb6; 
+# Sites for the first binding of KaiA to KaiB-KaiB-KaiC complexes
+site aa0, aa1, aa2, aa3, aa4, aa5, aa6;
+# Sites for the second binding of KaiA and KaiB
+site ahat, bhat;
+
+# Connections
+react(a, a0) @ kAf(1);
+react(a, a1) @ kAf(2);
+react(a, a2) @ kAf(3);
+react(a, a3) @ kAf(4);
+react(a, a4) @ kAf(5);
+react(a, a5) @ kAf(6);
+react(a, aa0) @ kkAf(1);
+react(a, aa1) @ kkAf(2);
+react(a, aa2) @ kkAf(3);
+react(a, aa3) @ kkAf(4);
+react(a, aa4) @ kkAf(5);
+react(a, aa5) @ kkAf(6);
+react(a, aa6) @ kkAf(7);
+react(a, ahat) @ kvf;
+react(b, bb0) @ kkBf(1);
+react(b, bb1) @ kkBf(2);
+react(b, bb2) @ kkBf(3);
+react(b, bb3) @ kkBf(4);
+react(b, bb4) @ kkBf(5);
+react(b, bb5) @ kkBf(6);
+react(b, bb6) @ kkBf(7);
+react(b, bhat) @ kvf;
+end
+
+# All of the KaiC species have plenty of free names which have to
+# be mentioned every time. The following macro lists them all; in 
+# what follows, we call the macro instead of listing the names, 
+# making the whole thing readable.
+!define xxx a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,b6,bb0,bb1,bb2,bb3,bb4,bb5,bb6,aa0,aa1,aa2,aa3,aa4,aa5,aa6,aaa0,aaa1,aaa2,aaa3,aaa4,aaa5,aaa6
+
+# The species: first, KaiA and KaiB. They can be bound and receive a name.
+# When triggered on it, they return to their original unbound state.
+
+species A(a)
+init 0.56;
+body a[;x].x.A(a);
+end
+
+species B(b)
+init 1.78;
+body b[;x].x.B(b);
+end
+
+# Now, the 7 active forms of KaiC. All of them (modulo boundary
+# conditions) can either flip to the active side, autonomously 
+# phosphorylate to the next form in the active chain, or bind KaiA.
+# When bound to KaiA, they can either go to the next form or unbind.
+
+species C0(xxx)
+init 0.58;
+network
+     site act,r,u;
+     react(act,r) @ kpf;
+     react(act,u) @ kAb(1);
+end
+body choice
+	  tau<flip(1)>.CC0(xxx);
+	  tau<kps>.C1(xxx);
+	  a0[act;].choice
+		       u.C0(xxx);
+		       r.C1(xxx);
+	           end;
+     end
+end
+
+species C1(xxx)
+network
+     site act,r,u;
+     react(act,r) @ kpf;
+     react(act,u) @ kAb(2);
+end
+body choice
+	  tau<flip(2)>.CC1(xxx);
+	  tau<kps>.C2(xxx);
+	  tau<kdps>.C0(xxx);
+	  a1[act;].choice
+		       u.C1(xxx);
+		       r.C2(xxx);
+		   end;
+     end
+end
+
+species C2(xxx)
+network
+     site act,r,u;
+     react(act,r) @ kpf;
+     react(act,u) @ kAb(3);
+end
+body choice
+	  tau<flip(3)>.CC2(xxx);
+	  tau<kps>.C3(xxx);
+	  tau<kdps>.C1(xxx);
+	  a2[act;].choice
+		       u.C2(xxx);
+		       r.C3(xxx);
+		   end;
+     end
+end
+
+species C3(xxx)
+network
+     site act,r,u;
+     react(act,r) @ kpf;
+     react(act,u) @ kAb(4);
+end
+body choice
+	  tau<flip(4)>.CC3(xxx);
+	  tau<kps>.C4(xxx);
+	  tau<kdps>.C2(xxx);
+	  a3[act;].choice
+		       u.C3(xxx);
+		       r.C4(xxx);
+                   end;
+     end
+end
+
+species C4(xxx)
+network
+     site act,r,u;
+     react(act,r) @ kpf;
+     react(act,u) @ kAb(5);
+end
+body choice
+	  tau<flip(5)>.CC4(xxx);
+	  tau<kps>.C5(xxx);
+	  tau<kdps>.C3(xxx);
+	  a4[act;].choice
+		       u.C4(xxx);
+		       r.C5(xxx);
+		   end;
+     end
+end
+
+species C5(xxx)
+network
+     site act,r,u;
+     react(act,r) @ kpf;
+     react(act,u) @ kAb(6);
+end
+body choice
+	  tau<flip(6)>.CC5(xxx);
+	  tau<kps>.C6(xxx);
+	  tau<kdps>.C4(xxx);
+	  a5[act;].choice
+		       u.C5(xxx);
+		       r.C6(xxx);
+		   end;
+     end
+end
+
+species C6(xxx)
+body choice
+	  tau<flip(7)>.CC6(xxx);
+	  tau<kdps>.C5(xxx);
+     end
+end
+
+# The inactive forms. Each comes in 3 variants: just KaiC (CCi),
+# KaiC with two KaiB bound (BCCi) and KaiC with two KaiBs and 
+# two KaiAs (ABCCi). At each of these stages autonomous 
+# (de-)phosphorylation is possible.
+species CC0(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+         tau<kkps>.CC1(xxx);
+	 tau<bflip(1)>.C0(xxx);
+	 bb0[x;].bhat[af;].BCC0(xxx,z,y,bf);
+     end
+end
+
+species BCC0(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+         tau<kkps>.BCC1(xxx,s,f,vf);
+	 f.vf.CC0(xxx);                            # BCC0 uses the fast trigger, others use slow
+	 aa0[xs;].ahat[xf;].ABCC0(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC0(xxx,s,f,vf,ss,ff) # s,f&vf unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkps>.ABCC1(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC0(xxx,s,f,vf);
+     end
+end
+
+species CC1(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+         tau<kkps>.CC2(xxx);
+	 tau<kkdps>.CC0(xxx);
+	 tau<bflip(2)>.C1(xxx);
+	 bb1[x;].bhat[af;].BCC1(xxx,z,y,bf);
+     end
+end
+
+species BCC1(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+         tau<kkps>.BCC2(xxx,s,f,vf);
+	 tau<kkdps>.BCC0(xxx,s,f,vf);
+	 s.vf.CC1(xxx);
+	 aa1[xs;].ahat[xf;].ABCC1(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC1(xxx,s,f,vf,ss,ff) # s&f unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkps>.ABCC2(xxx,s,f,vf,ss,ff);
+       tau<kkdps>.ABCC0(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC1(xxx,s,f,vf);
+     end
+end
+
+species CC2(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+         tau<kkps>.CC3(xxx);
+	 tau<kkdps>.CC1(xxx);
+	 tau<bflip(3)>.C2(xxx);
+	 bb2[x;].bhat[af;].BCC2(xxx,z,y,bf);
+     end
+end
+
+species BCC2(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+         tau<kkps>.BCC3(xxx,s,f,vf);
+	 tau<kkdps>.BCC1(xxx,s,f,vf);
+	 s.vf.CC2(xxx);
+	 aa2[xs;].ahat[xf;].ABCC2(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC2(xxx,s,f,vf,ss,ff) # s&f unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkps>.ABCC3(xxx,s,f,vf,ss,ff);
+       tau<kkdps>.ABCC1(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC2(xxx,s,f,vf);
+     end
+end
+
+species CC3(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+         tau<kkps>.CC4(xxx);
+	 tau<kkdps>.CC2(xxx);
+	 tau<bflip(4)>.C3(xxx);
+	 bb3[x;].bhat[af;].BCC3(xxx,z,y,bf);
+     end
+end
+
+species BCC3(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+         tau<kkps>.BCC4(xxx,s,f,vf);
+	 tau<kkdps>.BCC2(xxx,s,f,vf);
+	 s.vf.CC3(xxx);
+	 aa3[xs;].ahat[xf;].ABCC3(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC3(xxx,s,f,vf,ss,ff) # s,f&vf unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkps>.ABCC4(xxx,s,f,vf,ss,ff);
+       tau<kkdps>.ABCC2(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC3(xxx,s,f,vf);
+     end
+end
+
+species CC4(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+         tau<kkps>.CC5(xxx);
+	 tau<kkdps>.CC3(xxx);
+	 tau<bflip(5)>.C4(xxx);
+	 bb4[x;].bhat[af;].BCC4(xxx,z,y,bf);
+     end
+end
+
+species BCC4(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+         tau<kkps>.BCC5(xxx,s,f,vf);
+	 tau<kkdps>.BCC3(xxx,s,f,vf);
+	 s.vf.CC4(xxx);
+	 aa4[xs;].ahat[xf;].ABCC4(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC4(xxx,s,f,vf,ss,ff) # s,f&vf unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkps>.ABCC5(xxx,s,f,vf,ss,ff);
+       tau<kkdps>.ABCC3(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC4(xxx,s,f,vf);
+     end
+end
+
+species CC5(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+         tau<kkps>.CC6(xxx);
+	 tau<kkdps>.CC4(xxx);
+	 tau<bflip(6)>.C5(xxx);
+	 bb5[x;].bhat[af;].BCC5(xxx,z,y,bf);
+     end
+end
+
+species BCC5(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+         tau<kkps>.BCC6(xxx,s,f,vf);
+	 tau<kkdps>.BCC4(xxx,s,f,vf);
+	 s.vf.CC5(xxx);
+	 aa5[xs;].ahat[xf;].ABCC5(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC5(xxx,s,f,vf,ss,ff) # s&f unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkps>.ABCC6(xxx,s,f,vf,ss,ff);
+       tau<kkdps>.ABCC4(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC5(xxx,s,f,vf);
+     end
+end
+
+species CC6(xxx)
+network
+    site x, af;           # We send these to KaiB molecues
+    site y, z, bf;        # The triggers for unbinding: fast, slow and very fast
+    react(x, y) @ kkBbh;
+    react(x, z) @ kkBbl;
+    react(af, bf) @ kvf;
+end
+body choice
+	 tau<kkdps>.CC5(xxx);
+	 tau<bflip(7)>.C6(xxx);
+	 bb6[x;].bhat[af;].BCC6(xxx,z,y,bf);
+     end
+end
+
+species BCC6(xxx,s,f,vf) # s,f,vf are triggers to unbind KaiBs
+network
+    site xs, xf;   # We send these to KaiA molecues
+    site ys, yf;   # The triggers for unbinding
+    react(xs, ys) @ kkAb;
+    react(xf, yf) @ kvf;
+end
+body choice
+	 tau<kkdps>.BCC5(xxx,s,f,vf);
+	 s.vf.CC6(xxx);
+	 aa6[xs;].ahat[xf;].ABCC6(xxx,s,f,vf,ys,yf);
+     end	 
+end
+
+species ABCC6(xxx,s,f,vf,ss,ff) # s&f unbind KaiB, ss&ff KaiA
+body choice
+       tau<kkdps>.ABCC5(xxx,s,f,vf,ss,ff);
+       ss.ff.BCC6(xxx,s,f,vf);
+     end
+end

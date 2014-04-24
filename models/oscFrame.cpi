@@ -1,0 +1,100 @@
+------------
+-- Clock
+------------
+
+species S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xe@10.02, ca-xe@163.31, cb-xe@0} 
+		  s00a<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s00b<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@40.83, xf-u@10.02, xf-c@8.17}
+		  s01e<xe>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s01f<xf>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@8.17, xf-u@10.02, xf-c@40.83}
+		  s10e<xe>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s10f<xf>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xf@10.02, ca-xf@0, cb-xf@163.31} 
+		  s11a<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s11b<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s11i(x).x.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+		  +
+		  s11p(x).x.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b);
+
+species E(e) = e(x).x.E(e);
+
+species F(f) = f(x).x.F(f);
+
+--------------
+-- Driven nets
+--------------
+
+species P(p) = {x-u@1, x-r@1} p<x>.(u.P(p) + r.P'(p));
+species P'(p) = tau<1>.P(p);
+
+species Q(q) = {x-u@10, x-r@400} q<x>.(u.Q(q) + r.Q'(q));
+species Q'(q) = tau<1e-4>.Q(q);
+
+--------------
+-- Inhibitor
+--------------
+
+species In(in) = {x-u@1e-1} in<x>.u.In(in) + tau<2e-4>.0;
+species ProdIn(in) = tau<2e-4>.In(in);
+
+--------------
+-- Processes
+--------------
+
+
+process Pi = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f) ||
+			 [10e4] ProdIn(in) ||
+			 [0] In(in) ||
+			 [10e4] P(p) ||
+			 [0] P'(p) ||
+			 [10e4] Q(q) ||
+			 [0] Q'(q)
+		   	 : {s00a-e@818.18,
+				s00b-e@0,
+				s01e-e@13.64,
+				s10e-e@4093.17,
+				s01f-f@4093.17,
+				s10f-f@13.64,
+				s11a-f@0,
+				s11b-f@818.18,
+				in-e@0,     --5
+				in-f@0,     --5
+				in-s11i@0,  --3e-4
+				p-s11p@0,   --3e-4
+				q-e@0       --5
+			   };

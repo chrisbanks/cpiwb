@@ -1,0 +1,42 @@
+species F1(f1) = f1(x).x.F1(f1);
+
+species F2(f2) = f2(x).x.F2(f2);
+
+species E(e,e2,ep) = 
+		{t-u@1, t-r@0.0005}
+		e(x).x.E(e,e2,ep)
+		+ e2<t>.(u.E(e,e2,ep) + r.Ep(e,e2,ep));
+
+species Ep(e,e2,ep) = 
+		{t-u@1, t-r@0.01}
+		ep<t>.(u.Ep(e,e2,ep) + r.E(e,e2,ep));
+
+species S(s,sp1,sp2,spp) = 
+		{t-u@1, t-r@0.01}
+		s<t>.(u.S(s,sp1,sp2,spp) + r.Sp(s,sp1,sp2,spp));
+
+species Sp(s,sp1,sp2,spp) = 
+		{t1-u@1, t1-r@15, t2-u@1, t2-r@0.5}
+		sp1<t1>.(u.Sp(s,sp1,sp2,spp) + r.Spp(s,sp1,sp2,spp))
+		+ sp2<t2>.(u.Sp(s,sp1,sp2,spp) + r.S(s,sp1,sp2,spp));
+
+species Spp(s,sp1,sp2,spp) = 
+		{t-u@1, t-r@0.092}
+		spp<t>.(u.Spp(s,sp1,sp2,spp) + r.Sp(s,sp1,sp2,spp));
+
+
+process Pi = [500] S(s,sp1,sp2,spp)
+		   ||[0] Sp(s,sp1,sp2,spp)
+		   ||[0] Spp(s,sp1,sp2,spp)
+		   ||[300] E(e,e2,ep)
+		   ||[0] Ep(e,e2,ep)
+		   ||[100] F1(f1)
+		   ||[0.1] F2(f2)
+		   :
+		   {f1-sp2@0.01,
+			f1-spp@0.045,
+			f2-ep@1,
+			e-e2@0.003,
+			e-s@0.02,
+			e-sp1@0.032
+		   };

@@ -1,0 +1,12 @@
+-- Auto-catalysis
+
+species S(s) = {t-u@1, t-r@1}
+			   s2(x).x.S(s)
+			 + s<t>.(u.S(s) + r.T());
+
+species T() = 0;
+
+process Pi = [10] S(s)
+		   ||[0] T()
+		   :
+		   {s-s2@1};

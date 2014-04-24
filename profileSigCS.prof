@@ -1,0 +1,43 @@
+	Thu Oct 31 13:58 2013 Time and Allocation Profiling Report  (Final)
+
+	   profileSigCS +RTS -P -V0.001 -RTS 250
+
+	total time  =    10250.17 secs   (10250174 ticks @ 1000 us, 1 processor)
+	total alloc = 3,660,826,962,520 bytes  (excludes profiling overheads)
+
+COST CENTRE   MODULE  %time %alloc  ticks     bytes
+
+Inhib1-Signal Main     98.0   98.0  10049357 3588983538688
+CAF           Main      2.0    2.0  200813 71842781064
+
+
+                                                                       individual     inherited
+COST CENTRE       MODULE                             no.     entries  %time %alloc   %time %alloc  ticks     bytes
+
+MAIN              MAIN                               201           0    0.0    0.0   100.0  100.0      0      4288
+ Inhib1-Signal    Main                               405           0    0.0    0.0     0.0    0.0     27      2880
+ CAF              CPi.Lib                            400           0    0.0    0.0     0.0    0.0      0      3032
+ CAF              CPi.ODE                            399           0    0.0    0.0     0.0    0.0      0       616
+ CAF              CPi.Semantics                      397           0    0.0    0.0     0.0    0.0      0       288
+ CAF              CPi.Logic                          396           0    0.0    0.0     0.0    0.0      0       472
+ CAF              CPi.Signals                        395           0    0.0    0.0     0.0    0.0      0       400
+ CAF              Main                               394           0    2.0    2.0   100.0  100.0  200813 71842781064
+  Inhib1-Signal   Main                               404           1   98.0   98.0    98.0   98.0  10049330 3588983534080
+  PTO-Osc1-Trace  Main                               403           1    0.0    0.0     0.0    0.0      2    343256
+  PTO-Osc1-Signal Main                               402           1    0.0    0.0     0.0    0.0      2    179544
+ CAF              CPi.Parser                         393           0    0.0    0.0     0.0    0.0      0     11088
+ CAF              Text.Parsec.Token                  388           0    0.0    0.0     0.0    0.0      0       592
+ CAF              Text.Parsec.Language               386           0    0.0    0.0     0.0    0.0      0      1800
+ CAF              System.Process.Internals           330           0    0.0    0.0     0.0    0.0      0        64
+ CAF              Data.Map.Base                      301           0    0.0    0.0     0.0    0.0      0        16
+ CAF              GHC.Float                          254           0    0.0    0.0     0.0    0.0      0     55360
+ CAF              GHC.IO.Handle.FD                   251           0    0.0    0.0     0.0    0.0      0     34720
+ CAF              GHC.Show                           248           0    0.0    0.0     0.0    0.0      0       392
+ CAF              GHC.IO.Encoding                    238           0    0.0    0.0     0.0    0.0      0      3376
+ CAF              GHC.IO.FD                          236           0    0.0    0.0     0.0    0.0      0        32
+ CAF              GHC.TopHandler                     232           0    0.0    0.0     0.0    0.0      0        40
+ CAF              Text.Read.Lex                      225           0    0.0    0.0     0.0    0.0      0      2152
+ CAF              GHC.Conc.Signal                    223           0    0.0    0.0     0.0    0.0      0       672
+ CAF              GHC.IO.Encoding.Iconv              222           0    0.0    0.0     0.0    0.0      0       248
+ CAF              GHC.Integer.Logarithms.Internals   208           0    0.0    0.0     0.0    0.0      0       320
+  Inhib1-Signal   Main                               406           0    0.0    0.0     0.0    0.0      0      1728

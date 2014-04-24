@@ -1,0 +1,281 @@
+------------
+-- Clock 1
+------------
+
+species T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {u-xe@10.02, ca-xe@163.31, cb-xe@0} 
+		  t00a<xe>.(u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t00b<xe>.(u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+species T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {xe-u@10.02, xe-c@40.83, xf-u@10.02, xf-c@8.17}
+		  t01e<xe>.(u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t01f<xf>.(u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+species T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {xe-u@10.02, xe-c@8.17, xf-u@10.02, xf-c@40.83}
+		  t10e<xe>.(u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t10f<xf>.(u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+species T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {u-xf@10.02, ca-xf@0, cb-xf@163.31} 
+		  t11a<xf>.(u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t11b<xf>.(u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+
+------------
+-- Clock 2
+------------
+
+species S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xe@10.02, ca-xe@14.12, cb-xe@7.06} 
+		  s00a<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s00b<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@105.91, xf-u@10.02, xf-c@0}
+		  s01e<xe>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s01f<xf>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@0, xf-u@10.02, xf-c@105.91}
+		  s10e<xe>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s10f<xf>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xf@10.02, ca-xf@7.06, cb-xf@14.12} 
+		  s11a<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s11b<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+------------
+-- Enzymes
+------------
+
+species E(e) = e(x).x.E(e);
+
+species F(f) = f(x).x.F(f);
+
+
+-------------
+-- Process
+-------------
+
+process PiA0 = [5e4] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		   	 [0] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+			 [0] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+			 [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f)
+		   	 : {t00a-e@818.18,
+				t00b-e@0,
+				t01e-e@13.64,
+				t10e-e@4093.17,
+				t01f-f@4093.17,
+				t10f-f@13.64,
+				t11a-f@0,
+				t11b-f@818.18};
+
+process PiB0 = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f)
+		   	 : {s00a-e@7074.12,
+				s00b-e@70.74,
+				s01e-e@2.12,
+				s10e-e@0,
+				s01f-f@0,
+				s10f-f@2.12,
+				s11a-f@70.74,
+				s11b-f@7074.12};
+
+process PiA180 = [3.00676883e-7] E(e) || 
+		[1.31490982e-6] F(f) || 
+		[10808.8531] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		[2906.42549] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		[14549.7441] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		[21732.9773] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		[1.53410834e-2] {ca-xe@163.31, cb-xe@0.0, u-xe@10.02} ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e) || 
+		[0.0] {ca-xe@163.31, cb-xe@0.0, u-xe@10.02} cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e) || 
+		[0.0] {ca-xf@0.0, cb-xf@163.31, u-xf@10.02} ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		[0.134892677] {ca-xf@0.0, cb-xf@163.31, u-xf@10.02} cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		[5.13162008e-3] {xe-c@8.17, xe-u@10.02, xf-c@40.83, xf-u@10.02} c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		[0.984424191] {xe-c@8.17, xe-u@10.02, xf-c@40.83, xf-u@10.02} c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e) || 
+		[0.859974388] {xe-c@40.83, xe-u@10.02, xf-c@8.17, xf-u@10.02} c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		[2.34425026e-4] {xe-c@40.83, xe-u@10.02, xf-c@8.17, xf-u@10.02} c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e)
+		: {t00a-e@818.18,
+				t00b-e@0,
+				t01e-e@13.64,
+				t10e-e@4093.17,
+				t01f-f@4093.17,
+				t10f-f@13.64,
+				t11a-f@0,
+				t11b-f@818.18};
+
+process PiB180 = 
+			 [7.87524088e-4] E(e) || 
+			 [1.26929396e-7] F(f) || 
+			 [3.07145224e-4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [69378.2147] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [4099.69294] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [26520.0929] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [7.08829657e-5] {ca-xe@14.12, cb-xe@7.06, u-xe@10.02} ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e) || 
+			 [1.00180779e-6] {ca-xe@14.12, cb-xe@7.06, u-xe@10.02} cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e) || 
+			 [1.39361504e-2] {ca-xf@7.06, cb-xf@14.12, u-xf@10.02} ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [0.98605421] {ca-xf@7.06, cb-xf@14.12, u-xf@10.02} cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [9.51229833e-6] {xe-c@0.0, xe-u@10.02, xf-c@105.91, xf-u@10.02} c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [0.0] {xe-c@0.0, xe-u@10.02, xf-c@105.91, xf-u@10.02} c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e) || 
+			 [0.0] {xe-c@105.91, xe-u@10.02, xf-c@0.0, xf-u@10.02} c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [0.999140591] {xe-c@105.91, xe-u@10.02, xf-c@0.0, xf-u@10.02} c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e)
+		   	 : {s00a-e@7074.12,
+				s00b-e@70.74,
+				s01e-e@2.12,
+				s10e-e@0,
+				s01f-f@0,
+				s10f-f@2.12,
+				s11a-f@70.74,
+				s11b-f@7074.12};
+
+
+-------------------
+-- Composed clocks:
+-------------------
+
+process PiA0B0 = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+	       [5e4] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [0] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [0] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) ||
+		  [1] E(e) || 
+		  [1] F(f)
+		: {s00a-e@7074.12,
+		   s00b-e@70.74,
+		   s01e-e@2.12,
+		   s10e-e@0,
+		   s01f-f@0,
+		   s10f-f@2.12,
+		   s11a-f@70.74,
+		   s11b-f@7074.12,
+		   t00a-e@818.18,
+		   t00b-e@0,
+		   t01e-e@13.64,
+		   t10e-e@4093.17,
+		   t01f-f@4093.17,
+		   t10f-f@13.64,
+		   t11a-f@0,
+		   t11b-f@818.18};
+
+process PiA180B0 = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+	      [3.00676883e-7] E(e) || 
+		  [1.31490982e-6] F(f) || 
+		  [10808.8531] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [2906.42549] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [14549.7441] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [21732.9773] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [1.53410834e-2] {ca-xe@163.31, cb-xe@0.0, u-xe@10.02} ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e) || 
+		  [0.0] {ca-xe@163.31, cb-xe@0.0, u-xe@10.02} cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e) || 
+		  [0.0] {ca-xf@0.0, cb-xf@163.31, u-xf@10.02} ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		  [0.134892677] {ca-xf@0.0, cb-xf@163.31, u-xf@10.02} cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		  [5.13162008e-3] {xe-c@8.17, xe-u@10.02, xf-c@40.83, xf-u@10.02} c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		  [0.984424191] {xe-c@8.17, xe-u@10.02, xf-c@40.83, xf-u@10.02} c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e) || 
+		  [0.859974388] {xe-c@40.83, xe-u@10.02, xf-c@8.17, xf-u@10.02} c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xf.F(f) || 
+		  [2.34425026e-4] {xe-c@40.83, xe-u@10.02, xf-c@8.17, xf-u@10.02} c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) + u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) | xe.E(e)
+		: {s00a-e@7074.12,
+		   s00b-e@70.74,
+		   s01e-e@2.12,
+		   s10e-e@0,
+		   s01f-f@0,
+		   s10f-f@2.12,
+		   s11a-f@70.74,
+		   s11b-f@7074.12,
+		   t00a-e@818.18,
+		   t00b-e@0,
+		   t01e-e@13.64,
+		   t10e-e@4093.17,
+		   t01f-f@4093.17,
+		   t10f-f@13.64,
+		   t11a-f@0,
+		   t11b-f@818.18};
+
+process PiA0B180 = 
+	       	 [5e4] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		     [0] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		     [0] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		     [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) ||
+		  	 [7.87524088e-4] E(e) || 
+			 [1.26929396e-7] F(f) || 
+			 [3.07145224e-4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [69378.2147] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [4099.69294] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [26520.0929] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [7.08829657e-5] {ca-xe@14.12, cb-xe@7.06, u-xe@10.02} ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e) || 
+			 [1.00180779e-6] {ca-xe@14.12, cb-xe@7.06, u-xe@10.02} cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e) || 
+			 [1.39361504e-2] {ca-xf@7.06, cb-xf@14.12, u-xf@10.02} ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [0.98605421] {ca-xf@7.06, cb-xf@14.12, u-xf@10.02} cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [9.51229833e-6] {xe-c@0.0, xe-u@10.02, xf-c@105.91, xf-u@10.02} c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [0.0] {xe-c@0.0, xe-u@10.02, xf-c@105.91, xf-u@10.02} c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e) || 
+			 [0.0] {xe-c@105.91, xe-u@10.02, xf-c@0.0, xf-u@10.02} c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xf.F(f) || 
+			 [0.999140591] {xe-c@105.91, xe-u@10.02, xf-c@0.0, xf-u@10.02} c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) + u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) | xe.E(e)
+		: {s00a-e@7074.12,
+		   s00b-e@70.74,
+		   s01e-e@2.12,
+		   s10e-e@0,
+		   s01f-f@0,
+		   s10f-f@2.12,
+		   s11a-f@70.74,
+		   s11b-f@7074.12,
+		   t00a-e@818.18,
+		   t00b-e@0,
+		   t01e-e@13.64,
+		   t10e-e@4093.17,
+		   t01f-f@4093.17,
+		   t10f-f@13.64,
+		   t11a-f@0,
+		   t11b-f@818.18};

@@ -1,0 +1,365 @@
+species S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xe@10.02, ca-xe@163.31, cb-xe@0} 
+		  s00a<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s00b<xe>.(u.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@40.83, xf-u@10.02, xf-c@8.17}
+		  s01e<xe>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s01f<xf>.(u.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {xe-u@10.02, xe-c@8.17, xf-u@10.02, xf-c@40.83}
+		  s10e<xe>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s10f<xf>.(u.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b)
+				   +
+				   c.S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b));
+
+species S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		= {u-xf@10.02, ca-xf@0, cb-xf@163.31} 
+		  s11a<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   ca.S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s11b<xf>.(u.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) 
+		  		   + 
+				   cb.S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b))
+		  +
+		  s11i(x).x.S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b);
+
+species E(e) = e(x).x.E(e);
+
+species F(f) = f(x).x.F(f);
+
+----------------------
+-- Copy:
+----------------------
+
+species S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		= {u-xe'@10.02, ca-xe'@163.31, cb-xe'@0} 
+		  s'00a<xe'>.(u.S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		  		   + 
+				   ca.S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b))
+		  +
+		  s'00b<xe'>.(u.S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		  		   + 
+				   cb.S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b));
+
+species S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		= {xe'-u@10.02, xe'-c@40.83, xf'-u@10.02, xf'-c@8.17}
+		  s'01e'<xe'>.(u.S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b)
+				   +
+				   c.S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b))
+		  +
+		  s'01f'<xf'>.(u.S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b)
+				   +
+				   c.S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b));
+
+species S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		= {xe'-u@10.02, xe'-c@8.17, xf'-u@10.02, xf'-c@40.83}
+		  s'10e'<xe'>.(u.S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b)
+				   +
+				   c.S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b))
+		  +
+		  s'10f'<xf'>.(u.S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b)
+				   +
+				   c.S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b));
+
+species S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		= {u-xf'@10.02, ca-xf'@0, cb-xf'@163.31} 
+		  s'11a<xf'>.(u.S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		  		   + 
+				   ca.S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b))
+		  +
+		  s'11b<xf'>.(u.S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) 
+		  		   + 
+				   cb.S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b))
+		  +
+		  s'11i(x).x.S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b);
+
+species E'(e') = e'(x).x.E'(e');
+
+species F'(f') = f'(x).x.F'(f');
+
+
+--------------
+-- Inhibitor
+-------------
+
+species In(in) = {x-u@1e-1} in<x>.u.In(in) + tau<5e-4>.0;
+species ProdIn(in) = tau<5e-4>.In(in);
+
+---------------
+-- Clock 2:
+---------------
+
+species T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {u-xe@10.02, ca-xe@163.31, cb-xe@0} 
+		  t00a<xe>.(u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t00b<xe>.(u.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+species T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {xe-u@10.02, xe-c@40.83, xf-u@10.02, xf-c@8.17}
+		  t01e<xe>.(u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t01f<xf>.(u.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+species T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {xe-u@10.02, xe-c@8.17, xf-u@10.02, xf-c@40.83}
+		  t10e<xe>.(u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t10f<xf>.(u.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+				   +
+				   c.T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+species T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		= {u-xf@10.02, ca-xf@0, cb-xf@163.31} 
+		  t11a<xf>.(u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   ca.T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b))
+		  +
+		  t11b<xf>.(u.T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) 
+		  		   + 
+				   cb.T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b));
+
+-------------
+--Copy:
+-------------
+
+species T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		= {u-xe'@10.02, ca-xe'@163.31, cb-xe'@0} 
+		  t'00a<xe'>.(u.T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		  		   + 
+				   ca.T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b))
+		  +
+		  t'00b<xe'>.(u.T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		  		   + 
+				   cb.T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b));
+
+species T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		= {xe'-u@10.02, xe'-c@40.83, xf'-u@10.02, xf'-c@8.17}
+		  t'01e'<xe'>.(u.T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b)
+				   +
+				   c.T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b))
+		  +
+		  t'01f'<xf'>.(u.T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b)
+				   +
+				   c.T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b));
+
+species T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		= {xe'-u@10.02, xe'-c@8.17, xf'-u@10.02, xf'-c@40.83}
+		  t'10e'<xe'>.(u.T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b)
+				   +
+				   c.T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b))
+		  +
+		  t'10f'<xf'>.(u.T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b)
+				   +
+				   c.T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b));
+
+species T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		= {u-xf'@10.02, ca-xf'@0, cb-xf'@163.31} 
+		  t'11a<xf'>.(u.T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		  		   + 
+				   ca.T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b))
+		  +
+		  t'11b<xf'>.(u.T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) 
+		  		   + 
+				   cb.T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b));
+
+--------------
+-- Processes
+--------------
+
+
+process Pi = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f)
+		   	 : {s00a-e@818.18,
+				s00b-e@0,
+				s01e-e@13.64,
+				s10e-e@4093.17,
+				s01f-f@4093.17,
+				s10f-f@13.64,
+				s11a-f@0,
+				s11b-f@818.18,
+				in-e@5,     --5
+				in-f@0,     --5
+				in-s11i@0}; --3e-4
+
+process Pi' = [10e4] S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+		   	 [0] S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+			 [0] S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+			 [0] S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+		   	 [1] E'(e') || 
+			 [1] F'(f')
+		   	 : {s'00a-e'@818.18,
+				s'00b-e'@0,
+				s'01e'-e'@13.64,
+				s'10e'-e'@4093.17,
+				s'01f'-f'@4093.17,
+				s'10f'-f'@13.64,
+				s'11a-f'@0,
+				s'11b-f'@818.18};
+
+process Inhib = [10e4] ProdIn(in) ||
+			    [0] In(in)
+				: {};
+
+process PiInhib = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f) ||
+			 [10e4] ProdIn(in) ||
+			 [0] In(in)
+		   	 : {s00a-e@818.18,
+				s00b-e@0,
+				s01e-e@13.64,
+				s10e-e@4093.17,
+				s01f-f@4093.17,
+				s10f-f@13.64,
+				s11a-f@0,
+				s11b-f@818.18,
+				in-e@5,     --5
+				in-f@0,     --5
+				in-s11i@0}; --3e-4
+
+process PiComp = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+			 [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		   	 [1] E(e) || 
+			 [1] F(f) ||
+			 [10e4] S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+		   	 [0] S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+			 [0] S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+			 [0] S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+		   	 [1] E'(e') || 
+			 [1] F'(f')
+		   	 : {s00a-e@818.18,
+				s00b-e@0,
+				s01e-e@13.64,
+				s10e-e@4093.17,
+				s01f-f@4093.17,
+				s10f-f@13.64,
+				s11a-f@0,
+				s11b-f@818.18,
+				in-e@5,     --5
+				in-f@0,     --5
+				in-s11i@0,
+				s'00a-e'@818.18,
+				s'00b-e'@0,
+				s'01e'-e'@13.64,
+				s'10e'-e'@4093.17,
+				s'01f'-f'@4093.17,
+				s'10f'-f'@13.64,
+				s'11a-f'@0,
+				s'11b-f'@818.18};
+
+process Pi2 = [10e4] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		   	 [0] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+			 [0] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+			 [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b)
+		   	 : {t00a-e@818.18,
+				t00b-e@0,
+				t01e-e@13.64,
+				t10e-e@4093.17,
+				t01f-f@4093.17,
+				t10f-f@13.64,
+				t11a-f@0,
+				t11b-f@818.18};
+
+process Pi2' = [10e4] T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) || 
+		   	 [0] T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) || 
+			 [0] T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) || 
+			 [0] T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b)
+		   	 : {t'00a-e'@818.18,
+				t'00b-e'@0,
+				t'01e'-e'@13.64,
+				t'10e'-e'@4093.17,
+				t'01f'-f'@4093.17,
+				t'10f'-f'@13.64,
+				t'11a-f'@0,
+				t'11b-f'@818.18};
+
+process Pi12 = [10e4] S00(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S01(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S10(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+		  [0] S11(s00a,s00b,s01e,s01f,s10e,s10f,s11a,s11b) || 
+	       [10e4] T00(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [0] T01(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [0] T10(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) || 
+		  [0] T11(t00a,t00b,t01e,t01f,t10e,t10f,t11a,t11b) ||
+		  [1] E(e) || 
+		  [1] F(f)
+		: {s00a-e@818.18,
+		   s00b-e@0,
+		   s01e-e@13.64,
+		   s10e-e@4093.17,
+		   s01f-f@4093.17,
+		   s10f-f@13.64,
+		   s11a-f@0,
+		   s11b-f@818.18,
+		   t00a-e@818.18,
+		   t00b-e@0,
+		   t01e-e@13.64,
+		   t10e-e@4093.17,
+		   t01f-f@4093.17,
+		   t10f-f@13.64,
+		   t11a-f@0,
+		   t11b-f@818.18};
+
+process Pi12' = [10e4] S'00(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+		   	 [0] S'01(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+			 [0] S'10(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) || 
+			 [0] S'11(s'00a,s'00b,s'01e',s'01f',s'10e',s'10f',s'11a,s'11b) ||
+			 [10e4] T'00(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) || 
+		   	 [0] T'01(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) || 
+			 [0] T'10(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) || 
+			 [0] T'11(t'00a,t'00b,t'01e',t'01f',t'10e',t'10f',t'11a,t'11b) ||
+			 [1] E'(e') || 
+		     [1] F'(f')
+		   	 : {s'00a-e'@818.18,
+				s'00b-e'@0,
+				s'01e'-e'@13.64,
+				s'10e'-e'@4093.17,
+				s'01f'-f'@4093.17,
+				s'10f'-f'@13.64,
+				s'11a-f'@0,
+				s'11b-f'@818.18,
+				t'00a-e'@818.18,
+				t'00b-e'@0,
+				t'01e'-e'@13.64,
+				t'10e'-e'@4093.17,
+				t'01f'-f'@4093.17,
+				t'10f'-f'@13.64,
+				t'11a-f'@0,
+				t'11b-f'@818.18};
