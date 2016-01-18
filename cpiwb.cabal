@@ -3,7 +3,7 @@
 
 name:                cpiwb
 version:             0.6.0.0
--- synopsis:            
+synopsis:            An interactive command-line tool for working with the Continuous pi-Calculus
 -- description:         
 license:             GPL (Some 3)
 license-file:        LICENSE
@@ -12,7 +12,7 @@ maintainer:          Ian.Stark@ed.ac.uk
 -- copyright:           
 -- category:            
 build-type:          Simple
--- extra-source-files:  
+extra-source-files:  README, build
 cabal-version:       >=1.10
 
 executable cpiwb
@@ -27,8 +27,9 @@ executable cpiwb
                        Chart<1.0, Chart-gtk, gtk<0.13
 
 -- There's also a requirement to install gtk2hs-buildtools<0.13 first, which
--- this file cannot pick up.  Why it has to be an earlier version, I don't
--- know; could be the String/Text issue noted below.
+-- this file cannot pick up.  I wonder if I can manually adjust Setup.hs for
+-- this?  Why it has to be an earlier version, I don't know; could be the
+-- String/Text issue noted below.
 
 -- Chart/Chart-gtk must be at <1.0 to some things incorporated that were later
 -- broken out into cairo.
