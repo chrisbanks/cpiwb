@@ -1,1 +1,11 @@
-Less-than-minimal README
+For DICE Scientific Linux, execute "./build" to build, "cabal run" to run, and
+"cabal build" to build again.
+
+For systems like Debian Jessie with more recent gcc and cabal versions, it's
+necessary to point back to earlier generations.  
+
+  ./build --with-gcc=gcc-4.8 --cabal-lib-version=1.18.1.15
+
+Here the gcc version needs to be less than 5, and cabal less than 1.22.
+
+
