@@ -3,22 +3,44 @@
 
 name:                cpiwb
 version:             0.6.0.0
-synopsis:            An interactive command-line tool for working with the Continuous pi-Calculus
--- description:         
-license:             GPL (Some 3)
+synopsis:            The CPi Workbench: An interactive command-line tool for working with the Continuous pi-Calculus
+description:         The Continuous pi-Calculus is a process algebra for modelling continuous behaviour in biochemical systems.  The CPi Workbench is an interactive command-line tool for working with the calculus.  It provides facilities to read and parse .cpi files containing descriptions of CPi systems; to analyse their possible behaviour; and generate ODEs and numerical simulations of the systems they describe.
+license:             GPL-3
 license-file:        LICENSE
 author:              Chris Banks, Ian Stark
 maintainer:          Ian.Stark@ed.ac.uk
--- copyright:           
--- category:            
+copyright:           Chris Banks, Ian Stark
+category:            SystemsBiology
 build-type:          Simple
 extra-source-files:  README, build
-cabal-version:       >=1.10
+cabal-version:       >1.10
+-- In fact it must also be <1.22; but cabal-version won't accept an upper
+-- bound:
+--
+--   Warning: Packages relying on Cabal 1.10 or later must only specify a
+--   version range of the form 'cabal-version: >= x.y'. Use 'cabal-version: >= 
+--   1.10'.
+--
+-- There's a problem with gtk2hs <0.13 and cabal at 1.22; Gtk2HsSetup uses
+-- generateRegistrationInfo from Cabal's Distribution.Simple.Register, and
+-- that had an API change at 1.22
+
+-- Where the version of cabal is 1.22, it's necessary to use the
+-- --cabal-lib-version=1.??.??.?? switch in ./build to explicitly select an
+-- earlier one (which must then be installed)
+
+-- There's also a requirement that gcc must be at version <5.  I'm not sure
+-- whether I can enforce this here.  There's a --with-gcc switch on cabal
+-- install to point to the path for an appropriate gcc executable.  Again,
+-- that needs to be set by hand in ./build
 
 executable cpiwb
   main-is:             cpiwb.hs
-  -- other-modules:       
-  -- other-extensions:    
+  other-modules:       CPi.Logic, CPi.ODE, CPi.Plot, CPi.Signals, 
+                       CPi.Lib,  CPi.Matlab,  CPi.Parser,  
+                       CPi.Semantics, CPi.Tests
+  other-extensions:    DeriveDataTypeable, TypeSynonymInstances,
+                       FlexibleInstances, PatternGuards
   build-depends:       base >=4.7 && <4.8, parsec >=3.1 && <3.2,
                        containers >=0.5 && <0.6, transformers >=0.3 && <0.4,
                        process >=1.2 && <1.3, colour >=2.3 && <2.4,
