@@ -5,14 +5,14 @@ name:                cpiwb
 version:             0.6.0.0
 -- synopsis:            
 -- description:         
--- license:             
+license:             GPL (Some 3)
 license-file:        LICENSE
-author:              Ian Stark
+author:              Chris Banks, Ian Stark
 maintainer:          Ian.Stark@ed.ac.uk
 -- copyright:           
 -- category:            
 build-type:          Simple
-extra-source-files:  README
+-- extra-source-files:  
 cabal-version:       >=1.10
 
 executable cpiwb
@@ -41,14 +41,12 @@ executable cpiwb
 -- We need gtk <0.13 so that eventKeyName in Graphics.UI.Gtk.Gdk.Events is
 -- String not Text.  So an explicit mention of gtk with that constraint.
 
-
--- Source code uses the following modules
+-- The source code directly uses the following modules
 -- Numeric.GSL                  from hmatrix-gsl
 -- Numeric.LinearAlgebra        from hmatrix
 -- Graphics.Rendering.Chart     from Chart
 -- Graphics.Rendering.Chart.Gtk from Chart-gtk
 -- System.Console.Haskeline     from haskeline
-
 
   -- hs-source-dirs:      
   default-language:    Haskell2010
