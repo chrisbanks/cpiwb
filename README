@@ -1,11 +1,15 @@
-For DICE Scientific Linux, execute "./build" to build, "cabal run" to run, and
-"cabal build" to build again.
+This version is packaged for building with Cabal.  It uses sandboxes, which
+requries a version of Cabal at least 1.18; and for other reasons the version
+has to be less than 1.22.  
 
-For systems like Debian Jessie with more recent gcc and cabal versions, it's
+The current DICE, running Scientific Linux 7, satisfies this. 
+
+Execute "./build" to build, "cabal run" to run, and "cabal build" to build
+again.
+
+For systems like Debian Jessie with more recent gcc and Cabal versions, it's
 necessary to point back to earlier generations.  
 
   ./build --with-gcc=gcc-4.8 --cabal-lib-version=1.18.1.15
 
-Here the gcc version needs to be less than 5, and cabal less than 1.22.
-
-
+Here the gcc version needs to be less than 5, and Cabal less than 1.22.

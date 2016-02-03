@@ -10,7 +10,8 @@ copyright:           Chris Banks, Ian Stark
 category:            SystemsBiology
 build-type:          Simple
 extra-source-files:  README, build
-cabal-version:       >1.10
+cabal-version:       >=1.18
+-- The version must be able 1.18 to use sandboxes.
 -- In fact it must also be <1.22; but cabal-version won't accept an upper
 -- bound:
 --
