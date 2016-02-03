@@ -1,3 +1,4 @@
+cabal update
 cabal sandbox delete
 cabal sandbox init
 cabal install "$@" 'gtk2hs-buildtools<0.13'
