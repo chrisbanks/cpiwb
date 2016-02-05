@@ -1,5 +1,36 @@
+# -*- mode: Conf; -*-
+#
+# Time-stamp: <Monday 18 January 2016 / .gitignore>
+#
+# Files for git to ignore in a Haskell project.  Taken from github's
+# recommendations at
+#
+#   https://github.com/github/gitignore/blob/master/Haskell.gitignore
+#
+# 2016-01-18 I could make this dependency dynamic by pulling that project in
+# as a submodule and using a symbolic link, but I think that then means anyone
+# cloning the project needs to manually also set up the submodule.
+#
+# Although it's possible git clone --recursive can help with this.  Maybe try
+# some time.
+#
+# Ian Stark
+
+dist
+cabal-dev
 *.o
 *.hi
-*~
-*#
-cpiwb
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+.stack-work/
+
+# End of file
